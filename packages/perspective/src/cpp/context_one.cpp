@@ -577,8 +577,8 @@ t_ctx1::get_leaf_data(t_uindex depth,
     t_uindex nrows = end_row - start_row;
     t_uindex stride = end_col - start_col;
 
-    t_tscalvec values((nrows + 1) * stride);
-    t_uindex ridx = 1;
+    t_tscalvec values((nrows) * stride);
+    t_uindex ridx = 0;
 
     t_depth last_depth = -1;
 
@@ -587,6 +587,8 @@ t_ctx1::get_leaf_data(t_uindex depth,
     dft.push_front(m_tree->get_node(0));
 
     t_uindex naggs = m_config.get_num_aggregates();
+
+    static const char unit_sep = 0x1F;
 
     std::vector<t_str> plabels;
     while (!dft.empty())
@@ -623,7 +625,7 @@ t_ctx1::get_leaf_data(t_uindex depth,
             for (auto lit = plabels.begin(); lit != plabels.end();
                  ++lit)
             {
-                label << *lit << "/";
+                label << *lit << unit_sep;
             }
             label << value;
 

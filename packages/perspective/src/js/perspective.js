@@ -482,6 +482,70 @@ view.prototype.schema = async function() {
     return new_schema;
 }
 
+
+/**
+ * Serializes this view to JSON data in a standard format.
+ *
+ * @async
+ *
+ * @param {Object} [options] An optional configuration object.
+ * @param {number} options.start_row The starting row index from which
+ * to serialize.
+ * @param {number} options.end_row The ending row index from which
+ * to serialize.
+ * @param {number} options.start_col The starting column index from which
+ * to serialize.
+ * @param {number} options.end_col The ending column index from which
+ * to serialize. 
+ * 
+ * @returns {Promise<Array>} A Promise resolving to An array of Objects 
+ * representing the rows of this {@link view}.
+ */
+view.prototype.to_flat = async function(options) {
+
+    options = options || {};
+    let depth = this.config.row_pivot.length;
+    let viewport = this.config.viewport ? this.config.viewport : {};
+    let start_row = options.start_row || (viewport.top ? viewport.top : 0);
+    let end_row = options.end_row || (viewport.height ? start_row + viewport.height : this.ctx.get_leaf_count(depth));
+    let start_col = options.start_col || (viewport.left ? viewport.left : 0);
+    let end_col = options.end_col || (viewport.width ? start_row + viewport.width : this.ctx.unity_get_column_count() + (this.sides() === 0 ? 0 : 1));
+    let slice = [];
+    if (this.sides() === 1) {
+        slice = __MODULE__.get_leaf_data_one(this.ctx, start_row, end_row, start_col, end_col);
+    }
+    let unit_sep = String.fromCharCode(31);
+
+    let data = [];
+    let spans = [];
+    for (let d = 0; d < depth; d++) {
+        spans.push([]);
+    }
+    let stride = end_col - start_col;
+    for (let r = 0; r < end_row-start_row; r++) {
+        let row = [];
+        for (let c = 0; c < stride; c++) {
+            let val = slice[r*stride + c];
+            if (c === 0) {
+                val = val.split(unit_sep);
+                for (let i = 0; i < val.length; i++) {
+                    let span = spans[i];
+                    let curr = span[span.length - 1];
+                    if (!curr || curr[0] !== val[i]) {
+                        curr = [val[i], 0];
+                        span.push(curr);
+                    }
+                    curr[1] += 1;
+                }
+            } else {
+                row.push(val);
+            }
+        }
+        data.push(row);
+    }
+    return {spans: spans, data: data};
+}
+
 /**
  * Serializes this view to JSON data in a standard format.
  *

@@ -803,6 +803,21 @@ get_data(T ctx, t_uint32 start_row, t_uint32 end_row, t_uint32 start_col, t_uint
     return arr;
 }
 
+val
+get_leaf_data_one(t_ctx1_sptr ctx, t_uint32 start_row, t_uint32 end_row, t_uint32 start_col, t_uint32 end_col)
+{
+    t_depth depth = ctx->get_num_levels()-1;
+    t_uindex count = ctx->get_leaf_count(depth);
+    auto slice = ctx->get_leaf_data(depth, start_row, end_row, start_col, end_col);
+
+    val arr = val::array();
+    for (auto idx = 0; idx < slice.size(); ++idx)
+    {
+        arr.set(idx, scalar_to_val(slice, idx));
+    }
+    return arr;
+}
+
 /**
  * Main
  */
@@ -889,6 +904,7 @@ EMSCRIPTEN_BINDINGS(perspective)
         .smart_ptr<std::shared_ptr<t_ctx1>>("shared_ptr<t_ctx1>")
         .function<unsigned long>("get_row_count",reinterpret_cast<unsigned long (t_ctx1::*)() const>(&t_ctx1::get_row_count))
         .function<unsigned long>("get_column_count", reinterpret_cast<unsigned long (t_ctx1::*)() const>(&t_ctx1::get_column_count))
+        .function<unsigned long>("get_leaf_count",reinterpret_cast<unsigned long (t_ctx1::*)(const t_depth) const>(&t_ctx1::get_leaf_count))
         .function<t_tscalvec>("get_data", &t_ctx1::get_data)
         .function<t_stepdelta>("get_step_delta", &t_ctx1::get_step_delta)
         .function<t_cellupdvec>("get_cell_delta", &t_ctx1::get_cell_delta)
@@ -1079,4 +1095,5 @@ EMSCRIPTEN_BINDINGS(perspective)
     function("get_data_zero", &get_data<t_ctx0_sptr>);
     function("get_data_one", &get_data<t_ctx1_sptr>);
     function("get_data_two", &get_data<t_ctx2_sptr>);
+    function("get_leaf_data_one", &get_leaf_data_one);
 }
