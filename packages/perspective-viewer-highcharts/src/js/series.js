@@ -434,64 +434,103 @@ export function make_candlestick_data(js, schema, columns, pivots, col_pivots, h
     let rows = new TreeAxisIterator(pivots.length, js);
     let rows2 = new ColumnsIterator(rows, hidden);
     let series = [];
+    let series_vol = [];
     let colorRange = [Infinity, -Infinity];
     let make_tick = new MakeTick(schema, columns);
 
     let sname = ' ';
     let s = row_to_series(series, sname);
+    let s2 = row_to_series(series_vol, sname);
     for (let row of rows2) {
         let tick = {};
-        let open = false;
-        let high = false;
-        let low = false;
-        let close = false;
+        let vol_tick = {};
+        // let open = false;
+        // let high = false;
+        // let low = false;
+        // let close = false;
         for (let i=0; i<columns.length; i++){
-            if (i==0){
-                tick['x'] = row[columns[i]];
-            } else {
-                if (columns[i] === 'open'){
+            switch(i){
+                case 0: {
+                    tick['x'] = row[columns[i]];
+                    break;
+                };
+                case 1: {
                     tick['open'] = row[columns[i]];
-                    open = true;
-                } else if (columns[i] === 'high'){
+                    break;
+                };
+                case 2: {
                     tick['high'] = row[columns[i]];
-                    high = true;
-                } else if (columns[i] === 'low'){
+                    break;
+                };
+                case 3: {
                     tick['low'] = row[columns[i]];
-                    low = true;
-                } else if (columns[i] === 'close'){
+                    break;
+                };
+                case 4: {
                     tick['close'] = row[columns[i]];
-                    close = true;
+                    break;
+                };
+                case 5: {
+                    vol_tick['volume'] = row[columns[i]];
+                    s2.data.push(tick);
+                    break;
+                };
+                default: {
+
                 }
             }
+
+            // if (i==0){
+            //     tick['x'] = row[columns[i]];
+            // } else {
+            //     if (columns[i] === 'open'){
+            //         tick['open'] = row[columns[i]];
+            //         open = true;
+            //     } else if (columns[i] === 'high'){
+            //         tick['high'] = row[columns[i]];
+            //         high = true;
+            //     } else if (columns[i] === 'low'){
+            //         tick['low'] = row[columns[i]];
+            //         low = true;
+            //     } else if (columns[i] === 'close'){
+            //         tick['close'] = row[columns[i]];
+            //         close = true;
+            //     }
+            // }
         }
 
-        if(!open){
-            if(high){ tick['open'] = tick['high'];}
-            else if (close){ tick['open'] = tick['close'];}
-            else if (low){ tick['open'] = tick['low'];}
-            else {tick['open'] = 0.0;}
-        }
-        if(!high){
-            if(open){ tick['high'] = tick['open'];}
-            else if (close){ tick['high'] = tick['close'];}
-            else if (low){ tick['high'] = tick['low'];}
-            else {tick['high'] = 0.0;}
-        }
-        if(!low){
-            if(close){ tick['low'] = tick['close'];}
-            else if (open){ tick['low'] = tick['open'];}
-            else if (high){ tick['low'] = tick['high'];}
-            else {tick['low'] = 0.0;}
-        }
-        if(!close){
-            if(low){ tick['close'] = tick['low'];}
-            else if (open){ tick['close'] = tick['open'];}
-            else if (high){ tick['close'] = tick['high'];}
-            else {tick['close'] = 0.0;}
-        }
+        // if(!open){
+        //     if(high){ tick['open'] = tick['high'];}
+        //     else if (close){ tick['open'] = tick['close'];}
+        //     else if (low){ tick['open'] = tick['low'];}
+        //     else {tick['open'] = 0.0;}
+        // }
+        // if(!high){
+        //     if(open){ tick['high'] = tick['open'];}
+        //     else if (close){ tick['high'] = tick['close'];}
+        //     else if (low){ tick['high'] = tick['low'];}
+        //     else {tick['high'] = 0.0;}
+        // }
+        // if(!low){
+        //     if(close){ tick['low'] = tick['close'];}
+        //     else if (open){ tick['low'] = tick['open'];}
+        //     else if (high){ tick['low'] = tick['high'];}
+        //     else {tick['low'] = 0.0;}
+        // }
+        // if(!close){
+        //     if(low){ tick['close'] = tick['low'];}
+        //     else if (open){ tick['close'] = tick['open'];}
+        //     else if (high){ tick['close'] = tick['high'];}
+        //     else {tick['close'] = 0.0;}
+        // }
         if (tick) {
             s.data.push(tick);
         }
     }
-    return [series, {categories: make_tick.xaxis_clean.names}, [colorRange], {categories: make_tick.yaxis_clean.names}];
+
+    if(series_vol.length > 0){
+        // TODO
+        return [[series, series_vol], {categories: make_tick.xaxis_clean.names}, [colorRange], {categories: make_tick.yaxis_clean.names}];
+    }
+    return [[series], {categories: make_tick.xaxis_clean.names}, [colorRange], {categories: make_tick.yaxis_clean.names}];
 }

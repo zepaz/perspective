@@ -92,6 +92,8 @@ export function default_config(aggregates, mode) {
         type = 'line';
     } else if (mode === 'candlestick') {
         type = 'candlestick';
+    } else if (mode === 'step') {
+        type = 'scatter';
     } else if (mode === 'y_area') {
         type = 'area';
     } else if (mode.indexOf('bar') > -1) {
@@ -140,6 +142,9 @@ export function default_config(aggregates, mode) {
                 enabled: false
             }
         },
+        navigator: { // For highstock
+            enabled: false
+        },
         credits: {enabled: false},
         title: {
             text: null,
@@ -157,7 +162,6 @@ export function default_config(aggregates, mode) {
         boost: {
             enabled: false
         },
-
         plotOptions: {
             area: {
                 stacking: 'normal',
@@ -192,7 +196,8 @@ export function default_config(aggregates, mode) {
                 turboThreshold: 60000,
                 borderWidth: 0,
                 connectNulls: true,
-                lineWidth: (mode.indexOf('line') === -1 && mode.indexOf('candlestick') === -1) ? 0 : 1.5,
+                step: mode.indexOf('step') === -1 ? false: true,
+                lineWidth: (mode.indexOf('line') === -1 && mode.indexOf('candlestick') === -1 && mode.indexOf('step') === -1) ? 0 : 1.5,
                 states: {
                     hover: {
                         lineWidthPlus: 0,
@@ -222,6 +227,7 @@ export function default_config(aggregates, mode) {
         },
         tooltip: {
             animation: false,
+            enabled: true,
             backgroundColor: '#FFFFFF',
             borderColor: '#777777',
             followPointer: false,

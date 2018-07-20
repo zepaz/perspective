@@ -94,6 +94,18 @@ global.registerPlugin("xy_line", {
     delete: delete_chart
 });
 
+global.registerPlugin("xy_step", {
+    name: "X/Y Step Chart", 
+    create: draw("step"), 
+    resize: resize, 
+    initial: {
+        "type": "number",    
+        "count": 2
+    },
+    selectMode: "toggle",
+    delete: delete_chart
+});
+
 global.registerPlugin("xy_scatter", {
     name: "X/Y Scatter Chart", 
     create: draw('scatter'), 

@@ -120,11 +120,34 @@ export const draw = (mode) => async function (el, view, task) {
         }
         set_both_axis(config, 'xAxis', xaxis_name, xaxis_type, xtree_type, xtop);
         set_both_axis(config, 'yAxis', yaxis_name, yaxis_type, ytree_type, ytop);
+    } else if (mode === 'step') {
+        let config = configs[0] = default_config.call(this, aggregates, mode, js, col_pivots);
+        let [series, xtop, , ytop] = make_xy_data(js, schema, aggregates.map(x => x.column), row_pivots, col_pivots, hidden);
+        const colors = series.length <= 10 ? COLORS_10 : COLORS_20;
+        config.legend.floating = series.length <= 20;
+        config.legend.enabled = col_pivots.length > 0;
+        config.series = series;
+        config.plotOptions.scatter.marker = {enabled: false, radius: 0};
+        config.colors = colors;
+        if (set_boost(config, xaxis_type, yaxis_type)) {
+            delete config.chart['type'];
+        }
+        set_both_axis(config, 'xAxis', xaxis_name, xaxis_type, xtree_type, xtop);
+        set_both_axis(config, 'yAxis', yaxis_name, yaxis_type, ytree_type, ytop);
     } else if (mode === 'candlestick') {
         let config = configs[0] = default_config.call(this, aggregates, mode, js, col_pivots);
         let [series, xtop, , ytop] = make_candlestick_data(js, schema, aggregates.map(x => x.column), row_pivots, col_pivots, hidden);
-        const colors = series.length <= 10 ? COLORS_10 : COLORS_20;
-        config.legend.floating = series.length <= 20;
+
+        let colors = COLORS_10;
+        if (series.length === 1 || (series.length === 2 && series[1].length === 0)){
+            series = series[0];
+            colors = series.length <= 10 ? COLORS_10 : COLORS_20;
+            config.legend.floating = series.length <= 20;
+        } else {
+            series = series[0];
+            colors = series[0].length <= 10 ? COLORS_10 : COLORS_20;
+            config.legend.floating = series[0].length <= 20;
+        }
         config.legend.enabled = col_pivots.length > 0;
         config.series = series;
         config.plotOptions.scatter.marker = {enabled: false, radius: 0};
@@ -170,7 +193,7 @@ export const draw = (mode) => async function (el, view, task) {
                 };
                 set_tick_size.call(this, conf);
                 chart.update(conf);
-            } else if (mode.indexOf('line') > -1) {
+            } else if (mode.indexOf('line') > -1 || mode.indexOf('candlestick') > -1 )  {
                 chart.update({
                     series: config.series
                 });
@@ -186,7 +209,7 @@ export const draw = (mode) => async function (el, view, task) {
             let chart = document.createElement('div');
             chart.className = 'chart';
             el.appendChild(chart);
-            if (mode === 'candlestick'){
+            if (mode === 'candlestick' || mode === 'step'){
                 this._charts.push(() => Highcharts.stockChart(chart, config));
             } else {
                 this._charts.push(() => Highcharts.chart(chart, config));
