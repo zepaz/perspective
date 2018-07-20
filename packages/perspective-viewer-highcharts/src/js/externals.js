@@ -8,15 +8,18 @@
  */
 
 import highcharts from 'highcharts';
+import highstock from 'highcharts';
 import highchartsMore from 'highcharts-more';
 import heatmap from 'highcharts/modules/heatmap';
 import boost from 'highcharts/modules/boost';
 import treemap from 'highcharts/modules/treemap';
+import stock from 'highcharts/modules/stock';
 import sunburst from 'highcharts/modules/sunburst';
 import grouped_categories from 'highcharts-grouped-categories';
 import chroma from 'chroma-js';
 
 const Highcharts = highcharts;
+const Highstock = highstock;
 
 // cache prototypes
 let axisProto = Highcharts.Axis.prototype,
@@ -33,6 +36,7 @@ treemap(highcharts);
 sunburst(highcharts);
 grouped_categories(highcharts);
 boost(highcharts);
+stock(highcharts);
 
 export const COLORS_10 = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'];
 export const COLORS_20 = [

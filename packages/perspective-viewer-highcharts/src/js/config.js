@@ -90,6 +90,8 @@ export function default_config(aggregates, mode) {
     let type = 'scatter';
     if (mode === 'y_line') {
         type = 'line';
+    } else if (mode === 'candlestick') {
+        type = 'candlestick';
     } else if (mode === 'y_area') {
         type = 'area';
     } else if (mode.indexOf('bar') > -1) {
@@ -190,7 +192,7 @@ export function default_config(aggregates, mode) {
                 turboThreshold: 60000,
                 borderWidth: 0,
                 connectNulls: true,
-                lineWidth: mode.indexOf('line') === -1 ? 0 : 1.5,
+                lineWidth: (mode.indexOf('line') === -1 && mode.indexOf('candlestick') === -1) ? 0 : 1.5,
                 states: {
                     hover: {
                         lineWidthPlus: 0,
@@ -205,6 +207,17 @@ export function default_config(aggregates, mode) {
                         console.log(this);
                     }
                 }
+                // dataGrouping: {
+                //     units: [
+                //         [
+                //             'week', // unit name
+                //             [1] // allowed multiples
+                //         ], [
+                //             'month',
+                //             [1, 2, 3, 4, 6]
+                //         ]
+                //     ]
+                // }
             }
         },
         tooltip: {

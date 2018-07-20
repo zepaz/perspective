@@ -13,7 +13,7 @@ import "../less/highcharts.less";
 
 import {COLORS_10, COLORS_20} from "./externals.js";
 import {color_axis} from "./color_axis.js";
-import {make_tree_data, make_y_data, make_xy_data, make_xyz_data} from "./series.js";
+import {make_tree_data, make_y_data, make_xy_data, make_xyz_data, make_candlestick_data} from "./series.js";
 import {set_boost, set_axis, set_category_axis, set_both_axis, default_config, set_tick_size} from "./config.js";
 
 export const draw = (mode) => async function (el, view, task) {
@@ -120,6 +120,20 @@ export const draw = (mode) => async function (el, view, task) {
         }
         set_both_axis(config, 'xAxis', xaxis_name, xaxis_type, xtree_type, xtop);
         set_both_axis(config, 'yAxis', yaxis_name, yaxis_type, ytree_type, ytop);
+    } else if (mode === 'candlestick') {
+        let config = configs[0] = default_config.call(this, aggregates, mode, js, col_pivots);
+        let [series, xtop, , ytop] = make_candlestick_data(js, schema, aggregates.map(x => x.column), row_pivots, col_pivots, hidden);
+        const colors = series.length <= 10 ? COLORS_10 : COLORS_20;
+        config.legend.floating = series.length <= 20;
+        config.legend.enabled = col_pivots.length > 0;
+        config.series = series;
+        config.plotOptions.scatter.marker = {enabled: false, radius: 0};
+        config.colors = colors;
+        if (set_boost(config, xaxis_type, yaxis_type)) {
+            delete config.chart['type'];
+        }
+        set_both_axis(config, 'xAxis', xaxis_name, xaxis_type, xtree_type, xtop);
+        set_both_axis(config, 'yAxis', yaxis_name, yaxis_type, ytree_type, ytop);
     } else {
         let config = configs[0] = default_config.call(this, aggregates, mode, js, col_pivots);
         let [series, top, ] = make_y_data(js, row_pivots, hidden);
@@ -172,7 +186,11 @@ export const draw = (mode) => async function (el, view, task) {
             let chart = document.createElement('div');
             chart.className = 'chart';
             el.appendChild(chart);
-            this._charts.push(() => Highcharts.chart(chart, config));
+            if (mode === 'candlestick'){
+                this._charts.push(() => Highcharts.stockChart(chart, config));
+            } else {
+                this._charts.push(() => Highcharts.chart(chart, config));
+            }
         }
 
         this._charts = this._charts.map(x => x());

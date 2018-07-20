@@ -141,3 +141,16 @@ global.registerPlugin("heatmap", {
     selectMode: "select",
     delete: delete_chart
 });
+
+
+global.registerPlugin("candlestick", {
+    name: "Candlestick",
+    create: draw("candlestick"),
+    resize: resize,
+    initial: {
+        "type": "number",
+        "count": 5
+    },
+    selectMode: "toggle",
+    delete: delete_chart
+});
