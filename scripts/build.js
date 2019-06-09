@@ -135,10 +135,11 @@ function compileCPP(packageName) {
 }
 
 function lerna() {
-    let cmd = `lerna run build --loglevel silent --stream `;
+    let cmd = `lerna exec --loglevel silent `;
     if (process.env.PACKAGE) {
         cmd += `--scope=@finos/${process.env.PACKAGE} `;
     }
+    cmd += ` -- yarn build`;
     execute(cmd);
 }
 

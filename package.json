@@ -105,5 +105,8 @@
             "packages/perspective-viewer-d3fc"
         ],
         "verbose": true
+    },
+    "dependencies": {
+        "core-js": "^3.1.3"
     }
 }

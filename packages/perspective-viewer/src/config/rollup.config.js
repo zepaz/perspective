@@ -19,7 +19,17 @@ module.exports = [
         },
         moduleContext: {"../../node_modules/@webcomponents/shadycss/custom-style-interface.min.js": "window"},
         plugins: [
-            postcss({inject: false, minimize: true}),
+            postcss({
+                inject: false,
+                minimize: {
+                    preset: [
+                        "default",
+                        {
+                            minifyGradients: false
+                        }
+                    ]
+                }
+            }),
             babel({
                 exclude: [/node_modules/, /\/core-js\//],
                 include: "src/js/**",
@@ -51,7 +61,17 @@ module.exports = [
         },
         moduleContext: {"../../node_modules/@webcomponents/shadycss/custom-style-interface.min.js": "window"},
         plugins: [
-            postcss({inject: false, minimize: true}),
+            postcss({
+                inject: false,
+                minimize: {
+                    preset: [
+                        "default",
+                        {
+                            minifyGradients: false
+                        }
+                    ]
+                }
+            }),
             babel({
                 exclude: [/node_modules/, /\/core-js\//],
                 include: "src/js/**",
@@ -90,6 +110,19 @@ for (const theme of THEMES) {
             file: `build/${name}.css`,
             format: "es"
         },
-        plugins: [postcss({inject: false, minimize: true, extract: true})]
+        plugins: [
+            postcss({
+                inject: false,
+                extract: true,
+                minimize: {
+                    preset: [
+                        "default",
+                        {
+                            minifyGradients: false
+                        }
+                    ]
+                }
+            })
+        ]
     });
 }
