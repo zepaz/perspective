@@ -3,7 +3,9 @@ import html from "rollup-plugin-html";
 import less from "rollup-plugin-less";
 import commonjs from "rollup-plugin-commonjs";
 import resolve from "rollup-plugin-node-resolve";
-import autoExternal from "rollup-plugin-auto-external";
+import globals from "rollup-plugin-node-globals";
+import {uglify} from "rollup-plugin-uglify";
+import * as babelConfig from "../../babel.config.js";
 
 module.exports = {
     input: "src/js/viewer.js",
@@ -11,19 +13,24 @@ module.exports = {
         file: "build/perspective-viewer.js",
         format: "cjs"
     },
-    external: id => id.includes("core-js"),
+    moduleContext: {"../../node_modules/@webcomponents/shadycss/custom-style-interface.min.js": "window"},
     plugins: [
+        less({insert: false, output: false}),
         babel({
-            exclude: ["node_modules/**"]
+            exclude: [/node_modules/, /\/core-js\//],
+            include: "src/js/**",
+            ...babelConfig
         }),
         html({
             include: "**/*.html"
         }),
-        less({insert: false}),
-        autoExternal()
-        // commonjs(),
-        // resolve({browser: true})
-        // globals(),
-        // builtins()
+        resolve(),
+        commonjs({
+            namedExports: {
+                "../../node_modules/mobile-drag-drop/index.min.js": ["polyfill"]
+            }
+        }),
+        uglify(),
+        globals()
     ]
 };

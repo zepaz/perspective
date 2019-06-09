@@ -11,8 +11,8 @@ import * as defaults from "./defaults.js";
 
 import {Client} from "./API/client.js";
 
-import asmjs_worker from "./perspective.asmjs.js";
-import wasm_worker from "./perspective.wasm.js";
+// import asmjs_worker from "./perspective.asmjs.js";
+// import wasm_worker from "./perspective.wasm.js";
 
 import wasm from "./psp.async.wasm.js";
 

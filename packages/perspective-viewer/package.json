@@ -19,7 +19,6 @@
         "build:webpack:viewer": "webpack --color --config src/config/view.config.js",
         "build:webpack:themes": "webpack --color --config src/config/themes.config.js && rimraf build/__themes.js",
         "build": "npm-run-all build:rollup build:webpack:*",
-
         "build:rollup": "rollup --config src/config/rollup.config.js",
         "watch": "webpack --color --watch --config src/config/view.config.js",
         "test:build": "cpx \"test/html/*\" build && cpx \"test/csv/*\" build && cpx \"test/css/*\" build",
@@ -56,11 +55,11 @@
         "@webcomponents/webcomponentsjs": "~2.0.4",
         "awesomplete": "^1.1.2",
         "core-js": "^2.6.9",
-        "regenerator-runtime": "^0.13.2",
         "d3-array": "^1.2.1",
         "detectie": "1.0.0",
-        "lodash": "^4.17.4",
-        "mobile-drag-drop": "^2.2.0"
+        "lodash-es": "^4.17.11",
+        "mobile-drag-drop": "^2.2.0",
+        "regenerator-runtime": "^0.13.2"
     },
     "devDependencies": {
         "@finos/perspective-webpack-plugin": "^0.3.0-rc.4"
