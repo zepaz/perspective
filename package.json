@@ -46,7 +46,6 @@
         "typescript": "~2.9.2",
         "webpack": "^4.31.0",
         "webpack-cli": "^3.3.2"
-
     },
     "pre-commit": [
         "precommit"
@@ -93,5 +92,18 @@
             "packages/perspective-viewer-d3fc"
         ],
         "verbose": true
+    },
+    "dependencies": {
+        "core-js": "^2.6.9",
+        "regenerator-runtime": "^0.13.2",
+        "rollup": "^1.14.4",
+        "rollup-plugin-auto-external": "^2.0.0",
+        "rollup-plugin-babel": "^4.3.2",
+        "rollup-plugin-commonjs": "^10.0.0",
+        "rollup-plugin-html": "^0.2.1",
+        "rollup-plugin-less": "^1.1.2",
+        "rollup-plugin-node-builtins": "^2.1.2",
+        "rollup-plugin-node-globals": "^1.4.0",
+        "rollup-plugin-node-resolve": "^5.0.1"
     }
 }
