@@ -7,7 +7,7 @@
  *
  */
 
-import {values} from "lodash-es";
+import {values} from "lodash";
 
 export default class State {
     constructor() {
