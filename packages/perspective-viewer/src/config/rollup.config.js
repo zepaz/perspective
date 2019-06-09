@@ -1,6 +1,6 @@
 import babel from "rollup-plugin-babel";
 import html from "rollup-plugin-html";
-import less from "rollup-plugin-less";
+import postcss from "rollup-plugin-postcss";
 import commonjs from "rollup-plugin-commonjs";
 import resolve from "rollup-plugin-node-resolve";
 import globals from "rollup-plugin-node-globals";
@@ -15,7 +15,7 @@ module.exports = {
     },
     moduleContext: {"../../node_modules/@webcomponents/shadycss/custom-style-interface.min.js": "window"},
     plugins: [
-        less({insert: false, output: false}),
+        postcss({inject: false}),
         babel({
             exclude: [/node_modules/, /\/core-js\//],
             include: "src/js/**",

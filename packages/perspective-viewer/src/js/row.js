@@ -10,7 +10,7 @@
 import _ from "lodash";
 
 import Awesomplete from "awesomplete";
-import awesomplete_style from "../less/awesomplete.css";
+import awesomplete_style from "awesomplete/awesomplete.css";
 
 import {bindTemplate} from "./utils.js";
 
