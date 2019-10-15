@@ -22,17 +22,9 @@ namespace binding {
  * Fill columns with data
  */
 
-void _fill_col_time(t_data_accessor accessor, std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update);
-void _fill_col_date(t_data_accessor accessor, std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update);
-void _fill_col_bool(t_data_accessor accessor, std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update);
-void _fill_col_string(t_data_accessor accessor, std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update);
-void _fill_col_int64(t_data_accessor accessor, t_data_table& tbl, std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update);
-void _fill_col_numeric(t_data_accessor accessor, t_data_table& tbl, std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update);
-void _fill_data_helper(t_data_accessor accessor, t_data_table& tbl, std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update);
-
-
 template <>
 void set_column_nth(std::shared_ptr<t_column> col, t_uindex idx, t_val value);
+
 /******************************************************************************
  *
  * Fill tables with data
