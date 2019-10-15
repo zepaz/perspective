@@ -321,6 +321,12 @@ make_computed_lambdas(std::vector<t_val> computed) {
 void
 _fill_data_helper(t_data_accessor accessor, t_data_table& tbl,
     std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update) {
+    /* 
+    if (accessor.attr("is_numpy")(name).cast<bool>() && 
+        accessor.attr("numpy_dtype")(name).cast<std::string>() != "object") {
+        _fill_col_numpy(accessor, tbl, col, name, cidx, type, is_update);
+    } 
+    */
     switch (type) {
         case DTYPE_INT64: {
             _fill_col_int64(accessor, tbl, col, name, cidx, type, is_update);
