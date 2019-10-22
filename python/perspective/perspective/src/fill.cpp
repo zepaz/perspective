@@ -12,6 +12,7 @@
 #include <perspective/binding.h>
 #include <perspective/python/base.h>
 #include <perspective/python/fill.h>
+#include <perspective/python/numpy.h>
 #include <perspective/python/utils.h>
 
 namespace perspective {
@@ -346,6 +347,7 @@ make_computed_lambdas(std::vector<t_val> computed) {
 void
 _fill_data_helper(t_data_accessor accessor, t_data_table& tbl,
     std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update) {
+    numpy::NumpyLoader numpy_loader;
     switch (type) {
         case DTYPE_INT64: {
             _fill_col_int64(accessor, tbl, col, name, cidx, type, is_update);
@@ -364,7 +366,10 @@ _fill_data_helper(t_data_accessor accessor, t_data_table& tbl,
         } break;
         case DTYPE_FLOAT64: {
             if (accessor.attr("_is_numpy")(name).cast<bool>() == true) {
-                _fill_col_numpy(accessor, tbl, col, name, cidx, type, is_update);
+                py::array_t<double> dcol = accessor.attr("_get_column")(name);
+                std::int64_t length = py::len(dcol);
+                double* array = (double *)dcol.request().ptr;
+                numpy_loader.fill_column(array, col, length, type, is_update);
             } else {
                 _fill_col_numeric(accessor, tbl, col, name, cidx, type, is_update);
             }

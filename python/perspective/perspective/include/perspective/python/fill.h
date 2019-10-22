@@ -25,9 +25,6 @@ namespace binding {
 template <>
 void set_column_nth(std::shared_ptr<t_column> col, t_uindex idx, t_val value);
 
-void _fill_col_numpy(t_data_accessor accessor, t_data_table& tbl,
-    std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update);
-
 /******************************************************************************
  *
  * Fill tables with data
