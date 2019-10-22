@@ -39,6 +39,7 @@ class PerspectiveDockPanelRenderer extends DockPanel.Renderer {
         const tabbar = new PerspectiveTabBar({renderer: new PerspectiveTabBarRenderer(this.dock.maximized)});
         tabbar.addClass("p-DockPanel-tabBar");
         tabbar.tabMaximizeRequested.connect(this.dock.onTabMaximizeRequested, this);
+        tabbar.toggleConfigRequested.connect(this.dock.onToggleConfigRequested, this);
         return tabbar;
     }
 }
@@ -104,6 +105,9 @@ export class PerspectiveDockPanel extends DockPanel {
         return mapWidgets((widget: PerspectiveWidget) => widget.save(), layout);
     }
 
+    public onToggleConfigRequested = (sender: PerspectiveTabBar, args: TabMaximizeArgs): void => {
+        (args.title.owner as PerspectiveWidget).toggleConfig();
+    };
     /**
      * Handle the `tabMaximizeRequested` signal from a tab bar.
      */

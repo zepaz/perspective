@@ -6,6 +6,7 @@ import {uniqBy} from "lodash";
 import {Menu} from "@phosphor/widgets";
 import {createCommands} from "./contextmenu";
 import {CommandRegistry} from "@phosphor/commands";
+import PerspectiveViewer from "@finos/perspective-viewer";
 
 export interface PerspectiveWorkspaceOptions {
     node?: HTMLElement;
@@ -20,12 +21,9 @@ export class PerspectiveWorkspace extends SplitPanel {
         super({orientation: "horizontal"});
         this.dockpanel = new PerspectiveDockPanel("main", {enableContextMenu: false});
         this.masterpanel = new SplitPanel({orientation: "vertical"});
-
         this.masterpanel.addClass("p-Master");
         this.addWidget(this.dockpanel);
         this.commands = this.createCommands();
-        // this.node.appendChild(this.dockpanel.node);
-        // this.node.setAttribute("style", `position: absolute;top:0;left:0;right:0;bottom:0`);
         this.dockpanel.onContextMenu.connect(this.showContextMenu.bind(this));
     }
 
@@ -55,21 +53,25 @@ export class PerspectiveWorkspace extends SplitPanel {
         event.stopPropagation();
     }
 
-    private filterWidget(filters: string[][]): void {
+    private filterWidget(candidates: Set<string>, filters: string[][]): void {
         mapWidgets(async (widget: PerspectiveWidget): Promise<void> => {
+            const config = widget.save();
             const availableColumns = Object.keys(await (widget.table as any).schema());
-            const currentFilters = widget.save().filters || [];
+            const currentFilters = config.filters || [];
             const columnAvailable = (filter: string[]): boolean => filter[0] && availableColumns.includes(filter[0]);
             const validFilters = filters.filter(columnAvailable);
 
-            validFilters.push(...currentFilters);
+            validFilters.push(...currentFilters.filter(x => !candidates.has(x[0])));
             const newFilters = uniqBy(validFilters, (item: string[]) => item[0]);
             widget.restore({filters: newFilters});
         }, this.dockpanel.saveLayout());
     }
 
     private onPerspectiveClick = (event: CustomEvent): void => {
-        this.filterWidget([...event.detail.config.filters]);
+        const config = (event.target as PerspectiveViewer).save();
+        const candidates = new Set([...(config["row-pivots"] || []), ...(config["column-pivots"] || []), ...(config.filters || []).map(x => x[0])]);
+        const filters = [...event.detail.config.filters];
+        this.filterWidget(candidates, filters);
     };
 
     private makeMaster(widget: PerspectiveWidget): void {

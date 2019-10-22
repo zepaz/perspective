@@ -9,7 +9,7 @@ declare module '@finos/perspective-viewer' {
         delete(): Promise<void>;
         flush(): Promise<void>;
         toggleConfig(): void;
-        save(): ViewConfig;
+        save(): PerspectiveViewerOptions;
         reset(): void;
         restore(x: any): Promise<void>;
         restyleElement(): void;

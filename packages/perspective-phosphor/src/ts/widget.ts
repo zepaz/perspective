@@ -90,7 +90,7 @@ export class PerspectiveWidget extends Widget {
     /**********************/
     /* Phosphor Overrides */
     /**********************/
-    
+
     /**
      * Phosphor: after visible
      *
@@ -287,6 +287,10 @@ export class PerspectiveWidget extends Widget {
         } else {
             this.viewer.removeAttribute("editable");
         }
+    }
+
+    toggleConfig() {
+        this._viewer.toggleConfig();
     }
 
     get displayed(): boolean {

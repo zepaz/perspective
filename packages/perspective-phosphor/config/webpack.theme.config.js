@@ -6,10 +6,11 @@ module.exports = {
     mode: "production",
     entry: {
         material: path.join(__dirname, "../src/theme/material/index.less"),
+        vaporwave: path.join(__dirname, "../src/theme/vaporwave/index.less")
     },
     plugins: [
         new MiniCssExtractPlugin({
-            filename: "material.css",
+            filename: "[name].css",
             chunkFilename: "[id].css"
         }),
         new FixStyleOnlyEntriesPlugin()

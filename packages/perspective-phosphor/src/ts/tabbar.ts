@@ -20,15 +20,21 @@ export interface TabMaximizeArgs {
 export class PerspectiveTabBar extends TabBar<Widget> {
     private __content_node__: HTMLUListElement;
     private _tabMaximizeRequested: Signal<PerspectiveTabBar, TabMaximizeArgs>;
+    private _toggleConfigRequested: Signal<PerspectiveTabBar, TabMaximizeArgs>;
 
     constructor(options: TabBar.IOptions<Widget> = {}) {
         super(options);
         this._tabMaximizeRequested = new Signal(this);
+        this._toggleConfigRequested = new Signal(this);
         this.__content_node__;
     }
 
     public get tabMaximizeRequested(): Signal<PerspectiveTabBar, TabMaximizeArgs> {
         return this._tabMaximizeRequested;
+    }
+
+    public get toggleConfigRequested(): Signal<PerspectiveTabBar, TabMaximizeArgs> {
+        return this._toggleConfigRequested;
     }
 
     public onUpdateRequest(msg: Message): void {
@@ -44,7 +50,8 @@ export class PerspectiveTabBar extends TabBar<Widget> {
     public handleEvent(event: MouseEvent): void {
         switch (event.type) {
             case "mousedown":
-                if ((event.target as HTMLElement).id !== TabBarActions.Maximize) {
+                const action: string = (event.target as HTMLElement).id;
+                if ([TabBarActions.Maximize as string, TabBarActions.Config].indexOf(action) === -1) {
                     break;
                 }
                 const tabs = this.contentNode.children;
@@ -59,7 +66,11 @@ export class PerspectiveTabBar extends TabBar<Widget> {
                 }
 
                 const title = this.titles[index];
-                this._tabMaximizeRequested && this._tabMaximizeRequested.emit({title});
+                if (action === TabBarActions.Maximize) {
+                    this._tabMaximizeRequested && this._tabMaximizeRequested.emit({title});
+                } else {
+                    this._toggleConfigRequested.emit({title});
+                }
                 break;
         }
         super.handleEvent(event);

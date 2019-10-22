@@ -11,7 +11,8 @@ import {h, VirtualElement} from "@phosphor/virtualdom";
 import {TabBar} from "@phosphor/widgets";
 
 export enum TabBarActions {
-    Maximize = "maximize"
+    Maximize = "maximize",
+    Config = "config"
 }
 
 export class PerspectiveTabBarRenderer extends TabBar.Renderer {
@@ -39,6 +40,7 @@ export class PerspectiveTabBarRenderer extends TabBar.Renderer {
 
         return h.li(
             {key, className, title, style, dataset},
+            this.renderConfigIcon(),
             this.renderLoadingIcon(),
             this.renderLabel(data),
             h.div({className: "p-TabBar-tabLinkIcon"}),
@@ -52,6 +54,10 @@ export class PerspectiveTabBarRenderer extends TabBar.Renderer {
     public renderMaximizeIcon(): VirtualElement {
         const name = "p-TabBar-tabMaximizeIcon";
         return h.div({className: name, id: TabBarActions.Maximize});
+    }
+
+    public renderConfigIcon(): VirtualElement {
+        return h.div({className: "p-TabBar-tabConfigIcon", id: TabBarActions.Config});
     }
 
     public renderLoadingIcon(): VirtualElement {

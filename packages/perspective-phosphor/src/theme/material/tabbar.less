@@ -1,3 +1,5 @@
+@import "~@finos/perspective-viewer/src/less/variables.less";
+
 .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon:before {
     content: "\E14C";
     font-family: "Material Icons";
@@ -26,23 +28,23 @@
     font-family: "Material Icons";
 }
 
-.p-TabBar-tab > .p-TabBar-tabConfigureIcon {
+.p-TabBar-tab > .p-TabBar-tabConfigIcon {
     opacity: 0;
     pointer-events: none;
 }
 
-.p-TabBar-tab.p-mod-current > .p-TabBar-tabConfigureIcon {
+.p-TabBar-tab.p-mod-current > .p-TabBar-tabConfigIcon {
     opacity: 1;
     pointer-events: all;
 }
 
-.p-TabBar-tab > .p-TabBar-tabConfigureIcon:before {
+.p-TabBar-tab > .p-TabBar-tabConfigIcon:before {
     content: "expand_more";
     font-family: "Material Icons";
 }
 
 .p-mod-current {
-    .p-TabBar-tabConfigureIcon, .p-TabBar-tabMaximizeIcon, .p-TabBar-tabCloseIcon {
+    .p-TabBar-tabConfigIcon, .p-TabBar-tabMaximizeIcon, .p-TabBar-tabCloseIcon {
         color: #999;
     }
 }
@@ -150,7 +152,7 @@
     border-color: #eaeaea;
 }
 
-.p-TabBar-tab.p-mod-current.settings_open > .p-TabBar-tabConfigureIcon:before {
+.p-TabBar-tab.p-mod-current.settings_open > .p-TabBar-tabConfigIcon:before {
     content: "expand_less";
 }
 
@@ -161,11 +163,11 @@
 
  .condensed .p-TabBar-content {
 
-    & > .p-TabBar-tab .p-TabBar-tabConfigureIcon {
+    & > .p-TabBar-tab .p-TabBar-tabConfigIcon {
         display: none;
     }
 
-    & > .p-TabBar-tab.p-mod-current .p-TabBar-tabConfigureIcon {
+    & > .p-TabBar-tab.p-mod-current .p-TabBar-tabConfigIcon {
         display: block;
     }
 
@@ -234,7 +236,7 @@
 }
 
  .p-TabBar-content > .p-TabBar-tab.p-mod-current.perspective_updating {
-    .p-TabBar-tabConfigureIcon {
+    .p-TabBar-tabConfigIcon {
         display: none;
     }
 
@@ -300,14 +302,14 @@
 
 
 .p-TabBar-tabCloseIcon,
-.p-TabBar-tabConfigureIcon {
+.p-TabBar-tabConfigIcon {
     cursor: pointer !important;
     line-height: 34px !important;
     padding-right: 17px !important;
     padding-left: 4px;
 }
 
-.p-TabBar-tabConfigureIcon {
+.p-TabBar-tabConfigIcon {
     padding-left: 16px;
 }
 
