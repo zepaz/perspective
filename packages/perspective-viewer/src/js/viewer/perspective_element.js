@@ -141,7 +141,6 @@ export class PerspectiveElement extends StateElement {
     }
 
     async _load_table(table, computed = false) {
-        this.shadowRoot.querySelector("#app").classList.add("hide_message");
         const resolve = this._set_updating();
 
         if (this._table && !computed) {
