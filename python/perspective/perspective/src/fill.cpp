@@ -28,7 +28,7 @@ _fill_col_time(t_data_accessor accessor, std::shared_ptr<t_column> col, std::str
     t_uindex nrows = col->size();
 
     for (auto i = 0; i < nrows; ++i) {
-        if (!accessor.attr("has_column")(i, name).cast<bool>()) {
+        if (!accessor.attr("_has_column")(i, name).cast<bool>()) {
             continue;
         }
 
@@ -53,7 +53,7 @@ _fill_col_date(t_data_accessor accessor, std::shared_ptr<t_column> col, std::str
     t_uindex nrows = col->size();
 
     for (auto i = 0; i < nrows; ++i) {
-        if (!accessor.attr("has_column")(i, name).cast<bool>()) {
+        if (!accessor.attr("_has_column")(i, name).cast<bool>()) {
             continue;
         }
 
@@ -81,7 +81,7 @@ _fill_col_bool(t_data_accessor accessor, std::shared_ptr<t_column> col, std::str
     t_uindex nrows = col->size();
 
     for (auto i = 0; i < nrows; ++i) {
-        if (!accessor.attr("has_column")(i, name).cast<bool>()) {
+        if (!accessor.attr("_has_column")(i, name).cast<bool>()) {
             continue;
         }
 
@@ -108,7 +108,7 @@ _fill_col_string(t_data_accessor accessor, std::shared_ptr<t_column> col, std::s
     t_uindex nrows = col->size();
 
     for (auto i = 0; i < nrows; ++i) {
-        if (!accessor.attr("has_column")(i, name).cast<bool>()) {
+        if (!accessor.attr("_has_column")(i, name).cast<bool>()) {
             continue;
         }
 
@@ -137,7 +137,7 @@ _fill_col_int64(t_data_accessor accessor, t_data_table& tbl, std::shared_ptr<t_c
     t_uindex nrows = col->size();
 
     for (auto i = 0; i < nrows; ++i) {
-        if (!accessor.attr("has_column")(i, name).cast<bool>()) {
+        if (!accessor.attr("_has_column")(i, name).cast<bool>()) {
             continue;
         }
 
@@ -240,7 +240,7 @@ _fill_col_numeric(t_data_accessor accessor, t_data_table& tbl,
     t_uindex nrows = col->size();
 
     for (auto i = 0; i < nrows; ++i) {
-        if (!accessor.attr("has_column")(i, name).cast<bool>()) {
+        if (!accessor.attr("_has_column")(i, name).cast<bool>()) {
             continue;
         }
 
@@ -306,6 +306,31 @@ _fill_col_numeric(t_data_accessor accessor, t_data_table& tbl,
     }
 }
 
+/**
+ * Fill float64 columns with a numpy array.
+ */
+void _fill_col_numpy(t_data_accessor accessor, t_data_table& tbl,
+    std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update) {
+    t_val dcol = accessor.attr("_get_column")(name);
+    double *array = (double *)dcol.cast<py::array_t<double>>().request().ptr;
+
+    t_uindex nrows = col->size();
+
+    std::cout << "using numpy loader" << std::endl;
+    for (auto i = 0; i < nrows; ++i) {
+        double item = array[i];
+        if(npy_isnan(item)){
+            if (is_update) {
+                col->unset(i);
+            } else {
+                col->clear(i);
+            }
+            continue;
+        }
+        col->set_nth(i, item);
+    }
+}
+
 /*
 void
 add_computed_column(std::shared_ptr<t_data_table> table, const std::vector<t_uindex>& row_indices, t_val computed_def) {
@@ -321,12 +346,6 @@ make_computed_lambdas(std::vector<t_val> computed) {
 void
 _fill_data_helper(t_data_accessor accessor, t_data_table& tbl,
     std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update) {
-    /* 
-    if (accessor.attr("is_numpy")(name).cast<bool>() && 
-        accessor.attr("numpy_dtype")(name).cast<std::string>() != "object") {
-        _fill_col_numpy(accessor, tbl, col, name, cidx, type, is_update);
-    } 
-    */
     switch (type) {
         case DTYPE_INT64: {
             _fill_col_int64(accessor, tbl, col, name, cidx, type, is_update);
@@ -342,6 +361,13 @@ _fill_data_helper(t_data_accessor accessor, t_data_table& tbl,
         } break;
         case DTYPE_STR: {
             _fill_col_string(accessor, col, name, cidx, type, is_update);
+        } break;
+        case DTYPE_FLOAT64: {
+            if (accessor.attr("_is_numpy")(name).cast<bool>() == true) {
+                _fill_col_numpy(accessor, tbl, col, name, cidx, type, is_update);
+            } else {
+                _fill_col_numeric(accessor, tbl, col, name, cidx, type, is_update);
+            }
         } break;
         case DTYPE_NONE: {
             break;
