@@ -41,16 +41,6 @@ namespace numpy {
 
             auto col = tbl.get_column(name);
             fill_column(col, name, type, is_update);
-            
-
-            /*if (accessor.attr("_is_numpy")(name).cast<bool>() == true && type == DTYPE_FLOAT64) {
-                t_val dcol = accessor.attr("_get_column")(name);
-                std::int64_t length = py::len(dcol);
-                t_dtype dtype = numpy_loader.convert_type(dcol);
-                double* array = (double*)dcol.request().ptr;
-                numpy_loader.fill_column(array, col, length, type, is_update);
-                continue;
-            }*/
         }
 
         // Fill index column - recreated every time a `t_data_table` is created.
@@ -75,8 +65,23 @@ namespace numpy {
     void 
     NumpyLoader::fill_column(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, bool is_update) {
         std::cout << "FILLING " << name << std::endl;
-        py::object source = m_accessor.attr("_get_column")(name);
-        copy_array(source, col, 0);
+        py::dict source = m_accessor.attr("_get_numpy_column")(name);
+        py::object array = source["array"];
+        py::object mask = source["mask"];
+        copy_array(array, col, 0);
+
+        // Fill validity map
+        col->valid_raw_fill();
+        auto num_invalid = len(mask);
+
+        if (num_invalid > 0) {
+            py::array_t<std::uint64_t> null_array = mask;
+            std::uint64_t* ptr = (std::uint64_t*) null_array.request().ptr;
+            for (auto i = 0; i < num_invalid; ++i) {
+                std::uint64_t idx = ptr[i];
+                col->set_valid(idx, false);
+            }
+        }
     }
 
     void
@@ -124,12 +129,17 @@ namespace numpy {
             py::array_t<double> array = src; 
             double* ptr = (double*) array.request().ptr;
             copy_array_helper<double>(ptr, dest, length, offset);
+        } else if (py::isinstance<py::array_t<bool>>(src)) {
+            py::array_t<bool> array = src; 
+            bool* ptr = (bool*) array.request().ptr;
+            copy_array_helper<bool>(ptr, dest, length, offset);
         } else {
-            PSP_COMPLAIN_AND_ABORT("Could not copy numpy array.");
+            // TODO: iterative
+            std::string type_string = src.get_type().attr("__name__").cast<std::string>();
+            std::stringstream ss;
+            ss << "Could not copy numpy array of type " << type_string << std::endl;
+            PSP_COMPLAIN_AND_ABORT(ss.str());
         }
-        
-        // mark column as valid
-        dest->valid_raw_fill();
     }
 
     template <typename T>

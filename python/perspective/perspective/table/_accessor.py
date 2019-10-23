@@ -10,6 +10,7 @@ import numpy
 from math import isnan
 from .libbinding import t_dtype
 from ._date_validator import _PerspectiveDateValidator
+from ..core.data import deconstruct_numpy
 
 
 def _type_to_format(data_or_schema):
@@ -185,7 +186,7 @@ class _PerspectiveAccessor(object):
             return isinstance(data, numpy.ndarray)
         return False
 
-    def _get_column(self, name):
+    def _get_numpy_column(self, name):
         '''For columnar datasets, return the list/Numpy array that contains the data for a single column.
 
         Args:
@@ -194,8 +195,8 @@ class _PerspectiveAccessor(object):
         Returns:
             list/numpy.array/None : returns the column's data, or None if it cannot be found.
         '''
-        if self._format == 1:
-            return self._data_or_schema.get(name, None)
+        if self._is_numpy_column(name):
+            return deconstruct_numpy(self._data_or_schema.get(name, None))
         else:
             return None
 
