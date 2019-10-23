@@ -43,12 +43,18 @@ namespace numpy {
              * @param type
              * @param is_update
              */
-            void fill_column(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, bool is_update);
+            void fill_column(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
 
             std::vector<std::string> names() const;
             std::vector<t_dtype> types() const;
             std::uint32_t num_rows() const;
         private:
+            void fill_column_iter(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
+            void fill_date_iter(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
+            void fill_datetime_iter(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
+            void fill_string_iter(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
+            void fill_bool_iter(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
+
             /**
              * Extract a numpy array from src and copy it into dest.
              */
@@ -60,7 +66,7 @@ namespace numpy {
     };
 
     template <typename T>
-    void copy_array_helper(T* src, std::shared_ptr<t_column> dest, const std::uint64_t length, const std::uint64_t offset);
+    void copy_array_helper(void* src, std::shared_ptr<t_column> dest, const std::uint64_t offset);
 
 } // namespace numpy
 } // numpy perspective

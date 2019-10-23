@@ -673,7 +673,8 @@ t_tscalar::to_string(bool for_expr) const {
             return ss.str();
         } break;
         case DTYPE_TIME: {
-            double timestamp = to_double() / 1000; // Unix timestamp in milliseconds
+            // Convert back to seconds - std::tm is seconds precision
+            std::int64_t timestamp = get<std::int64_t>() / 1000;
             std::time_t temp = timestamp;
             std::tm* t = std::gmtime(&temp);
             ss << std::put_time(t, "%Y-%m-%d %H:%M:%S UTC");

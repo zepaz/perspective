@@ -306,31 +306,6 @@ _fill_col_numeric(t_data_accessor accessor, t_data_table& tbl,
     }
 }
 
-/**
- * Fill float64 columns with a numpy array.
- */
-void _fill_col_numpy(t_data_accessor accessor, t_data_table& tbl,
-    std::shared_ptr<t_column> col, std::string name, std::int32_t cidx, t_dtype type, bool is_update) {
-    t_val dcol = accessor.attr("_get_column")(name);
-    double *array = (double *)dcol.cast<py::array_t<double>>().request().ptr;
-
-    t_uindex nrows = col->size();
-
-    std::cout << "using numpy loader" << std::endl;
-    for (auto i = 0; i < nrows; ++i) {
-        double item = array[i];
-        if(npy_isnan(item)){
-            if (is_update) {
-                col->unset(i);
-            } else {
-                col->clear(i);
-            }
-            continue;
-        }
-        col->set_nth(i, item);
-    }
-}
-
 /*
 void
 add_computed_column(std::shared_ptr<t_data_table> table, const std::vector<t_uindex>& row_indices, t_val computed_def) {
