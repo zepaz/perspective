@@ -19,11 +19,8 @@ def deconstruct_numpy(array):
     import numpy as np
     import pandas as pd
 
-    print(array.dtype)
-    print(array)
-
     # use `isnull` or `isnan` depending on dtype
-    if array.dtype == object or array.dtype == str:
+    if pd.api.types.is_object_dtype(array.dtype):
         data = array
         mask = np.argwhere(pd.isnull(array)).flatten()
     else:

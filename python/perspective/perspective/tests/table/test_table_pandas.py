@@ -142,6 +142,46 @@ class TestTablePandas(object):
         table = Table(df)
         assert table.view().to_dict()["a"] == data
 
+    def test_table_pandas_symmetric_table(self):
+        # make sure that updates are symmetric to table creation
+        df = pd.DataFrame({
+            "a": [1, 2, 3, 4],
+            "b": [1.5, 2.5, 3.5, 4.5]
+        })
+        t1 = Table(df)
+        t2 = Table({
+            "a": int,
+            "b": float
+        })
+        t2.update(df)
+        assert t1.view().to_dict() == {
+            "index": [0, 1, 2, 3],
+            "a": [1, 2, 3, 4],
+            "b": [1.5, 2.5, 3.5, 4.5]
+        }
+
+    def test_table_pandas_symmetric_stacked_updates(self):
+        # make sure that updates are symmetric to table creation
+        df = pd.DataFrame({
+            "a": [1, 2, 3, 4],
+            "b": [1.5, 2.5, 3.5, 4.5]
+        })
+
+        t1 = Table(df)
+        t1.update(df)
+
+        t2 = Table({
+            "a": int,
+            "b": float
+        })
+        t2.update(df)
+        t2.update(df)
+
+        assert t1.view().to_dict() == {
+            "index": [0, 1, 2, 3, 0, 1, 2, 3],
+            "a": [1, 2, 3, 4, 1, 2, 3, 4],
+            "b": [1.5, 2.5, 3.5, 4.5, 1.5, 2.5, 3.5, 4.5]
+        }
     # Timeseries/Period index
 
     def test_table_pandas_timeseries(self):

@@ -30,6 +30,11 @@ namespace numpy {
             ~NumpyLoader();
 
             /**
+             * Initialize the Numpy loader by constructing the column names and data types arrays.
+             */
+            void init();
+
+            /**
              * Fill a `t_data_table` with numpy array-backed data.
              */
             void fill_table(t_data_table& tbl, const t_schema& input_schema, const std::string& index, 
@@ -48,7 +53,7 @@ namespace numpy {
 
             std::vector<std::string> names() const;
             std::vector<t_dtype> types() const;
-            std::uint32_t num_rows() const;
+            std::uint32_t row_count() const;
         private:
             /**
              * When memory cannot be copied (for dtype=object arrays, for example), fill the column through iteration.
@@ -65,8 +70,15 @@ namespace numpy {
             /**
              * Extract a numpy array from src and copy it into dest.
              */
-            void copy_array(py::object src, std::shared_ptr<t_column> dest, const std::uint64_t offset);
+            void copy_array(py::object src, std::shared_ptr<t_column> dest, t_dtype np_dtype, const std::uint64_t offset);
 
+            // Return the column names from the Python data accessor
+            std::vector<std::string> make_names();
+
+            // Map the dtype of each numpy array into Perspective `t_dtype`s.
+            std::vector<t_dtype> make_types();
+
+            bool m_init;
             py::object m_accessor;
             std::vector<std::string> m_names;
             std::vector<t_dtype> m_types;

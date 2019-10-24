@@ -79,11 +79,17 @@ class _PerspectiveAccessor(object):
             len(self._data_or_schema) if self._format == 0 else \
             len(max(self._data_or_schema.values(), key=len)) if self._format == 1 else \
             0
+
         if isinstance(self._data_or_schema, list):
             self._names = list(self._data_or_schema[0].keys()) if len(self._data_or_schema) > 0 else []
         elif isinstance(self._data_or_schema, dict):
             self._names = list(self._data_or_schema.keys())
-        self._types = []
+
+        # if pandas dataframe, use types from dataframe
+        if self._is_numpy:
+            self._types = [col.dtype for col in self._data_or_schema.values()]
+        else:
+            self._types = []
 
     def data(self):
         return self._data_or_schema
@@ -199,6 +205,7 @@ class _PerspectiveAccessor(object):
             list/numpy.array/None : returns the column's data, or None if it cannot be found.
         '''
         if self._is_numpy_column(name):
+            print(name, "is dtype", self._data_or_schema.get(name, None).dtype)
             return deconstruct_numpy(self._data_or_schema.get(name, None))
         else:
             return None
