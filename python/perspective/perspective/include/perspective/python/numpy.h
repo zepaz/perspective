@@ -16,6 +16,7 @@
 #include <perspective/exception.h>
 #include <perspective/column.h>
 #include <perspective/data_table.h>
+#include <perspective/python/utils.h>
 
 namespace perspective {
 namespace numpy {
@@ -43,13 +44,19 @@ namespace numpy {
              * @param type
              * @param is_update
              */
-            void fill_column(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
+            void fill_column(t_data_table& tbl, std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
 
             std::vector<std::string> names() const;
             std::vector<t_dtype> types() const;
             std::uint32_t num_rows() const;
         private:
-            void fill_column_iter(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
+            /**
+             * When memory cannot be copied (for dtype=object arrays, for example), fill the column through iteration.
+             */
+            void fill_column_iter(t_data_table& tbl, std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
+
+            // Fill helpers
+            void fill_numeric_iter(t_data_table& tbl, std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);       
             void fill_date_iter(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
             void fill_datetime_iter(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
             void fill_string_iter(std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update);
@@ -66,7 +73,7 @@ namespace numpy {
     };
 
     template <typename T>
-    void copy_array_helper(void* src, std::shared_ptr<t_column> dest, const std::uint64_t offset);
+    void copy_array_helper(const void* src, std::shared_ptr<t_column> dest, const std::uint64_t offset);
 
 } // namespace numpy
 } // numpy perspective

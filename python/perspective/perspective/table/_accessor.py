@@ -63,6 +63,9 @@ def _type_to_format(data_or_schema):
             # flatten column/index multiindex
             df, _ = deconstruct_pandas(data_or_schema)
 
+            # try to squash object dtype as much as possible
+            df.fillna(value=pandas.np.nan, inplace=True)
+
             return True, 1, {c: df[c].values for c in df.columns}
 
 
