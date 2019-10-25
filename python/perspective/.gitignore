@@ -106,3 +106,8 @@ ENV/
 _depr
 docs/api
 /perspective/node/assets
+
+# C++ source that gets regenerated after every build
+cmake/
+src/
+test/

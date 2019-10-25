@@ -195,7 +195,7 @@ class _PerspectiveAccessor(object):
             return isinstance(data, numpy.ndarray)
         return False
 
-    def _get_numpy_column(self, name):
+    def _get_numpy_column(self, name, type):
         '''For columnar datasets, return the list/Numpy array that contains the data for a single column.
 
         Args:
@@ -205,8 +205,20 @@ class _PerspectiveAccessor(object):
             list/numpy.array/None : returns the column's data, or None if it cannot be found.
         '''
         if self._is_numpy_column(name):
-            print(name, "is dtype", self._data_or_schema.get(name, None).dtype)
-            return deconstruct_numpy(self._data_or_schema.get(name, None))
+            column = deconstruct_numpy(self._data_or_schema.get(name, None))
+            dtype = column["array"].dtype
+
+            # TODO: don't actually do this in production
+            # Coerce int64 into int32, coerce float into int64
+            if type == t_dtype.DTYPE_INT32:
+                if numpy.issubdtype(dtype, numpy.integer):
+                    column["array"] = column["array"].astype(numpy.int32)
+            elif type == t_dtype.DTYPE_INT64:
+                if numpy.issubdtype(dtype, numpy.float):
+                    column["array"] = column["array"].astype(numpy.int64)
+
+            return column
+
         else:
             return None
 

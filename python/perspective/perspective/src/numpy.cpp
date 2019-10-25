@@ -122,7 +122,7 @@ namespace numpy {
         std::cout << "COL " << name << " with dtype " << dtype_to_str(np_dtype) << std::endl;
         
         try {
-            py::dict source = m_accessor.attr("_get_numpy_column")(name);
+            py::dict source = m_accessor.attr("_get_numpy_column")(name, type);
             py::object array = source["array"];
             py::object mask = source["mask"];
             copy_array(array, col, np_dtype, 0);
@@ -269,7 +269,7 @@ namespace numpy {
         PSP_VERBOSE_ASSERT(m_init, "touching uninited object");
         // memcpy doesn't work at the moment - simulate that path but iterate through
         t_uindex nrows = col->size();
-        py::dict source = m_accessor.attr("_get_numpy_column")(name);
+        py::dict source = m_accessor.attr("_get_numpy_column")(name, type);
         py::array_t<std::int64_t> array = source["array"].cast<py::array_t<std::int64_t>>();
         std::int64_t* ptr = (std::int64_t*) array.data();
 
