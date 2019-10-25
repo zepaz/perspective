@@ -68,6 +68,30 @@ class TestTablePandas(object):
             {"a": 3, "b": 4, "index": 1}
         ]
 
+    def test_table_pandas_nan(self):
+        data = [np.nan, np.nan, np.nan, np.nan]
+        df = pd.DataFrame({
+            "a": data
+        })
+        table = Table(df)
+        assert table.view().to_dict()["a"] == data
+
+    def test_table_pandas_int_nan(self):
+        data = [np.nan, 1, np.nan, 2]
+        df = pd.DataFrame({
+            "a": data
+        })
+        table = Table(df)
+        assert table.view().to_dict()["a"] == data
+
+    def test_table_pandas_float_nan(self):
+        data = [np.nan, 1.5, np.nan, 2.5]
+        df = pd.DataFrame({
+            "a": data
+        })
+        table = Table(df)
+        assert table.view().to_dict()["a"] == data
+
     def test_table_pandas_from_schema_int(self):
         data = [None, 1, None, 2, None, 3, 4]
         df = pd.DataFrame({
@@ -182,6 +206,76 @@ class TestTablePandas(object):
             "a": [1, 2, 3, 4, 1, 2, 3, 4],
             "b": [1.5, 2.5, 3.5, 4.5, 1.5, 2.5, 3.5, 4.5]
         }
+
+    # Type matching
+
+    def test_table_pandas_update_float_schema_with_int(self):
+        df = pd.DataFrame({
+            "a": [1.5, 2.5, 3.5, 4.5],
+            "b": [1, 2, 3, 4]
+        })
+
+        table = Table({
+            "a": float,
+            "b": float
+        })
+
+        table.update(df)
+
+        assert table.view().to_dict() == {
+            "a": [1.5, 2.5, 3.5, 4.5],
+            "b": [1.0, 2.0, 3.0, 4.0]
+        }
+
+    def test_table_pandas_update_int32_with_int64(self):
+        df = pd.DataFrame({
+            "a": [1, 2, 3, 4]
+        })
+
+        table = Table({
+            "a": [1, 2, 3, 4]
+        })
+
+        table.update(df)
+
+        assert table.view().to_dict() == {
+            "a": [1, 2, 3, 4, 1, 2, 3, 4]
+        }
+
+    def test_table_pandas_update_int64_with_float(self):
+        df = pd.DataFrame({
+            "a": [1.5, 2.5, 3.5, 4.5]
+        })
+
+        table = Table(pd.DataFrame({
+            "a": [1, 2, 3, 4]
+        }))
+
+        table.update(df)
+
+        assert table.view().to_dict() == {
+            "a": [1, 2, 3, 4, 1, 2, 3, 4]
+        }
+
+    def test_table_pandas_update_date_schema_with_datetime(self):
+        df = pd.DataFrame({
+            "a": np.array([date(2019, 7, 11)])
+        })
+
+        table = Table({
+            "a": date
+        })
+
+        table.update(df)
+
+        assert table.schema() == {
+            "a": date
+        }
+
+        assert table.view().to_dict() == {
+            "a": [datetime(2019, 7, 11, 0, 0)]
+        }
+
     # Timeseries/Period index
 
     def test_table_pandas_timeseries(self):

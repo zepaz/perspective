@@ -7,6 +7,8 @@
 #
 
 import numpy as np
+from pytest import raises
+from perspective import PerspectiveCppError
 from perspective.table import Table
 from datetime import date, datetime
 
@@ -90,10 +92,32 @@ class TestTableNumpy(object):
             "b": np.full(5, np.nan),
             "c": ["a", "b", "c", "d", "e"]
         }
-        tbl = Table(data)
+
+        # should not be able to parse mixed dicts of numpy array with list
+        with raises(PerspectiveCppError):
+            Table(data)
+
+    def test_table_np_promote(self):
+        data = {
+            "a": np.arange(5),
+            "b": np.full(5, np.nan),
+            "c": np.array([1, 2, 3, 2147483648, 5])
+        }
+        tbl = Table({
+            "a": int,
+            "b": float,
+            "c": int
+        })
+        tbl.update(data)
         assert tbl.size() == 5
         assert tbl.schema() == {
             "a": int,
             "b": float,
-            "c": str
+            "c": int
+        }
+
+        assert tbl.view().to_dict() == {
+            "a": [0, 1, 2, 3, 4],
+            "b": [None, None, None, None, None],
+            "c": [1.0, 2.0, 3.0, 2147483648.0, 5.0]
         }

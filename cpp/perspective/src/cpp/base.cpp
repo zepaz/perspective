@@ -246,9 +246,11 @@ dtype_to_str(t_dtype dtype) {
         case DTYPE_UINT64:
         case DTYPE_INT8:
         case DTYPE_INT16:
-        case DTYPE_INT32:
+        case DTYPE_INT32: {
+            ss << "integer32";
+        } break;
         case DTYPE_INT64: {
-            ss << "integer";
+            ss << "integer64";
         } break;
         case DTYPE_BOOL: {
             ss << "boolean";

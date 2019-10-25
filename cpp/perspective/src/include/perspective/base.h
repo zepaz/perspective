@@ -76,8 +76,7 @@ PERSPECTIVE_EXPORT void psp_abort(const std::string& message);
             std::stringstream ss;                                                              \
             ss << __FILE__ << ":" << __LINE__ << ": " << MSG << " : "                          \
                << perspective::get_error_str();                                                \
-            perror(ss.str().c_str());                                                          \
-            psp_abort("Verbose assert failed!");                                                \
+            psp_abort(ss.str());                                                               \
         }                                                                                      \
     }
 
@@ -87,8 +86,7 @@ PERSPECTIVE_EXPORT void psp_abort(const std::string& message);
             std::stringstream ss;                                                              \
             ss << __FILE__ << ":" << __LINE__ << ": " << MSG << " : "                          \
                << perspective::get_error_str();                                                \
-            perror(ss.str().c_str());                                                          \
-            psp_abort("Verbose assert failed!");                                               \
+            psp_abort(ss.str());                                                               \
         }                                                                                      \
     }
 
@@ -96,8 +94,7 @@ PERSPECTIVE_EXPORT void psp_abort(const std::string& message);
     {                                                                                          \
         std::stringstream ss;                                                                  \
         ss << __FILE__ << ":" << __LINE__ << ": " << X;                                        \
-        perror(ss.str().c_str());                                                              \
-        psp_abort(X);                                                                          \
+        psp_abort(ss.str());                                                                   \
     }
 
 #define PSP_ASSERT_SIMPLE_TYPE(X)                                                              \
@@ -126,12 +123,12 @@ std::is_pod<X>::value && std::is_standard_layout<X>::value , \
 #define PSP_VERBOSE_ASSERT1(COND, MSG)                                                         \
     {                                                                                          \
         if (!(COND))                                                                           \
-            psp_abort("Assertion failed!");                                                    \
+            psp_abort(MSG);                                                                    \
     }
 #define PSP_VERBOSE_ASSERT2(EXPR, COND, MSG)                                                   \
     {                                                                                          \
         if (!(EXPR COND))                                                                      \
-            psp_abort("Assertion failed!");                                                    \
+            psp_abort(MSG);                                                                    \
     }
 #define PSP_COMPLAIN_AND_ABORT(X) psp_abort(X);
 #define PSP_ASSERT_SIMPLE_TYPE(X)
