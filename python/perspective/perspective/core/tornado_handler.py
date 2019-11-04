@@ -5,25 +5,12 @@
 # This file is part of the Perspective library, distributed under the terms of
 # the Apache License 2.0.  The full license can be found in the LICENSE file.
 #
-import json
 import tornado.websocket
-from datetime import datetime
 from .exception import PerspectiveError
 from ..table._date_validator import _PerspectiveDateValidator
 
 
 _date_validator = _PerspectiveDateValidator()
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    '''Create a custom JSON encoder that allows serialization of datetime and date objects.'''
-
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            # Convert to milliseconds - perspective.js expects millisecond timestamps, but python generates them in seconds.
-            return _date_validator.to_timestamp(obj)
-        else:
-            return super(DateTimeEncoder, self).default(obj)
 
 
 class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
@@ -66,7 +53,6 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
         '''When the websocket receives a message, send it to the `process` method of the `PerspectiveManager` with a reference to the `post` callback.'''
         if message == "heartbeat":
             return
-        message = json.loads(message)
         self._session.process(message, self.post)
 
     def post(self, message):

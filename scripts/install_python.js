@@ -29,7 +29,6 @@ try {
     rimraf.sync(resolve(__dirname, "..", "python", "perspective", "cmake"));
     mkdir(resolve(__dirname, "..", "python", "perspective", "cmake"));
     fs.copySync(resolve(__dirname, "..", "cpp", "perspective"), resolve(__dirname, "..", "python", "perspective"));
-
     fs.copySync(resolve(__dirname, "..", "cmake"), resolve(__dirname, "..", "python", "perspective", "cmake"));
 
     let cmd;
