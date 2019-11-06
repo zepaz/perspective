@@ -22,7 +22,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.render("perspective_tornado_client.html")
 
 
-def make_app():
+def make_app(MANAGER):
     '''Create and return a Tornado app.
 
     For `PerspectiveTornadoHandler` to work, it must be passed an instance of `PerspectiveManager`.
@@ -30,9 +30,6 @@ def make_app():
     The data is loaded into a new `Table`, which is passed to the manager through `host_table`.
     The front-end is able to look up the table using the name provided to `host_table`.
     '''
-    MANAGER = PerspectiveManager()
-    TABLE = Table(pd.read_csv("superstore.csv"))
-    MANAGER.host_table("data_source_one", TABLE)
     return tornado.web.Application([
         (r"/", MainHandler),
         # create a websocket endpoint that the client Javascript can access
@@ -42,8 +39,22 @@ def make_app():
 
 if __name__ == "__main__":
     # Because we use `PerspectiveTornadoHandler`, all that needs to be done in `init` is to start the Tornado server.
-    app = make_app()
+    print(os.getpid())
+    MANAGER = PerspectiveManager()
+    TABLE = Table(pd.util.testing.makeTimeDataFrame(50000))
+    MANAGER.host_table("data_source_one", TABLE)
+    input("wait...")
+    app = make_app(MANAGER)
     app.listen(8888)
     logging.critical("Listening on http://localhost:8888")
     loop = tornado.ioloop.IOLoop.current()
+
+    # update with new data every 50ms
+    def updater():
+        print("creating df")
+        nd = pd.util.testing.makeTimeDataFrame(50000)
+        print("UPDATING")
+        TABLE.update(nd)
+
+    # loop.call_later(delay=10, callback=updater)
     loop.start()

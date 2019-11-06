@@ -79,19 +79,16 @@ def make_app():
     The front-end is able to look up the table using the name provided to `host_table`.
     '''
     MANAGER = PerspectiveManager()
-    # DF = pd.DataFrame(data_source(10000))
-    DF = superstore(10000)
+    DF = pd.DataFrame(data_source(50))
     TABLE = Table(DF)
     MANAGER.host_table("data_source_one", TABLE)
 
-    '''
     # update with new data every 500ms
     def updater():
         TABLE.update(data_source(10))
 
     callback = tornado.ioloop.PeriodicCallback(callback=updater, callback_time=50)
     callback.start()
-    '''
 
     return tornado.web.Application([
         # create a websocket endpoint that the client Javascript can access

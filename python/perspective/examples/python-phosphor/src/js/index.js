@@ -20,21 +20,15 @@ import "./style/index.less";
 window.addEventListener("load", async () => {
     // Create a client that expects a Perspective server to accept connections at the specified URL.
     const websocket = perspective.websocket("ws://localhost:3001/websocket");
+    //const worker = perspective.worker();
+    //worker.initialize_profile_thread();
 
-    /**
-     * `table` is a proxy for the `Table` we created on the server.
-     *
-     * All operations that are possible through the Javascript API are possible on the Python API as well,
-     * thus calling `view()`, `schema()`, `update()` etc on `const table` will pass those operations to the
-     * Python `Table`, execute the commands, and return the result back to Javascript.
-     */
+    //const view = websocket.open_view("data_source_one");
+
+    // Table created in JS from datafeed in python
     const table = websocket.open_table("data_source_one");
-
     const workspace = new PerspectiveWorkspace();
 
-    /**
-     * Each `PerspectiveWidget` requires a title and takes an optional config object consisting of
-     * `perspective-viewer` options.
     const widget1 = new PerspectiveWidget("Spread", {
         editable: true,
         plugin: "d3_y_line",
@@ -54,8 +48,8 @@ window.addEventListener("load", async () => {
         "row-pivots": ["name"],
         columns: ["bid", "ask"],
         aggregates: {
-            bid: "avg",
-            ask: "avg"
+            bid: "last",
+            ask: "last"
         }
     });
 
@@ -69,41 +63,21 @@ window.addEventListener("load", async () => {
 
     const widget4 = new PerspectiveWidget("Four", {
         editable: true,
+        plugin: "grid",
         sort: [["lastUpdate", "desc"]]
-    });
-    */
-
-    const widget1 = new PerspectiveWidget("Profits", {
-        editable: true,
-        plugin: "d3_heatmap",
-        "row-pivots": ["State"],
-        columns: ["Profit"],
-        sort: [["Profit", "desc"]]
-    });
-
-    const widget2 = new PerspectiveWidget("Sales", {
-        editable: true,
-        plugin: "d3_y_bar",
-        "row-pivots": ["City", "Sub-Category"],
-        columns: ["Sales"],
-        sort: [["City", "asc"]],
-        filters: [["City", "contains", "fort"], ["Sales", ">", 5000]]
-    });
-
-    const widget3 = new PerspectiveWidget("Blotter", {
-        editable: true,
-        plugin: "grid"
     });
 
     workspace.addViewer(widget1);
     workspace.addViewer(widget2, {mode: "split-bottom", ref: widget1});
     workspace.addViewer(widget3, {mode: "split-right", ref: widget1});
+    workspace.addViewer(widget4, {mode: "split-right", ref: widget3});
 
     Widget.attach(workspace, document.body);
 
     widget1.load(table);
     widget2.load(table);
     widget3.load(table);
+    widget4.load(table);
 
     window.onresize = () => {
         workspace.update();

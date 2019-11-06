@@ -30,10 +30,10 @@ def data_source():
         rows.append({
             "name": SECURITIES[random.randint(0, len(SECURITIES) - 1)],
             "client": CLIENTS[random.randint(0, len(CLIENTS) - 1)],
-            "open": (random.random() * 75 + random.randint(0, 9)) * modifier,
+            "bid": (random.random() * 85 + random.randint(0, 9)) * modifier,
             "high": (random.random() * 105 + random.randint(1, 3)) * modifier,
             "low": (random.random() * 85 + random.randint(1, 3)) * modifier,
-            "close": (random.random() * 90 + random.randint(1, 3)) * modifier,
+            "ask": (random.random() * 90 + random.randint(1, 3)) * modifier,
             "lastUpdate": datetime.now()
         })
     return rows
@@ -50,12 +50,12 @@ def make_app():
     TABLE = Table({
         "name": str,
         "client": str,
-        "open": float,
+        "bid": float,
         "high": float,
         "low": float,
-        "close": float,
+        "ask": float,
         "lastUpdate": datetime,
-    }, limit=2500)
+    }, limit=10000)
 
     # Track the table with the name "data_source_one", which will be used in the front-end to access the Table.
     MANAGER.host_table("data_source_one", TABLE)

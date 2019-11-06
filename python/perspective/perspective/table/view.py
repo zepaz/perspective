@@ -37,7 +37,7 @@ class View(object):
         self._config = ViewConfig(**config)
         self._sides = self.sides()
 
-        date_validator = self._table._accessor._date_validator
+        date_validator = self._table._date_validator
         if self._sides == 0:
             self._view = make_view_zero(self._table._table, self._name, COLUMN_SEPARATOR_STRING, self._config, date_validator)
         elif self._sides == 1:

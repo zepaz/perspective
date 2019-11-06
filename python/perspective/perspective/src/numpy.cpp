@@ -27,6 +27,7 @@ namespace numpy {
     void
     NumpyLoader::init() {
         m_names = make_names();
+        // TODO: fix in on_update
         m_types = make_types();
         m_init = true;
     }

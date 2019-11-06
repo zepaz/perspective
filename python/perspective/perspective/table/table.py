@@ -8,6 +8,7 @@
 from datetime import date, datetime
 from .view import View
 from ._accessor import _PerspectiveAccessor
+from ._date_validator import _PerspectiveDateValidator
 from ._callback_cache import _PerspectiveCallBackCache
 from ..core.exception import PerspectiveError
 from ._utils import _dtype_to_pythontype, _dtype_to_str
@@ -35,8 +36,10 @@ class Table(object):
         self._is_arrow = isinstance(data_or_schema, (bytes, bytearray))
         if (self._is_arrow):
             self._accessor = data_or_schema
+            self._date_validator = _PerspectiveDateValidator()
         else:
             self._accessor = _PerspectiveAccessor(data_or_schema)
+            self._date_validator = self._accessor._date_validator
 
         self._limit = config.get("limit", 4294967295)
         self._index = config.get("index", "")
