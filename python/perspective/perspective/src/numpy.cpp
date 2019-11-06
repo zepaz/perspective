@@ -24,9 +24,13 @@ namespace numpy {
 
     void
     NumpyLoader::init() {
+        auto t1 = std::chrono::high_resolution_clock::now();
         m_names = make_names();
         m_types = make_types();
         m_init = true;
+        auto t2 = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+        std::cout << "init numpy loader: " << duration << std::endl;
     }
 
     bool
@@ -79,6 +83,7 @@ namespace numpy {
     void
     NumpyLoader::fill_table(t_data_table& tbl, const t_schema& input_schema,
         const std::string& index, std::uint32_t offset, std::uint32_t limit, bool is_update) {
+        auto t1 = std::chrono::high_resolution_clock::now();
         PSP_VERBOSE_ASSERT(m_init, "touching uninited object");
         bool implicit_index = false;
         std::vector<std::string> col_names(input_schema.columns());
@@ -116,12 +121,16 @@ namespace numpy {
                 tbl.clone_column(index, "psp_okey");
             }
         }
+        auto t2 = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+        std::cout << "fill_table numpy: " << duration << std::endl;
     }
 
     
     void 
     NumpyLoader::fill_column(t_data_table& tbl, std::shared_ptr<t_column> col, const std::string& name, t_dtype type, std::uint32_t cidx, bool is_update) {
         PSP_VERBOSE_ASSERT(m_init, "touching uninited object");
+        auto t1 = std::chrono::high_resolution_clock::now();
 
         // Use name index instead of column index - prevents off-by-one errors with the "index" column.
         auto name_it = std::find(m_names.begin(), m_names.end(), name); 
@@ -183,6 +192,10 @@ namespace numpy {
         
         // Fill validity map using null mask
         fill_validity_map(col, mask_ptr, mask_size, is_update);
+
+        auto t2 = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+        std::cout << "np fill `" << name << "`: " << duration << std::endl;
     }
 
     template <typename T>

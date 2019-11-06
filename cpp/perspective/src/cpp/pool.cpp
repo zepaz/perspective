@@ -136,11 +136,15 @@ t_pool::send(t_uindex gnode_id, t_uindex port_id, const t_data_table& table) {
 
 void
 t_pool::_process_helper() {
+    auto t1 = std::chrono::high_resolution_clock::now();
     auto work_to_do = m_data_remaining.load();
     if (work_to_do) {
         t_update_task task(*this);
         task.run();
     }
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+    std::cout << "process: " << duration << std::endl;
 }
 
 void

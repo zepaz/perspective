@@ -28,6 +28,7 @@ notify_sparse_tree_common(std::shared_ptr<t_data_table> strands,
     const std::vector<t_aggspec>& aggregates,
     const std::vector<std::pair<std::string, std::string>>& tree_sortby,
     const std::vector<t_sortspec>& ctx_sortby, const t_gstate& gstate) {
+    auto t1 = std::chrono::high_resolution_clock::now();
     t_filter fltr;
     if (t_env::log_data_nsparse_strands()) {
         std::cout << "nsparse_strands" << std::endl;
@@ -101,6 +102,8 @@ notify_sparse_tree_common(std::shared_ptr<t_data_table> strands,
             traversal->populate_root_children(tree);
         }
     } else {
+        auto t1 = std::chrono::high_resolution_clock::now();
+        t_uindex counter;
         for (const auto& lpath : leaf_paths) {
             t_uindex lfidx = lpath.m_lfidx;
             auto ancestry = tree->get_ancestry(lfidx);
@@ -123,8 +126,17 @@ notify_sparse_tree_common(std::shared_ptr<t_data_table> strands,
             for (auto nidx : ancestry) {
                 visited.insert(nidx);
             }
+
+            counter++;
         }
+        auto t2 = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+        std::cout << "iterate through `" << counter << "` leaf paths: " << duration << std::endl;
     }
+    
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+    std::cout << "notify tree common: " << duration << std::endl;
 }
 
 void

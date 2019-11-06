@@ -28,6 +28,7 @@ namespace binding {
 
 std::shared_ptr<Table> make_table_py(t_val table, t_data_accessor accessor, t_val computed,
         std::uint32_t limit, py::str index, t_op op, bool is_update, bool is_arrow) {
+    auto t1 = std::chrono::high_resolution_clock::now();
     std::vector<std::string> column_names;
     std::vector<t_dtype> data_types;
     arrow::ArrowLoader arrow_loader;
@@ -160,6 +161,10 @@ std::shared_ptr<Table> make_table_py(t_val table, t_data_accessor accessor, t_va
 
     // FIXME: replicate JS _clear_process etc.
     pool->_process();
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+    std::cout << "make_table: " << duration << std::endl;
     return tbl;
 }
 

@@ -263,7 +263,7 @@ t_gnode::notify_context(CTX_T* ctx, const t_data_table& flattened, const t_data_
     if (t_env::log_time_ctx_notify()) {
         auto t2 = std::chrono::high_resolution_clock::now();
         std::cout << ctx->repr() << " ctx_notify "
-                  << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
+                  << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count()
                   << std::endl;
     }
 }

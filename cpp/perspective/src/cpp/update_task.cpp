@@ -17,6 +17,7 @@ t_update_task::t_update_task(t_pool& pool)
 
 void
 t_update_task::run() {
+    auto t1 = std::chrono::high_resolution_clock::now();
     auto work_to_do = m_pool.m_data_remaining.load();
     if (work_to_do) {
         m_pool.m_data_remaining.store(true);
@@ -32,6 +33,9 @@ t_update_task::run() {
     }
     m_pool.notify_userspace();
     m_pool.inc_epoch();
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+    std::cout << "update task: " << duration << std::endl;
 }
 
 void
