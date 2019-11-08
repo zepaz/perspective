@@ -91,6 +91,7 @@ class TestTablePandas(object):
 
     def test_table_date_series(self, util):
         data = util.make_date_series()
+        print(data.index)
         tbl = Table(data)
         assert tbl.size() == 10
         assert tbl.schema() == {
