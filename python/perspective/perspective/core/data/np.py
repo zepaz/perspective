@@ -10,6 +10,11 @@ import numpy as np
 from datetime import datetime
 
 DATE_DTYPES = [np.dtype("datetime64[D]"), np.dtype("datetime64[W]"), np.dtype("datetime64[M]"), np.dtype("datetime64[Y]")]
+NAT = np.datetime64("NaT").view("int64")
+
+
+def _isnat(d):
+    return d.view("int64") == NAT
 
 
 def deconstruct_numpy(array):
@@ -37,7 +42,7 @@ def deconstruct_numpy(array):
 
         if not is_object_or_string_dtype:
             if is_datetime_dtype:
-                invalid = invalid or np.isnat(item)
+                invalid = invalid or _isnat(item)
             else:
                 invalid = invalid or np.isnan(item)
 
