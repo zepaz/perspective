@@ -79,7 +79,7 @@ sunburst.plugin = {
     initial: {
         type: "number",
         count: 2,
-        names: ["Size", "Color"]
+        names: ["Size", "Color", "Tooltip"]
     }
 };
 

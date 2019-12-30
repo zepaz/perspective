@@ -156,6 +156,7 @@ export class DomElement extends PerspectiveElement {
             columns = this._get_view_columns();
         }
         this.setAttribute("columns", JSON.stringify(columns));
+        columns = columns.filter(x => typeof x !== "undefined" && x !== null);
         const lis = this._get_view_dom_columns("#inactive_columns perspective-row");
         if (columns.length === lis.length) {
             this._inactive_columns.parentElement.classList.add("collapse");

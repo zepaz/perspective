@@ -173,6 +173,7 @@ export class PerspectiveElement extends StateElement {
         const aggregates = get_aggregates_with_defaults(aggregate_attribute, schema, all_cols);
 
         let shown = JSON.parse(this.getAttribute("columns")).filter(x => all_cols.indexOf(x) > -1);
+        shown = shown.filter(x => typeof x !== "undefined" && x !== null);
         if (shown.length === 0) {
             shown = this._initial_col_order;
         }
