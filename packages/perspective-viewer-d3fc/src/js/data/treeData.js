@@ -26,7 +26,7 @@ export function treeData(settings) {
                     element = {name: group, children: []};
                     currentLevel.push(element);
                 }
-                if (settings.mainValues.length > 1) {
+                if (settings.realValues[1] !== null) {
                     const colorValue = getDataValue(d, settings.mainValues[1], split);
                     element.color = element.color ? element.color + colorValue : colorValue;
                 }

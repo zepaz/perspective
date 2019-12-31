@@ -20,6 +20,59 @@ utils.with_server({}, () => {
         "scatter.html",
         () => {
             simple_tests.default();
+
+            //TODO rename me
+            test.capture("tooltips with no color and size.", async page => {
+                const viewer = await page.$("perspective-viewer");
+                await page.shadow_click("perspective-viewer", "#config_button");
+                await page.evaluate(element => element.setAttribute("columns", '["Sales", "Profit", null, null, "Quantity"]'), viewer);
+                const columns = JSON.parse(await page.evaluate(element => element.getAttribute("columns"), viewer));
+                expect(columns).toEqual(["Sales", "Profit", null, null, "Quantity"]);
+            });
+
+            test.capture("tooltip columns works", async page => {
+                const viewer = await page.$("perspective-viewer");
+                await page.shadow_click("perspective-viewer", "#config_button");
+                await page.evaluate(element => element.setAttribute("columns", '["Sales", "Profit", "Discount", "Quantity", "State"]'), viewer);
+                const columns = JSON.parse(await page.evaluate(element => element.getAttribute("columns"), viewer));
+                expect(columns).toEqual(["Sales", "Profit", "Discount", "Quantity", "State"]);
+                await page.waitForSelector("perspective-viewer:not([updating])");
+                await page.mouse.move(550, 200);
+                await page.waitFor(
+                    element => {
+                        const elem = element.shadowRoot.querySelector("perspective-d3fc-chart").shadowRoot.querySelector(".tooltip");
+                        if (elem) {
+                            return window.getComputedStyle(elem).opacity === "0.9";
+                        }
+                        return false;
+                    },
+                    {},
+                    viewer
+                );
+                await page.waitFor(5000);
+            });
+
+            test.capture("tooltip columns works when size and color columns are null", async page => {
+                const viewer = await page.$("perspective-viewer");
+                await page.shadow_click("perspective-viewer", "#config_button");
+                await page.evaluate(element => element.setAttribute("columns", '["Sales", "Profit", null, "Quantity", "State"]'), viewer);
+                const columns = JSON.parse(await page.evaluate(element => element.getAttribute("columns"), viewer));
+                expect(columns).toEqual(["Sales", "Profit", null, "Quantity", "State"]);
+                await page.waitForSelector("perspective-viewer:not([updating])");
+                await page.mouse.move(500, 200);
+                await page.waitFor(
+                    element => {
+                        const elem = element.shadowRoot.querySelector("perspective-d3fc-chart").shadowRoot.querySelector(".tooltip");
+                        if (elem) {
+                            return window.getComputedStyle(elem).opacity === "0.9";
+                        }
+                        return false;
+                    },
+                    {},
+                    viewer
+                );
+                await page.waitFor(5000);
+            });
         },
         {reload_page: false, root: path.join(__dirname, "..", "..", "..")}
     );
