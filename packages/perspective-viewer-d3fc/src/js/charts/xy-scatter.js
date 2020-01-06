@@ -24,7 +24,7 @@ import nearbyTip from "../tooltip/nearbyTip";
 function xyScatter(container, settings) {
     const data = pointData(settings, filterDataByGroup(settings));
     const symbols = symbolTypeFromGroups(settings);
-    const useGroupColors = settings.realValues.length <= 3 || settings.realValues[2] === null;
+    const useGroupColors = settings.realValues.length <= 2 || settings.realValues[2] === null;
     let color = null;
     let legend = null;
 

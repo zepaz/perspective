@@ -172,9 +172,8 @@ export class PerspectiveElement extends StateElement {
         const all_cols = cols.concat(Object.keys(computed_schema));
         const aggregates = get_aggregates_with_defaults(aggregate_attribute, schema, all_cols);
 
-        let shown = JSON.parse(this.getAttribute("columns")).filter(x => all_cols.indexOf(x) > -1);
-        shown = shown.filter(x => typeof x !== "undefined" && x !== null);
-        if (shown.length === 0) {
+        let shown = JSON.parse(this.getAttribute("columns")); //.filter(x => all_cols.indexOf(x) > -1);
+        if (shown.filter(x => all_cols.indexOf(x) > -1).length === 0) {
             shown = this._initial_col_order;
         }
 
@@ -189,12 +188,16 @@ export class PerspectiveElement extends StateElement {
             }
         }
 
+        while (shown.length < this._plugin.initial?.names?.length) {
+            shown.push(null);
+        }
+
         for (const x of shown) {
             const active_row = this._new_row(x, schema[x]);
             this._active_columns.appendChild(active_row);
         }
 
-        if (all_cols.length === shown.length) {
+        if (all_cols.length === shown.filter(x => all_cols.indexOf(x) > -1).length) {
             this._inactive_columns.parentElement.classList.add("collapse");
         } else {
             this._inactive_columns.parentElement.classList.remove("collapse");
@@ -390,12 +393,12 @@ export class PerspectiveElement extends StateElement {
             sort: sort
         };
 
-        if (!this._is_config_changed(config) && !ignore_size_check && !force_update) {
-            if (this._render_count === 0) {
-                this.removeAttribute("updating");
-            }
-            return;
-        }
+        // if (!this._is_config_changed(config) && !ignore_size_check && !force_update) {
+        //     if (this._render_count === 0) {
+        //         this.removeAttribute("updating");
+        //     }
+        //     return;
+        // }
 
         if (this._view) {
             this._view.remove_update(this._view_updater);

@@ -243,7 +243,22 @@
     }
 }
 
+:host(.null-column) {
+    .is_visible {
+        opacity: 0 !important;
+    }
+    .row_draggable {
+        background-color: var(
+            --null--background,
+            transparent
+        ) !important;
+        border-color: @border-color !important;
+        border-width: 0 0 1px 0 !important;
+    }
+}
+
 :host([drop-target]) {
+    
     .row_draggable {
         background-color: var(
             --active--background,

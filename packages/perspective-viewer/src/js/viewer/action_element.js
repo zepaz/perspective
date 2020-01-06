@@ -8,7 +8,6 @@
  */
 
 import {dragend, column_dragend, column_dragleave, column_dragover, column_drop, drop, dragenter, dragover, dragleave} from "./dragdrop.js";
-
 import {DomElement} from "./dom_element.js";
 
 export class ActionElement extends DomElement {
@@ -121,7 +120,8 @@ export class ActionElement extends DomElement {
         let parent = ev.currentTarget;
         let is_active = parent.parentElement.getAttribute("id") === "active_columns";
         if (is_active) {
-            if (this._get_visible_column_count() === 1) {
+            const min_columns = this._plugin.initial?.count || 1;
+            if (this._get_view_active_valid_column_count() === min_columns) {
                 return;
             }
             if (ev.detail.shiftKey) {
@@ -131,6 +131,10 @@ export class ActionElement extends DomElement {
                     }
                 }
             } else {
+                const index = Array.prototype.slice.call(this._active_columns.children).indexOf(parent);
+                if (index < this._plugin.initial?.names?.length - 1) {
+                    this._active_columns.insertBefore(this._new_row(null), parent);
+                }
                 this._active_columns.removeChild(parent);
             }
         } else {
@@ -147,11 +151,20 @@ export class ActionElement extends DomElement {
                 }
             }
             let row = this._new_row(parent.getAttribute("name"), parent.getAttribute("type"));
-            this._active_columns.appendChild(row);
+            const cols = this._get_view_active_columns();
+            let i = cols.length - 1;
+            if (!cols[i].classList.contains("null-column")) {
+                this._active_columns.appendChild(row);
+            } else
+                while (i-- > 0) {
+                    if (!cols[i].classList.contains("null-column")) {
+                        this._active_columns.replaceChild(row, cols[i + 1]);
+                        break;
+                    }
+                }
         }
         this._check_responsive_layout();
-        let cols = this._get_view_columns();
-        this._update_column_view(cols);
+        this._update_column_view();
     }
 
     _column_aggregate_clicked() {

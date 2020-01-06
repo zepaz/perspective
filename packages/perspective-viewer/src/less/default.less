@@ -211,6 +211,11 @@
             perspective-row[drop-target] {
                 --row_draggable_children-opacity: 0;
             }
+
+            perspective-row.null-column {
+                --row_draggable_children-opacity: 0;
+                pointer-events: none;
+            }
         }
 
         #active_columns,
