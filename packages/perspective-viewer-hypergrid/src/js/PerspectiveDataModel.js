@@ -139,10 +139,14 @@ export default require("datasaur-local").extend("PerspectiveDataModel", {
             }
         }
         if (has_row_selections) {
-            const row_data = this.data[this._grid.getSelectedRows()[0]];
-            if (row_data) {
-                this._selected_row_index = row_data.__ID__;
-            }
+            // remove all selected indexes that are in the data window
+            this._selected_row_indices = (this._selected_row_indices || []).filter(index => this.lookup[index] === undefined);
+            this._grid.getSelectedRows().forEach(idx => {
+                const row = this.data[idx];
+                if (row) {
+                    this._selected_row_indices.push(row.__ID__);
+                }
+            });
         }
     },
 
@@ -156,7 +160,6 @@ export default require("datasaur-local").extend("PerspectiveDataModel", {
         }
         return new_index;
     },
-
     _update_selection: function(new_index) {
         const has_cell_selections = this._grid.selectionModel.hasSelections();
         if (has_cell_selections) {
@@ -166,23 +169,35 @@ export default require("datasaur-local").extend("PerspectiveDataModel", {
                 this._grid.selectionModel.select(col, new_index, 0, 0);
             }
         }
-        if (this._selected_row_index) {
+        if (this._selected_row_indices && this._selected_row_indices.length > 0) {
             this._grid.selectionModel.clearRowSelection();
-            const row_index = new_index || find_row(this.data, this._selected_row_index);
-            if (row_index !== -1) {
-                this._grid.selectionModel.selectRow(row_index);
-            }
+            this._selected_row_indices.forEach(index => {
+                const row_id = this.lookup[index];
+                if (row_id !== undefined) {
+                    this._grid.selectionModel.selectRow(row_id);
+                } else {
+                    this._selected_ind;
+                }
+            });
         }
+        // if (this._selected_row_index) {
+        //     this._grid.selectionModel.clearRowSelection();
+        //     const row_index = new_index || find_row(this.data, this._selected_row_index);
+        //     if (row_index !== -1) {
+        //         this._grid.selectionModel.selectRow(row_index);
+        //     }
+        // }
     },
 
     pspFetch: async function(rect) {
         const selection_enabled = this._grid.properties.rowSelection || this._viewer.hasAttribute("editable");
-        const range = pad_data_window(rect, this._config.row_pivots, this._viewer.hasAttribute("settings"), selection_enabled);
+        const range = pad_data_window(rect, this._config.row_pivots, selection_enabled);
         const next_page = await this._view.to_columns(range);
         this.data = [];
-        const rows = page2hypergrid(next_page, this._config.row_pivots, this._columns);
+        const {rows, lookup} = page2hypergrid(next_page, this._config.row_pivots, this._columns);
         const base = range.start_row;
         const data = this.data;
+        this.lookup = lookup;
         rows.forEach((row, offset) => (data[base + offset] = row));
     },
 

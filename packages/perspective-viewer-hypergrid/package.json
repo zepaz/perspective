@@ -16,14 +16,17 @@
         "bench:run": "echo \"No Benchmarks\"",
         "prebuild": "mkdirp dist/esm",
         "build:babel": "cpx \"src/**/*\" dist && babel src/js --source-maps --out-dir dist/esm",
+        "build:babel:watch": "babel src/js --source-maps --out-dir dist/esm --watch",
         "build:webpack:esm": "webpack --color --config src/config/cjs.config.js",
+        "build:webpack:esm:watch": "webpack --color --config src/config/cjs.config.js --watch",
         "build:webpack:umd": "webpack --color --config src/config/umd.config.js",
         "build": "npm-run-all build:babel build:webpack:esm build:webpack:umd",
         "test:build": "cpx \"test/html/*\" dist/umd",
         "test:run": "jest --rootDir=. --config=../perspective-test/jest.config.js --silent --color 2>&1",
         "test": "npm-run-all test:build test:run",
         "clean": "rimraf dist",
-        "clean:screenshots": "rimraf \"screenshots/**/*.@(failed|diff).png\""
+        "clean:screenshots": "rimraf \"screenshots/**/*.@(failed|diff).png\"",
+        "watch": "npm-run-all -p build:babel:watch build:webpack:esm:watch"
     },
     "publishConfig": {
         "access": "public"

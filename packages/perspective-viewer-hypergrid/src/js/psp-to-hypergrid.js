@@ -22,6 +22,7 @@ function page2hypergrid(data, row_pivots, columns) {
     const flat_columns = row_pivots.length ? columns.filter(x => x !== "__ROW_PATH__") : columns;
     const data_indices = data_columns.map(x => flat_columns.indexOf(x));
     const rows = [];
+    const lookup = {};
 
     for (let ridx = 0; ridx < data[firstcol].length; ridx++) {
         const dataRow = {};
@@ -46,10 +47,13 @@ function page2hypergrid(data, row_pivots, columns) {
                 rowPath: ["ROOT"].concat(data["__ROW_PATH__"][ridx]),
                 isLeaf: data["__ROW_PATH__"][ridx].length >= row_pivots.length
             };
+            dataRow["__ROW_PATH__"] = data["__ROW_PATH__"][ridx];
         }
 
         if (data.__ID__) {
-            dataRow["__ID__"] = data["__ID__"][ridx].join("|");
+            const id = data["__ID__"][ridx].join("|");
+            dataRow["__ID__"] = id;
+            lookup[id] = ridx;
         }
 
         if (data.__INDEX__) {
@@ -59,14 +63,14 @@ function page2hypergrid(data, row_pivots, columns) {
         rows.push(dataRow);
     }
 
-    return rows;
+    return {rows, lookup};
 }
 
 function psp2hypergrid(data, schema, tschema, row_pivots, columns) {
     const flat_columns = row_pivots.length ? columns.filter(x => x !== "__ROW_PATH__") : columns;
     const columnPaths = flat_columns.map(row => row.split(COLUMN_SEPARATOR_STRING));
     const is_tree = !!row_pivots.length;
-    const rows = page2hypergrid(data, row_pivots, columns);
+    const {rows} = page2hypergrid(data, row_pivots, columns);
 
     return {
         rows: rows,

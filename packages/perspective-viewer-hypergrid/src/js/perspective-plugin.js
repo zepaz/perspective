@@ -278,6 +278,43 @@ const right_click_handler = e => {
     e.target.parentElement.parentElement.parentElement.dispatchEvent(new_event);
 };
 
+function get_config(row_idx, col_idx) {
+    const config = this.dataModel.getConfig();
+    const row_pivots = config.row_pivots;
+    const column_pivots = config.column_pivots;
+    row_idx = row_idx >= 0 ? row_idx : 0;
+
+    const row = this.dataModel.data[row_idx];
+    const filters = config.filters ? [...config.filters] : [];
+    const result = {row, filters};
+
+    const row_path = row.__ROW_PATH__ || [];
+
+    row_pivots.forEach((pivot, index) => {
+        const pivot_value = row_path[index];
+        if (pivot_value) {
+            filters.push([pivot, "==", pivot_value]);
+        }
+    });
+
+    if (col_idx) {
+        const column_index = row_pivots.length > 0 ? col_idx + 1 : col_idx;
+        const column_paths = Object.keys(row)[column_index];
+        if (column_paths) {
+            const column_pivot_values = column_paths.split("|");
+            result.column = [column_pivot_values[column_pivot_values.length - 1]];
+            column_pivots.forEach((pivot, index) => {
+                const pivot_value = column_pivot_values[index];
+                if (pivot_value && pivot_value !== "__ROW_PATH__") {
+                    filters.push([pivot, "==", pivot_value]);
+                }
+            });
+        }
+    }
+
+    return result;
+}
+
 // `install` makes this a Hypergrid plug-in
 export const install = function(grid) {
     addSortChars(grid.behavior.charMap);
@@ -287,12 +324,22 @@ export const install = function(grid) {
     Object.getPrototypeOf(grid.behavior).formatColumnHeader = formatColumnHeader;
 
     grid.addEventListener("fin-column-sort", sortColumn.bind(grid));
+    grid.addEventListener("fin-row-selection-changed", event => {
+        grid.canvas.dispatchEvent(
+            new CustomEvent("perspective-row-selection", {
+                bubbles: true,
+                composed: true,
+                detail: event.detail.rows.map(row => get_config.call(grid.behavior, row))
+            })
+        );
+    });
 
     grid.addEventListener("fin-canvas-context-menu", right_click_handler);
     Object.getPrototypeOf(grid.behavior).cellClicked = async function(event) {
         event.primitiveEvent.preventDefault();
         event.handled = true;
         const {x, y} = event.dataCell;
+
         const config = this.dataModel.getConfig();
         const row_pivots = config.row_pivots;
         const column_pivots = config.column_pivots;
@@ -324,6 +371,7 @@ export const install = function(grid) {
         }
 
         const filters = config.filter.concat(row_filters).concat(column_filters);
+
         const action = this.grid.properties.rowSelection && this.grid.getSelectedRows().indexOf(y) === -1 ? "deselected" : "selected";
 
         this.grid.canvas.dispatchEvent(

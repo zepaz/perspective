@@ -196,7 +196,7 @@ const dynamic_defaults = {
 
 export function get_dynamic_styles(elem, selectable) {
     const properties = {
-        singleRowSelectionMode: selectable,
+        // singleRowSelectionMode: selectable,
         autoSelectRows: selectable,
         rowSelection: selectable
     };

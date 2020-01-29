@@ -16,6 +16,7 @@ import "@finos/perspective-viewer-d3fc";
 import "@finos/perspective-viewer/dist/umd/material.css";
 
 import "./index.css";
+import {securities} from "../../datasources";
 
 const worker = perspective.shared_worker();
 
@@ -31,7 +32,16 @@ window.addEventListener("load", async () => {
     const buffer = await resp.arrayBuffer();
     const table = worker.table(buffer);
 
+    // const table = worker.table({name: "string", number: "integer"}, {index: "name"});
+    // table.update([
+    //     {name: "zeme", number: 1},
+    //     {name: "olotu", number: 2}
+    // ]);
+    // viewer.load(securities);
     viewer.load(table);
+    // viewer.restore({selectable: true});
+    viewer.restore({selectable: true, "row-pivots": ["Country", "Region", "State"]});
 
+    viewer.addEventListener("perspective-row-selection", event => console.log(event.detail.map(x => x.filters)));
     window.viewer = viewer;
 });
