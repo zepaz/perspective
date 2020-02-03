@@ -63,16 +63,8 @@ class PerspectiveWorkspaceElement extends HTMLElement {
         return this.workspace.restore(layout);
     }
 
-    addTable(name, table) {
-        this.workspace.addTable(name, table);
-    }
-
-    getTable(name) {
-        return this.workspace.getTable(name);
-    }
-
-    removeTable(name) {
-        return this.workspace.removeTable(name);
+    get tables() {
+        return this.workspace.tables;
     }
 
     /**

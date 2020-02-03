@@ -28,6 +28,30 @@ export const SIDE = {
     RIGHT: "right"
 };
 
+class ObservableMap extends Map {
+    set(name, item) {
+        this._set_listener?.(name, item);
+        super.set(name, item);
+    }
+
+    get(name) {
+        return super.get(name);
+    }
+
+    delete(name) {
+        this._delete_listener?.(name);
+        super.delete(name);
+    }
+
+    addSetListener(listener) {
+        this._set_listener = listener;
+    }
+
+    addDeleteistener(listener) {
+        this._delete_listener = listener;
+    }
+}
+
 export class PerspectiveWorkspace extends DiscreteSplitPanel {
     constructor(element, options = {}) {
         super({orientation: "horizontal"});
@@ -47,7 +71,9 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         this._side = options.side || SIDE.LEFT;
 
         this.listeners = new WeakMap();
-        this.tables = new Map();
+        this._tables = new ObservableMap();
+        this._tables.addSetListener(this._set_listener.bind(this));
+        this._tables.addDeleteistener(this._delete_listener.bind(this));
         this.commands = createCommands(this);
         this.menuRenderer = new MenuRenderer(this.element);
     }
@@ -55,29 +81,9 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
     /*********************************************************************
      * Workspace public api
      */
-    addTable(name, table) {
-        this.tables.set(name, table);
-        this.getAllWidgets().forEach(widget => {
-            if (widget.tableName === name) {
-                widget.table = table;
-            }
-        });
-    }
 
-    getTable(name) {
-        return this.tables.get(name);
-    }
-
-    removeTable(name) {
-        const isUsed = this.getAllWidgets().some(widget => widget.tableName === name);
-        if (isUsed) {
-            console.error(`Cannot remove table: '${name}' because it's still bound to widget(s)`);
-        } else {
-            const result = this.tables.delete(name);
-            if (!result) {
-                console.warn(`Table: '${name}' does not exist`);
-            }
-        }
+    get tables() {
+        return this._tables;
     }
 
     set side(value) {
