@@ -247,7 +247,7 @@ t_gnode::_process_table() {
         row_lookup[idx] = m_gstate->lookup(pkey);
     }
 
-    recompute_columns(get_table_sptr(), flattened, row_lookup);
+    recompute_columns(flattened);
 
     if (m_gstate->mapping_size() == 0) {
         // Updates have already been processed - break early.
@@ -393,6 +393,9 @@ t_gnode::_process() {
 
     std::shared_ptr<t_data_table> flattened_masked = _process_table();
     if (flattened_masked) {
+        // The flattened state of the Table after an update
+        std::cout << "Flattened masked:" << std::endl;
+        flattened_masked->pprint();
         notify_contexts(*flattened_masked);
     }
 
@@ -554,6 +557,8 @@ t_gnode::_register_context(const std::string& name, t_ctx_type type, std::int64_
 
     std::shared_ptr<t_data_table> flattened;
 
+    // TODO: need to make sure that cases of `should_update == false` are
+    // handled by computed column creation
     if (should_update) {
         flattened = m_gstate->get_pkeyed_table();
     }
@@ -1019,9 +1024,9 @@ t_gnode::register_context(const std::string& name, std::shared_ptr<t_ctx_grouped
 }
 
 void 
-t_gnode::recompute_columns(std::shared_ptr<t_data_table> table, std::shared_ptr<t_data_table> flattened, const std::vector<t_rlookup>& updated_ridxs) {
+t_gnode::recompute_columns(std::shared_ptr<t_data_table> table) {
     for (auto l : m_computed_lambdas) {
-        l(table, flattened, updated_ridxs);
+        l(table);
     }
 }
 
