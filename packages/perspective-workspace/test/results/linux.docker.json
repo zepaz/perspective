@@ -1,6 +1,14 @@
 {
     "index_restore_workspace_with_detail_only": "1168e9bee0eec492dfd5f50b2e087d84",
-    "index_restore_workspace_with_master_only": "13ff739449bf9745d43f9af8bfc67c7c",
-    "index_restore_workspace_with_master_and_detail": "aafccad40bfe1a921c220da2a0e07a30",
-    "__GIT_COMMIT__": "5e68a41988f611e0c240e0032758cc6cd55ea932"
+    "index_restore_workspace_with_master_only": "17241c83a4c438b3da9ab1860fd2b1b6",
+    "index_restore_workspace_with_master_and_detail": "564f405f5a2185a71b514afd132a1ea0",
+    "__GIT_COMMIT__": "166393207a0d9de6bfce5afc326f5ac495d71b6a",
+    "index_HTML_Create_One": "f3cc4b8096b69679e85526ccf28120a6",
+    "index_HTML_Create_Multiple": "67d5318f2bb18b0cfd7130e72199dd52",
+    "index_HTML_Create_multiple_with_names": "0bed0974e891d51eb400070f99f78189",
+    "index_removeChild_Remove_One": "3d8e42bea464280934900433dde0d4de",
+    "index_appendChild_Create_One": "f3cc4b8096b69679e85526ccf28120a6",
+    "index_appendChild_Create_multiple": "9ee5a53d3b004b03d3cfbc813a92d659",
+    "index_appendChild_With_name": "1168e9bee0eec492dfd5f50b2e087d84",
+    "index_appendChild_Without_slot": "f3cc4b8096b69679e85526ccf28120a6"
 }
