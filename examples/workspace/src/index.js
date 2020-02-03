@@ -23,30 +23,33 @@ const datasource = async () => {
     return worker.table(buffer);
 };
 
-window.addEventListener("load", async () => {
+window.addEventListener("load", () => {
     const workspace = document.createElement("perspective-workspace");
     document.body.append(workspace);
-    workspace.addTable("superstore", await datasource());
+    workspace.tables.set("superstore", datasource());
 
-    const config = {
+    for (const name of ["One", "Two", "Three"]) {
+        const viewer = document.createElement("perspective-viewer");
+        viewer.setAttribute("slot", name);
+        viewer.setAttribute("table", "superstore");
+        viewer.setAttribute("name", `Test Widget ${name}`);
+        workspace.appendChild(viewer);
+    }
+
+    workspace.restore({
         master: {
-            widgets: [
-                {table: "superstore", name: "Three", "row-pivots": ["State"], columns: ["Sales", "Profit"]},
-                {table: "superstore", name: "Four", "row-pivots": ["Category", "Sub-Category"], columns: ["Sales", "Profit"]}
-            ]
+            widgets: ["Three", "Four"]
         },
         detail: {
             main: {
                 currentIndex: 0,
                 type: "tab-area",
-                widgets: [
-                    {table: "superstore", name: "One"},
-                    {table: "superstore", name: "Two"}
-                ]
+                widgets: ["One", "Two"]
             }
+        },
+        viewers: {
+            Three: {table: "superstore", name: "Test Widget III (modified)", "row-pivots": ["State"], columns: ["Sales", "Profit"]},
+            Four: {table: "superstore", name: "Test Widget IV (modified)", "row-pivots": ["Category", "Sub-Category"], columns: ["Sales", "Profit"]}
         }
-    };
-
-    workspace.restore(config);
-    window.workspace = workspace;
+    });
 });
