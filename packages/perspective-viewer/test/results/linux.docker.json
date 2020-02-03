@@ -13,7 +13,7 @@
     "superstore_filters_by_computed_column_": "fa0fbf6eeec33053a30700c73dc75520",
     "superstore_computed_column_aggregates_should_persist_": "a7030a052356ed393cc4fe9c5f03c422",
     "superstore_user_defined_aggregates_maintained_on_computed_columns": "b6309eb8a6883114e424a3e350bb18e0",
-    "__GIT_COMMIT__": "166393207a0d9de6bfce5afc326f5ac495d71b6a",
+    "__GIT_COMMIT__": "5a4327948f6de20d350eaa24c8910c5e5dbb640e",
     "blank_Handles_reloading_with_a_schema_": "f6c016d83aeb20b04f8eecb73f0e40f5",
     "superstore_doesn_t_leak_tables_": "8974cdec585553e7011b54b4867b5072",
     "superstore_doesn_t_leak_elements_": "8974cdec585553e7011b54b4867b5072",
