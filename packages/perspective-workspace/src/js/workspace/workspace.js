@@ -78,8 +78,10 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         this.menuRenderer = new MenuRenderer(this.element);
     }
 
-    /*********************************************************************
-     * Workspace public api
+    /***************************************************************************
+     *
+     * `<perspective-workspace>` Public API
+     *
      */
 
     get tables() {
@@ -332,9 +334,6 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         }
     }
 
-    /*********************************************************************
-     * Master -> Detail filters
-     */
     filterWidget(candidates, filters) {
         toArray(this.dockpanel.widgets()).forEach(async widget => {
             const config = widget.save();
@@ -359,10 +358,6 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         const filters = [...event.detail.config.filters];
         this.filterWidget(candidates, filters);
     };
-
-    /*********************************************************************
-     * Master/Detail methods
-     */
 
     makeMaster(widget) {
         widget.master = true;
@@ -397,8 +392,10 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         widget.viewer.removeEventListener("perspective-select", this.onPerspectiveSelect);
     }
 
-    /*********************************************************************
-     * Context menu methods.
+    /***************************************************************************
+     *
+     * Context Menu
+     *
      */
 
     createContextMenu(widget) {
@@ -444,8 +441,10 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         event.stopPropagation();
     }
 
-    /*********************************************************************
-     * layout helper methods .
+    /***************************************************************************
+     *
+     * Context Menu
+     *
      */
 
     clearLayout() {
