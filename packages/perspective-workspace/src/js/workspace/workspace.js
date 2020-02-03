@@ -21,6 +21,8 @@ import {DiscreteSplitPanel} from "./discrete";
 
 const DEFAULT_WORKSPACE_SIZE = [1, 3];
 
+let ID_COUNTER = 0;
+
 export const SIDE = {
     LEFT: "left",
     RIGHT: "right"
@@ -109,65 +111,188 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
     }
 
     save() {
-        const config = {
+        const layout = {
             sizes: [...this.relativeSizes()],
-            detail: PerspectiveDockPanel.mapWidgets(widget => widget.save(), this.dockpanel.saveLayout())
+            detail: PerspectiveDockPanel.mapWidgets(widget => widget.viewer.getAttribute("slot"), this.dockpanel.saveLayout())
         };
         if (this.masterPanel.isAttached) {
             const master = {
-                widgets: this.masterPanel.widgets.map(widget => widget.save()),
+                widgets: this.masterPanel.widgets.map(widget => widget.viewer.getAttribute("slot")),
                 sizes: [...this.masterPanel.relativeSizes()]
             };
-            config.master = master;
+            layout.master = master;
         }
-        return config;
+        const viewers = {};
+        for (const widget of this.masterPanel.widgets) {
+            viewers[widget.viewer.getAttribute("slot")] = widget.save();
+        }
+        PerspectiveDockPanel.mapWidgets(widget => {
+            viewers[widget.viewer.getAttribute("slot")] = widget.save();
+        }, this.dockpanel.saveLayout());
+        return {...layout, viewers};
     }
 
     restore(value) {
-        this.clearLayout();
-
-        const layout = cloneDeep(value);
-        if (layout.master && layout.master.widgets.length > 0) {
-            this.setupMasterPanel(layout.sizes || DEFAULT_WORKSPACE_SIZE);
+        const {sizes, master, detail, viewers: viewer_configs = []} = cloneDeep(value);
+        if (master && master.widgets.length > 0) {
+            this.setupMasterPanel(sizes || DEFAULT_WORKSPACE_SIZE);
         } else {
             this.addWidget(this.detailPanel);
         }
 
-        if (layout.master) {
-            layout.master.widgets.forEach(widgetConfig => {
-                const widget = this._createWidget({
-                    title: widgetConfig.name,
-                    table: this.getTable(widgetConfig.table),
-                    config: {master: true, ...widgetConfig}
-                });
-                widget.viewer.addEventListener("perspective-select", this.onPerspectiveSelect);
-                widget.viewer.addEventListener("perspective-click", this.onPerspectiveSelect);
-                this.masterPanel.addWidget(widget);
-            });
-            layout.master.sizes && this.masterPanel.setRelativeSizes(layout.master.sizes);
-        }
+        // Using ES generators as context managers ..
+        for (const viewers of this._capture_viewers()) {
+            for (const widgets of this._capture_widgets()) {
+                const callback = this._restore_callback.bind(this, viewer_configs, viewers, widgets);
 
-        if (layout.detail) {
-            const detailLayout = PerspectiveDockPanel.mapWidgets(widgetConfig => {
-                const widget = this._createWidget({
-                    title: widgetConfig.name,
-                    table: this.getTable(widgetConfig.table),
-                    config: {master: false, ...widgetConfig}
-                });
-                return widget;
-            }, layout.detail);
-            this.dockpanel.restoreLayout(detailLayout);
+                if (master) {
+                    master.widgets.forEach(callback.bind(this, true));
+                    master.sizes && this.masterPanel.setRelativeSizes(master.sizes);
+                }
+
+                if (detail) {
+                    const detailLayout = PerspectiveDockPanel.mapWidgets(callback.bind(this, false), detail);
+                    this.dockpanel.restoreLayout(detailLayout);
+                }
+            }
         }
     }
 
-    /*********************************************************************
+    *_capture_widgets() {
+        const widgets = this.getAllWidgets();
+        yield widgets;
+        for (const widget of widgets) {
+            if (!widget.node.isConnected) {
+                widget.close();
+            }
+        }
+    }
+
+    *_capture_viewers() {
+        const viewers = Array.from(this.element.children);
+        yield viewers;
+        const ending_widgets = this.getAllWidgets();
+        for (const viewer of viewers) {
+            let widget = ending_widgets.find(x => x.viewer === viewer);
+            if (!widget && Array.from(this.element.children).indexOf(viewer) > -1) {
+                this.element.removeChild(viewer);
+                viewer.delete();
+            }
+        }
+    }
+
+    _restore_callback(viewers, starting_viewers, starting_widgets, master, widgetName) {
+        const viewer_config = viewers[widgetName];
+        let viewer = starting_viewers.find(x => x.getAttribute("slot") === widgetName);
+        let widget;
+        if (viewer) {
+            widget = starting_widgets.find(x => x.viewer === viewer);
+            if (widget) {
+                widget.restore({master, ...viewer_config});
+            } else {
+                widget = this._createWidget({
+                    config: {master, ...viewer_config},
+                    viewer
+                });
+            }
+        } else if (viewer_config) {
+            widget = this._createWidgetAndNode({
+                config: {master, ...viewer_config},
+                slot: widgetName
+            });
+        } else {
+            console.error(`Could not find or create <perspective-viewer> for slot "${widgetName}"`);
+        }
+        if (master) {
+            widget.viewer.addEventListener("perspective-select", this.onPerspectiveSelect);
+            widget.viewer.addEventListener("perspective-click", this.onPerspectiveSelect);
+            // TODO remove event listener
+            this.masterPanel.addWidget(widget);
+        }
+        return widget;
+    }
+
+    _validate(table) {
+        if (!table.hasOwnProperty("view") || table.type !== "table") {
+            throw new Error("Only `perspective.Table()` instances can be added to `tables`");
+        }
+        return table;
+    }
+
+    _set_listener(name, table) {
+        if (table instanceof Promise) {
+            table = table.then(this._validate);
+        } else {
+            this._validate(table);
+        }
+        this.getAllWidgets().forEach(widget => {
+            if (widget.viewer.getAttribute("table") === name) {
+                widget.viewer.load(table);
+            }
+        });
+    }
+
+    _delete_listener(name) {
+        const isUsed = this.getAllWidgets().some(widget => widget.tableName === name);
+        if (isUsed) {
+            console.error(`Cannot remove table: '${name}' because it's still bound to widget(s)`);
+        } else {
+            const result = this.tables.delete(name);
+            if (!result) {
+                console.warn(`Table: '${name}' does not exist`);
+            }
+        }
+    }
+
+    update_widget_for_viewer(viewer) {
+        let slot_name = viewer.getAttribute("slot");
+        if (!slot_name) {
+            slot_name = this._gen_id();
+            viewer.setAttribute("slot", slot_name);
+        }
+        const table_name = viewer.getAttribute("table");
+        if (table_name) {
+            const slot = this.node.querySelector(`slot[name=${slot_name}]`);
+            if (!slot) {
+                //const name = viewer.getAttribute("name");
+                console.warn(`Undocked ${viewer.outerHTML}, creating default layout`);
+                const widget = this._createWidget({
+                    title: viewer.getAttribute("name"),
+                    table: this.tables.get(viewer.getAttribute("table")),
+                    config: {master: false},
+                    viewer
+                });
+                this.dockpanel.addWidget(widget);
+                this.dockpanel.activateWidget(widget);
+            }
+        } else {
+            console.warn(`No table set for ${viewer.outerHTML}`);
+        }
+    }
+
+    remove_unslotted_widgets(viewers) {
+        const widgets = this.getAllWidgets();
+        for (const widget of widgets) {
+            let missing = viewers.indexOf(widget.viewer) === -1;
+            if (missing) {
+                widget.close();
+            }
+        }
+    }
+
+    /***************************************************************************
+     *
      * Workspace-level contextmenu actions
+     *
      */
+
     duplicate(widget) {
         if (this.dockpanel.mode === "single-document") {
             this.toggleSingleDocument(widget);
         }
-        const duplicate = this._createWidget({title: "duplicate", table: widget.table, config: widget.save()});
+        const config = widget.save();
+        config.name = `${config.name} (duplicate)`;
+        const duplicate = this._createWidgetAndNode({config});
         if (widget.master) {
             const index = this.masterPanel.widgets.indexOf(widget) + 1;
             this.masterPanel.insertWidget(index, duplicate);
@@ -351,8 +476,47 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
      * Widget helper methods
      */
 
-    _createWidget({title, table, config}) {
-        const widget = new PerspectiveViewerWidget({title, table});
+    _createWidgetAndNode({config, slot: slotname}) {
+        const node = this._createNode(slotname);
+        const table = config.table;
+        const viewer = document.createElement("perspective-viewer");
+        viewer.setAttribute("slot", node.children[0].getAttribute("name"));
+        if (table) {
+            viewer.setAttribute("table", table);
+        }
+        return this._createWidget({config, node, viewer});
+    }
+
+    _gen_id() {
+        return `PERSPECTIVE_GENERATED_ID_${ID_COUNTER++}`;
+    }
+
+    _createNode(slotname) {
+        let node = this.node.querySelector(`slot[name=${slotname}]`);
+        if (!node) {
+            const slot = document.createElement("slot");
+            slotname = slotname || this._gen_id();
+            slot.setAttribute("name", slotname);
+            node = document.createElement("div");
+            node.classList.add("p-Widget");
+            node.appendChild(slot);
+        }
+        return node;
+    }
+
+    _createWidget({config, node, viewer}) {
+        const title = config.name || viewer.getAttribute("name");
+        if (!node) {
+            const slotname = viewer.getAttribute("slot");
+            node = this.node.querySelector(`slot[name=${slotname}]`);
+            if (!node) {
+                node = this._createNode(slotname);
+            } else {
+                node = node.parentElement;
+            }
+        }
+        const table = this.tables.get(viewer.getAttribute("table") || config.table);
+        const widget = new PerspectiveViewerWidget({title, table, node, viewer});
         widget.title.closable = true;
         this.element.appendChild(widget.viewer);
         this._addWidgetEventListeners(widget);

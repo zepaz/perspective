@@ -82,11 +82,31 @@ class PerspectiveWorkspaceElement extends HTMLElement {
         this.workspace.update();
     }
 
+    _light_dom_changed() {
+        const viewers = Array.from(this.childNodes);
+        for (const viewer of viewers) {
+            if (viewer.nodeType === Node.TEXT_NODE) {
+                continue;
+            }
+            this.workspace.update_widget_for_viewer(viewer);
+        }
+        this.workspace.remove_unslotted_widgets(viewers);
+    }
+
+    _register_light_dom_listener() {
+        let observer = new MutationObserver(this._light_dom_changed.bind(this));
+        let config = {attributes: false, childList: true, subtree: true};
+        observer.observe(this, config);
+        this._light_dom_changed();
+    }
+
     connectedCallback() {
         this.side = this.side || SIDE.LEFT;
 
         const container = this.shadowRoot.querySelector("#container");
         this.workspace = new PerspectiveWorkspace(this, {side: this.side});
+
+        this._register_light_dom_listener();
 
         // TODO: check we only insert one of these
         this._injectStyle = injectStyles("workspace-injected-stylesheet", injectedStyles);

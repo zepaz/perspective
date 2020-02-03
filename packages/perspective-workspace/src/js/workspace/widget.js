@@ -10,12 +10,10 @@
 import "@finos/perspective-viewer";
 import {Widget} from "@phosphor/widgets";
 
-let ID_COUNTER = 0;
-
 export class PerspectiveViewerWidget extends Widget {
-    constructor({title, table}) {
-        const {viewer, node} = createNode();
+    constructor({title, table, viewer, node}) {
         super({node});
+        viewer.setAttribute("name", title);
         this.viewer = viewer;
         this.table = table;
 
@@ -60,9 +58,14 @@ export class PerspectiveViewerWidget extends Widget {
     }
 
     restore(config) {
-        const {master, table, ...viewerConfig} = config;
-        this.tableName = table;
+        const {master, table, name, ...viewerConfig} = config;
         this.master = master;
+        if (table) {
+            this.viewer.setAttribute("table", table);
+        }
+        if (name) {
+            this.viewer.setAttribute("name", name);
+        }
         this.viewer.restore({...viewerConfig});
     }
 
@@ -71,7 +74,8 @@ export class PerspectiveViewerWidget extends Widget {
             ...this.viewer.save(),
             name: this.title.label,
             master: this.master,
-            table: this.tableName
+            name: this.viewer.getAttribute("name"),
+            table: this.viewer.getAttribute("table")
         };
     }
 
@@ -87,8 +91,10 @@ export class PerspectiveViewerWidget extends Widget {
 
     async onCloseRequest(msg) {
         super.onCloseRequest(msg);
+        if (this.viewer.parentElement) {
+            this.viewer.parentElement.removeChild(this.viewer);
+        }
         await this.viewer.delete();
-        this.viewer.parentElement.removeChild(this.viewer);
     }
 
     onResize(msg) {
@@ -102,18 +108,3 @@ export class PerspectiveViewerWidget extends Widget {
         }
     }
 }
-
-const createNode = () => {
-    const slot = document.createElement("slot");
-    const name = `AUTO_ID_${ID_COUNTER++}`;
-    slot.setAttribute("name", name);
-
-    const node = document.createElement("div");
-    node.classList.add("p-Widget");
-    node.appendChild(slot);
-
-    const viewer = document.createElement("perspective-viewer");
-    viewer.setAttribute("slot", name);
-
-    return {node: node, viewer: viewer};
-};
