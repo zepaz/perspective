@@ -183,36 +183,35 @@ protected:
      * @tparam CTX_T 
      * @param ptr 
      */
-    template <typename CTX_T>
-    void set_ctx_state(void* ptr);
-
-    /**
-     * @brief Given the process state, create a `t_mask` bitset set to true for
-     * all rows in `flattened`, UNLESS the row is an `OP_DELETE`.
-     * 
-     * Mutates the `t_process_state` object that is passed in.
-     * 
-     * @param process_state
-     */
-    t_mask _process_mask_existed_rows(t_process_state& process_state);
-
-    /**
-     * @brief Given a flattened column, the master column from `m_gstate`, and
-     * all transitional columns containing metadata, process and calculate
-     * transitional values.
-     * 
-     * @tparam DATA_T 
-     * @param fcolumn 
-     * @param scolumn 
-     * @param dcolumn 
-     * @param pcolumn 
-     * @param ccolumn 
-     * @param tcolumn 
-     * @param process_state 
-     */
-    template <typename DATA_T>
     void _process_column(const t_column* fcolumn, const t_column* scolumn, t_column* dcolumn,
         t_column* pcolumn, t_column* ccolumn, t_column* tcolumn, const t_process_state& process_state);
+
+    /**
+     * @brief 
+     * 
+     * @param tbl 
+     */
+    void _compute_context_columns(std::shared_ptr<t_data_table> tbl);
+
+    /**
+     * @brief 
+     * 
+     * @tparam CTX_T 
+     * @param ctx 
+     * @param tbl 
+     */
+    template <typename CTX_T>
+    void compute_columns(CTX_T* ctx, const t_data_table& tbl);
+
+    /**
+     * @brief 
+     * 
+     * @tparam CTX_T 
+     * @param ctx 
+     * @param tbl 
+     */
+    template <typename CTX_T>
+    void _compute_columns_sptr(CTX_T* ctx, std::shared_ptr<t_data_table> tbl);
 
     /**
      * @brief Calculate the transition state for a single cell, which depends
@@ -277,6 +276,7 @@ void
 t_gnode::notify_context(const t_data_table& flattened, const t_ctx_handle& ctxh) {
     CTX_T* ctx = ctxh.get<CTX_T>();
     const t_data_table& delta = *(m_oports[PSP_PORT_DELTA]->get_table().get());
+    // TODO: each need to have the correct computed column state
     const t_data_table& prev = *(m_oports[PSP_PORT_PREV]->get_table().get());
     const t_data_table& current = *(m_oports[PSP_PORT_CURRENT]->get_table().get());
     const t_data_table& transitions = *(m_oports[PSP_PORT_TRANSITIONS]->get_table().get());
@@ -304,16 +304,20 @@ void
 t_gnode::notify_context(CTX_T* ctx, const t_data_table& flattened, const t_data_table& delta,
     const t_data_table& prev, const t_data_table& current, const t_data_table& transitions,
     const t_data_table& existed) {
-    auto t1 = std::chrono::high_resolution_clock::now();
+    auto ctx_config = ctx->get_config();
+    auto computed_columns = ctx_config.get_computed_columns();
+
+    std::cout << "Notifying" << std::endl;
+    flattened.pprint();
+
+    if (computed_columns.size() > 0) {
+        // TODO: make sure all column lookups are by name
+        compute_columns<CTX_T>(ctx, flattened);
+    }
+
     ctx->step_begin();
     ctx->notify(flattened, delta, prev, current, transitions, existed);
     ctx->step_end();
-    if (t_env::log_time_ctx_notify()) {
-        auto t2 = std::chrono::high_resolution_clock::now();
-        std::cout << ctx->repr() << " ctx_notify "
-                  << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-                  << std::endl;
-    }
 }
 
 /**
@@ -336,8 +340,27 @@ t_gnode::update_context_from_state(CTX_T* ctx, const t_data_table& flattened) {
     if (flattened.size() == 0)
         return;
 
-    // Make computed column
-    t_data_table& tbl = const_cast<t_data_table&>(flattened);
+    auto ctx_config = ctx->get_config();
+    auto computed_columns = ctx_config.get_computed_columns();
+
+    if (computed_columns.size() > 0) {
+        // TODO: make sure all column lookups are by name
+        compute_columns<CTX_T>(ctx, flattened);
+    }
+
+    std::cout << "Updating from state" << std::endl;
+    flattened.pprint();
+
+    ctx->step_begin();
+    ctx->notify(flattened);
+    ctx->step_end();
+}
+
+template <typename CTX_T>
+void
+t_gnode::compute_columns(CTX_T* ctx, const t_data_table& tbl) {
+    // `get_column` does not work on a const `t_data_table`
+    t_data_table& flattened = const_cast<t_data_table&>(tbl);
     auto computed_columns = ctx->get_config().get_computed_columns();
 
     for (auto c : computed_columns) {
@@ -348,8 +371,10 @@ t_gnode::update_context_from_state(CTX_T* ctx, const t_data_table& flattened) {
         t_computed_function_name computed_function_name = std::get<1>(c);
         std::vector<std::string> input_column_names = std::get<2>(c);
         
+        std::cout << "computing " << computed_column_name << std::endl;
+
         for (const auto& name : input_column_names) {
-            auto column = tbl.get_column(name);
+            auto column = flattened.get_column(name);
             input_columns.push_back(column);
             input_types.push_back(column->get_dtype());
         }
@@ -358,7 +383,7 @@ t_gnode::update_context_from_state(CTX_T* ctx, const t_data_table& flattened) {
             computed_function_name, input_types);
         t_dtype output_column_type = computation.m_return_type;
 
-        auto output_column = tbl.add_column_sptr(
+        auto output_column = flattened.add_column_sptr(
             computed_column_name, output_column_type, true);
         output_column->reserve(input_columns[0]->size());
 
@@ -367,13 +392,42 @@ t_gnode::update_context_from_state(CTX_T* ctx, const t_data_table& flattened) {
             output_column,
             computation);   
     }
+}
 
-    std::cout << "Updating context:" << std::endl;
-    flattened.pprint();
+template <typename CTX_T>
+void
+t_gnode::_compute_columns_sptr(CTX_T* ctx, std::shared_ptr<t_data_table> tbl) {
+    auto computed_columns = ctx->get_config().get_computed_columns();
 
-    ctx->step_begin();
-    ctx->notify(flattened);
-    ctx->step_end();
+    for (auto c : computed_columns) {
+        std::vector<t_dtype> input_types;
+        std::vector<std::shared_ptr<t_column>> input_columns;
+
+        std::string computed_column_name = std::get<0>(c);
+        t_computed_function_name computed_function_name = std::get<1>(c);
+        std::vector<std::string> input_column_names = std::get<2>(c);
+
+        std::cout << "computing " << computed_column_name << std::endl;
+        
+        for (const auto& name : input_column_names) {
+            auto column = tbl->get_column(name);
+            input_columns.push_back(column);
+            input_types.push_back(column->get_dtype());
+        }
+
+        t_computation computation = t_computed_column::get_computation(
+            computed_function_name, input_types);
+        t_dtype output_column_type = computation.m_return_type;
+
+        auto output_column = tbl->add_column_sptr(
+            computed_column_name, output_column_type, true);
+        output_column->reserve(input_columns[0]->size());
+
+        t_computed_column::apply_computation(
+            input_columns,
+            output_column,
+            computation);   
+    }
 }
 
 template <>
