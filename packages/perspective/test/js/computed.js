@@ -497,9 +497,69 @@ module.exports = perspective => {
                 table.delete();
             });
 
-            it("Should be able to row pivot on a computed column.", async function() {});
+            it("Should be able to row pivot on a computed column.", async function() {
+                const table = perspective.table(int_float_data);
+                const view = table.view({
+                    row_pivots: ["int + float"],
+                    computed_columns: [
+                        {
+                            column: "int + float",
+                            computed_function_name: "+",
+                            inputs: ["w", "x"]
+                        }
+                    ]
+                });
+                const result = await view.to_columns();
+                expect(result).toEqual({
+                    __ROW_PATH__: [[], [2.5], [4.5], [6.5], [8.5]],
+                    "int + float": [22, 2.5, 4.5, 6.5, 8.5],
+                    w: [12, 1.5, 2.5, 3.5, 4.5],
+                    x: [10, 1, 2, 3, 4],
+                    y: [4, 1, 1, 1, 1],
+                    z: [4, 1, 1, 1, 1]
+                });
+                view.delete();
+                table.delete();
+            });
 
-            it("Should be able to column pivot on a computed column.", async function() {});
+            it("Should be able to column pivot on a computed column.", async function() {
+                const table = perspective.table(int_float_data);
+                const view = table.view({
+                    column_pivots: ["int + float"],
+                    computed_columns: [
+                        {
+                            column: "int + float",
+                            computed_function_name: "+",
+                            inputs: ["w", "x"]
+                        }
+                    ]
+                });
+                const result = await view.to_columns();
+                expect(result).toEqual({
+                    "2.5|w": [1.5, null, null, null],
+                    "2.5|x": [1, null, null, null],
+                    "2.5|y": ["a", null, null, null],
+                    "2.5|z": [true, null, null, null],
+                    "2.5|int + float": [2.5, null, null, null],
+                    "4.5|w": [null, 2.5, null, null],
+                    "4.5|x": [null, 2, null, null],
+                    "4.5|y": [null, "b", null, null],
+                    "4.5|z": [null, false, null, null],
+                    "4.5|int + float": [null, 4.5, null, null],
+                    "6.5|w": [null, null, 3.5, null],
+                    "6.5|x": [null, null, 3, null],
+                    "6.5|y": [null, null, "c", null],
+                    "6.5|z": [null, null, true, null],
+                    "6.5|int + float": [null, null, 6.5, null],
+                    "8.5|w": [null, null, null, 4.5],
+                    "8.5|x": [null, null, null, 4],
+                    "8.5|y": [null, null, null, "d"],
+                    "8.5|z": [null, null, null, false],
+                    "8.5|int + float": [null, null, null, 8.5]
+                });
+                view.delete();
+                table.delete();
+            });
 
             it("Should be able to row + column pivot on a computed column.", async function() {});
 

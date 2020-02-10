@@ -359,9 +359,6 @@ t_gnode::_process_table() {
         lkup[idx] = cstate.lookup(pkey);
     }
 
-    // For each context, compute columns so they end up on flattened.
-    _compute_context_columns(flattened);
-
     if (m_state->mapping_size() == 0) {
         std::cout << "no map, break early" << std::endl;
         _update_contexts_from_state(*flattened);
@@ -377,6 +374,9 @@ t_gnode::_process_table() {
 
         return nullptr;
     }
+
+    // For each context, compute columns so they end up on flattened.
+    _compute_context_columns(flattened);
 
     for (t_uindex idx = 0, loop_end = m_iports.size(); idx < loop_end; ++idx) {
         m_iports[idx]->release_or_clear();
