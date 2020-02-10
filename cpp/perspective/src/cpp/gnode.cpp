@@ -270,7 +270,6 @@ t_gnode::_process_table() {
     // Use `t_process_state` to manage intermediate structures
     t_process_state _process_state;
 
-
     _process_state.m_state_data_table = get_table_sptr();
     _process_state.m_flattened_data_table = flattened;
     _process_state.m_lookup = row_lookup;
@@ -281,6 +280,11 @@ t_gnode::_process_table() {
     _process_state.m_current_data_table = m_oports[PSP_PORT_CURRENT]->get_table();
     _process_state.m_transitions_data_table = m_oports[PSP_PORT_TRANSITIONS]->get_table();
     _process_state.m_existed_data_table = m_oports[PSP_PORT_EXISTED]->get_table();
+
+    _compute_context_columns(_process_state.m_delta_data_table);
+    _compute_context_columns(_process_state.m_prev_data_table);
+    _compute_context_columns(_process_state.m_current_data_table);
+    _compute_context_columns(_process_state.m_transitions_data_table);
 
     // ALL transitional tables are cleared on each call
     _process_state.clear_transitional_data_tables();
@@ -481,9 +485,6 @@ t_gnode::set_ctx_state(void* ptr) {
 
 void
 t_gnode::_compute_context_columns(std::shared_ptr<t_data_table> tbl) {
-    // TODO: need to compute post transition, i.e. get_table_sptr() and
-    // flattened
-    std::cout << "computing FOR ALL CONTEXTS" << std::endl;
     for (auto& kv : m_contexts) {
         auto& ctxh = kv.second;
         switch (ctxh.m_ctx_type) {
@@ -506,6 +507,46 @@ t_gnode::_compute_context_columns(std::shared_ptr<t_data_table> tbl) {
             default: { PSP_COMPLAIN_AND_ABORT("Unexpected context type"); } break;
         }
     }
+}
+
+std::vector<std::string>
+t_gnode::_get_computed_columns_from_contexts() {
+    std::vector<std::string> rval;
+    for (auto& kv : m_contexts) {
+        auto& ctxh = kv.second;
+        switch (ctxh.m_ctx_type) {
+            case TWO_SIDED_CONTEXT: {
+                auto ctx = static_cast<t_ctx2*>(ctxh.m_ctx);
+                auto computed_columns = ctx->get_config().get_computed_columns();
+                for (const auto& decl : computed_columns) {
+                    rval.push_back(std::get<0>(decl));
+                }
+            } break;
+            case ONE_SIDED_CONTEXT: {
+                auto ctx = static_cast<t_ctx1*>(ctxh.m_ctx);
+                auto computed_columns = ctx->get_config().get_computed_columns();
+                for (const auto& decl : computed_columns) {
+                    rval.push_back(std::get<0>(decl));
+                }
+            } break;
+            case ZERO_SIDED_CONTEXT: {
+                auto ctx = static_cast<t_ctx0*>(ctxh.m_ctx);
+                auto computed_columns = ctx->get_config().get_computed_columns();
+                for (const auto& decl : computed_columns) {
+                    rval.push_back(std::get<0>(decl));
+                }
+            } break;
+            case GROUPED_PKEY_CONTEXT: {
+                auto ctx = static_cast<t_ctx_grouped_pkey*>(ctxh.m_ctx);
+                auto computed_columns = ctx->get_config().get_computed_columns();
+                for (const auto& decl : computed_columns) {
+                    rval.push_back(std::get<0>(decl));
+                }
+            } break;
+            default: { PSP_COMPLAIN_AND_ABORT("Unexpected context type"); } break;
+        }
+    }
+    return rval;
 }
 
 void
@@ -661,7 +702,6 @@ t_gnode::_unregister_context(const std::string& name) {
     PSP_VERBOSE_ASSERT(m_init, "touching uninited object");
     if ((m_contexts.find(name) == m_contexts.end()))
         return;
-
     PSP_VERBOSE_ASSERT(m_contexts.find(name) != m_contexts.end(), "Context not found.");
     m_contexts.erase(name);
 }

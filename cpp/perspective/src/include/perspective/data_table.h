@@ -125,8 +125,13 @@ public:
 
     void set_column(t_uindex idx, std::shared_ptr<t_column> col);
     void set_column(const std::string& name, std::shared_ptr<t_column> col);
+
     std::shared_ptr<t_column> add_column_sptr(const std::string& cname, t_dtype dtype, bool status_enabled);
+
     t_column* add_column(const std::string& cname, t_dtype dtype, bool status_enabled);
+
+    void drop_column(const std::string& name);
+
     void promote_column(
         const std::string& cname, t_dtype new_dtype, std::int32_t iter_limit, bool fill);
 

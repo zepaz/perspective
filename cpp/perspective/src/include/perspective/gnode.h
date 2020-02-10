@@ -136,6 +136,7 @@ public:
 
     std::vector<t_computed_column_lambda> get_computed_lambdas() const;
 
+<<<<<<< HEAD
     void pprint() const;
     std::string repr() const;
 protected:
@@ -182,6 +183,10 @@ protected:
 
     /**
      * @brief 
+=======
+    /**
+     * @brief For each context registered to the gnode, compute columns.
+>>>>>>> WIP: everything except updates work
      * 
      * @param tbl 
      */
@@ -206,6 +211,25 @@ protected:
      */
     template <typename CTX_T>
     void _compute_columns_sptr(CTX_T* ctx, std::shared_ptr<t_data_table> tbl);
+protected:
+    void recompute_columns(std::shared_ptr<t_data_table> table);
+    void append_computed_lambdas(std::vector<t_computed_column_lambda> new_lambdas);
+
+    bool have_context(const std::string& name) const;
+    void notify_contexts(const t_data_table& flattened);
+
+    template <typename CTX_T>
+    void notify_context(const t_data_table& flattened, const t_ctx_handle& ctxh);
+
+    template <typename CTX_T>
+    void notify_context(CTX_T* ctx, const t_data_table& flattened, const t_data_table& delta,
+        const t_data_table& prev, const t_data_table& current, const t_data_table& transitions,
+        const t_data_table& existed);
+
+    template <typename CTX_T>
+    void update_context_from_state(CTX_T* ctx, const t_data_table& tbl);
+
+    std::vector<std::string> _get_computed_columns_from_contexts();
 
     /**
      * @brief Calculate the transition state for a single cell, which depends
@@ -329,23 +353,13 @@ t_gnode::update_context_from_state(CTX_T* ctx, const t_data_table& flattened) {
     PSP_TRACE_SENTINEL();
     PSP_VERBOSE_ASSERT(m_init, "touching uninited object");
     PSP_VERBOSE_ASSERT(
-        m_mode == NODE_PROCESSING_SIMPLE_DATAFLOW, "Only simple dataflows supported currently");
+        m_mode == NODE_PROCESSING_SIMPLE_DATAFLOW, "Only simple dataflows supported currently")
 
     if (flattened.size() == 0)
         return;
 
-    auto ctx_config = ctx->get_config();
-    auto computed_columns = ctx_config.get_computed_columns();
-
-    if (computed_columns.size() > 0) {
-        // TODO: make sure all column lookups are by name
-        compute_columns<CTX_T>(ctx, flattened);
-    }
-
-    //std::cout << "Updating from state" << std::endl;
-    //flattened.pprint();
-
     ctx->step_begin();
+    // Flattened will have the computed columns at this point
     ctx->notify(flattened);
     ctx->step_end();
 }
