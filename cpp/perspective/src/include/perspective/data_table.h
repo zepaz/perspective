@@ -362,7 +362,7 @@ t_data_table::flatten_helper_1(FLATTENED_T flattened) const {
     t_uindex ndata_cols = d_columns.size();
 
 #ifdef PSP_PARALLEL_FOR
-    tbb::parallel_forallel_for(0, int(ndata_cols), 1,
+    tbb::parallel_for(0, int(ndata_cols), 1,
         [&s_columns, &sorted, &d_columns, &fltrecs, this](int colidx)
 #else
     for (t_uindex colidx = 0; colidx < ndata_cols; ++colidx)

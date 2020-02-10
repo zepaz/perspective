@@ -364,8 +364,16 @@ t_gnode::update_context_from_state(CTX_T* ctx, const t_data_table& flattened) {
     if (flattened.size() == 0)
         return;
 
+    // Flattened won't have the computed columns if it didn't pass through
+    // `process_table`, i.e. creating a 1/2 sided context. Compute again here.
+    auto ctx_config = ctx->get_config();
+    auto computed_columns = ctx_config.get_computed_columns();
+
+    if (computed_columns.size() > 0) {
+        compute_columns<CTX_T>(ctx, flattened);
+    }
+
     ctx->step_begin();
-    // Flattened will have the computed columns at this point
     ctx->notify(flattened);
     ctx->step_end();
 }
