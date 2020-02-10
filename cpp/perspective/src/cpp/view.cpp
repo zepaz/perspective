@@ -52,6 +52,7 @@ View<CTX_T>::View(
     m_columns = m_view_config->get_columns();
     m_filter = m_view_config->get_fterm();
     m_sort = m_view_config->get_sortspec();
+    m_computed_columns = m_view_config->get_computed_columns();
 
     // Add hidden columns used in sorts to the `m_hidden_sort` vector.
     if (m_sort.size() > 0) {
@@ -67,12 +68,21 @@ View<CTX_T>::View(
     is_column_only() ? m_row_offset = 1 : m_row_offset = 0;
     // TODO: make sure is 0 for column only - right now get_data returns row path for everything
     sides() > 0 ? m_col_offset = 1 : m_col_offset = 0;
+
+    // Compute columns for this context on the master table for `t_gstate`
+    auto gnode = m_table->get_gnode();
+    auto gnode_data_table = gnode->get_table_sptr();
+    gnode->_compute_columns_sptr(m_ctx.get(), gnode_data_table);
 }
 
 template <typename CTX_T>
 View<CTX_T>::~View() {
     auto pool = m_table->get_pool();
     auto gnode = m_table->get_gnode();
+    auto gnode_data_table = gnode->get_table_sptr();
+    for (const auto& computed : m_computed_columns) {
+        gnode_data_table->drop_column(std::get<0>(computed));
+    }
     pool->unregister_context(gnode->get_id(), m_name);
 }
 
@@ -641,6 +651,12 @@ template <typename CTX_T>
 std::vector<t_sortspec>
 View<CTX_T>::get_sort() const {
     return m_sort;
+}
+
+template <typename CTX_T>
+std::vector<std::tuple<std::string, t_computed_function_name, std::vector<std::string>>>
+View<CTX_T>::get_computed_columns() const {
+    return m_computed_columns;
 }
 
 template <>
