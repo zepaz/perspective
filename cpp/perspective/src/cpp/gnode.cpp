@@ -248,8 +248,10 @@ t_gnode::_process_table() {
     }
 
     // For each context, compute columns so they end up on flattened.
-    _compute_context_columns(get_table_sptr());
     _compute_context_columns(flattened);
+
+    // Ensure that old code path works
+    recompute_columns(get_table_sptr());
 
     if (m_gstate->mapping_size() == 0) {
         // Updates have already been processed - break early.
