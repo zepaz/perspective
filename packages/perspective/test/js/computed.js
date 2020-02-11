@@ -294,6 +294,39 @@ module.exports = perspective => {
                 table.delete();
             });
 
+            it("A view should be able to create a computed column with the same name as another deleted view's computed columns.", async function() {
+                const table = perspective.table(int_float_data);
+                const view = table.view({
+                    computed_columns: [
+                        {
+                            column: "int + float",
+                            computed_function_name: "+",
+                            inputs: ["w", "x"]
+                        }
+                    ]
+                });
+
+                const result = await view.to_columns();
+                expect(result["int + float"]).toEqual([2.5, 4.5, 6.5, 8.5]);
+                view.delete();
+
+                const view2 = table.view({
+                    computed_columns: [
+                        {
+                            column: "int + float",
+                            computed_function_name: "-",
+                            inputs: ["w", "x"]
+                        }
+                    ]
+                });
+
+                const result2 = await view2.to_columns();
+                expect(result2["int + float"]).toEqual([0.5, 0.5, 0.5, 0.5]);
+
+                view2.delete();
+                table.delete();
+            });
+
             it.skip("Should be able to create multiple computed column in multiple `view()`s with the same name", async function() {
                 const table = perspective.table(int_float_data);
                 const view = table.view({
@@ -358,29 +391,74 @@ module.exports = perspective => {
                 table.delete();
             });
 
-            it.skip("Dependent column updates should notify computed columns.", async function() {
-                const table = perspective.table(int_float_data, {index: "x"});
+            it("Dependent column update appends should notify computed columns, arity 1", async function() {
+                const table = perspective.table({
+                    x: [1, 2, 3, 4],
+                    y: ["A", "B", "C", "D"]
+                });
+                const view = table.view({
+                    computed_columns: [
+                        {
+                            column: "lowercase",
+                            computed_function_name: "Lowercase",
+                            inputs: ["y"]
+                        }
+                    ]
+                });
+
+                const before = await view.to_columns();
+                expect(before["lowercase"]).toEqual(["a", "b", "c", "d"]);
+                table.update({y: ["HELLO", "WORLD"]});
+
+                const after = await view.to_columns();
+                expect(after["lowercase"]).toEqual(["a", "b", "c", "d", "hello", "world"]);
+                view.delete();
+                table.delete();
+            });
+
+            it("Dependent column updates should notify computed columns, arity 1", async function() {
+                const table = perspective.table(
+                    {
+                        x: [1, 2, 3, 4],
+                        y: ["A", "B", "C", "D"]
+                    },
+                    {index: "x"}
+                );
+                const view = table.view({
+                    computed_columns: [
+                        {
+                            column: "lowercase",
+                            computed_function_name: "Lowercase",
+                            inputs: ["y"]
+                        }
+                    ]
+                });
+
+                const before = await view.to_columns();
+                expect(before["lowercase"]).toEqual(["a", "b", "c", "d"]);
+                table.update({x: [1, 3], y: ["HELLO", "WORLD"]});
+
+                const after = await view.to_columns();
+                expect(after["lowercase"]).toEqual(["hello", "b", "world", "d"]);
+                view.delete();
+                table.delete();
+            });
+
+            it.skip("Dependent column appends should notify computed columns, arity 2.", async function() {
+                const table = perspective.table(int_float_data);
                 const view = table.view({
                     computed_columns: [
                         {
                             column: "int + float",
                             computed_function_name: "+",
                             inputs: ["w", "x"]
-                        },
-                        {
-                            column: "uppercase",
-                            computed_function_name: "Uppercase",
-                            inputs: ["y"]
                         }
                     ]
                 });
                 const result = await view.to_columns();
                 expect(result["int + float"]).toEqual([2.5, 4.5, 6.5, 8.5]);
-                expect(result["uppercase"]).toEqual(["A", "B", "C", "D"]);
                 table.update({x: [2, 4], w: [10.5, 12.5]});
-                expect(result["int + float"]).toEqual([2.5, 12.5, 6.5, 16.5]);
-                table.update({x: [1, 3], y: ["hello", "world"]});
-                expect(result["uppercase"]).toEqual(["HELLO", "B", "WORLD", "D"]);
+                expect(result["int + float"]).toEqual([2.5, 12.5, 6.5, 16.5, 12.5, 16.5]);
                 view.delete();
                 table.delete();
             });
@@ -565,11 +643,74 @@ module.exports = perspective => {
 
             it("Should be able to aggregate on a computed column.", async function() {});
 
-            it("Should be able to filter on a computed column.", async function() {});
+            it("Should be able to filter on a computed column.", async function() {
+                const table = perspective.table(int_float_data);
+                const view = table.view({
+                    filter: [["int + float", ">", 6.5]],
+                    computed_columns: [
+                        {
+                            column: "int + float",
+                            computed_function_name: "+",
+                            inputs: ["w", "x"]
+                        }
+                    ]
+                });
+                const result = await view.to_columns();
+                expect(result).toEqual({
+                    "int + float": [8.5],
+                    w: [4.5],
+                    x: [4],
+                    y: ["d"],
+                    z: [false]
+                });
+                view.delete();
+                table.delete();
+            });
 
-            it("Should be able to sort on a computed column.", async function() {});
+            it("Should be able to sort on a computed column.", async function() {
+                const table = perspective.table(int_float_data);
+                const view = table.view({
+                    sort: [["int + float", "desc"]],
+                    computed_columns: [
+                        {
+                            column: "int + float",
+                            computed_function_name: "+",
+                            inputs: ["w", "x"]
+                        }
+                    ]
+                });
+                const result = await view.to_columns();
+                expect(result).toEqual({
+                    "int + float": [8.5, 6.5, 4.5, 2.5],
+                    w: [4.5, 3.5, 2.5, 1.5],
+                    x: [4, 3, 2, 1],
+                    y: ["d", "c", "b", "a"],
+                    z: [false, true, false, true]
+                });
+                view.delete();
+                table.delete();
+            });
 
-            it("Should be able to sort on a hidden computed column.", async function() {});
+            it("Should be able to sort on a hidden computed column.", async function() {
+                const table = perspective.table(int_float_data);
+                const view = table.view({
+                    columns: ["w"],
+                    sort: [["int + float", "desc"]],
+                    computed_columns: [
+                        {
+                            column: "int + float",
+                            computed_function_name: "+",
+                            inputs: ["w", "x"]
+                        }
+                    ]
+                });
+                const result = await view.to_columns();
+                expect(result).toEqual({
+                    w: [4.5, 3.5, 2.5, 1.5]
+                });
+                view.delete();
+                table.delete();
+            });
         });
 
         describe("Numeric, arity 1", function() {

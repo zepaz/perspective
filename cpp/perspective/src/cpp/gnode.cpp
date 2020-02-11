@@ -532,44 +532,31 @@ t_gnode::_compute_context_columns(std::shared_ptr<t_data_table> tbl) {
     }
 }
 
-std::vector<std::string>
-t_gnode::_get_computed_columns_from_contexts() {
-    std::vector<std::string> rval;
+void
+t_gnode::_add_computed_columns_for_context(
+    std::shared_ptr<t_data_table> tbl, t_dtype dtype) {
     for (auto& kv : m_contexts) {
         auto& ctxh = kv.second;
         switch (ctxh.m_ctx_type) {
             case TWO_SIDED_CONTEXT: {
                 auto ctx = static_cast<t_ctx2*>(ctxh.m_ctx);
-                auto computed_columns = ctx->get_config().get_computed_columns();
-                for (const auto& decl : computed_columns) {
-                    rval.push_back(std::get<0>(decl));
-                }
+                _add_computed_column_sptr<t_ctx2>(ctx, tbl, dtype);
             } break;
             case ONE_SIDED_CONTEXT: {
                 auto ctx = static_cast<t_ctx1*>(ctxh.m_ctx);
-                auto computed_columns = ctx->get_config().get_computed_columns();
-                for (const auto& decl : computed_columns) {
-                    rval.push_back(std::get<0>(decl));
-                }
+                _add_computed_column_sptr<t_ctx1>(ctx, tbl, dtype);
             } break;
             case ZERO_SIDED_CONTEXT: {
                 auto ctx = static_cast<t_ctx0*>(ctxh.m_ctx);
-                auto computed_columns = ctx->get_config().get_computed_columns();
-                for (const auto& decl : computed_columns) {
-                    rval.push_back(std::get<0>(decl));
-                }
+                _add_computed_column_sptr<t_ctx0>(ctx, tbl, dtype);
             } break;
             case GROUPED_PKEY_CONTEXT: {
                 auto ctx = static_cast<t_ctx_grouped_pkey*>(ctxh.m_ctx);
-                auto computed_columns = ctx->get_config().get_computed_columns();
-                for (const auto& decl : computed_columns) {
-                    rval.push_back(std::get<0>(decl));
-                }
+                _add_computed_column_sptr<t_ctx_grouped_pkey>(ctx, tbl, dtype);
             } break;
             default: { PSP_COMPLAIN_AND_ABORT("Unexpected context type"); } break;
         }
     }
-    return rval;
 }
 
 void
@@ -650,6 +637,7 @@ t_gnode::_register_context(const std::string& name, t_ctx_type type, std::int64_
 
     bool should_update = m_gstate->mapping_size() > 0;
 
+    // TODO: shift columns forward in cleanup, translate dead indices
     std::shared_ptr<t_data_table> flattened;
 
     // TODO: need to make sure that cases of `should_update == false` are
@@ -662,56 +650,28 @@ t_gnode::_register_context(const std::string& name, t_ctx_type type, std::int64_
         case TWO_SIDED_CONTEXT: {
             set_ctx_state<t_ctx2>(ptr_);
             t_ctx2* ctx = static_cast<t_ctx2*>(ptr_);
-            if (t_env::log_progress()) {
-                std::cout << repr() << " << gnode.register_context: "
-                          << " name => " << name << " type => " << type << " ctx => "
-                          << ctx->repr() << std::endl;
-            }
-
             ctx->reset();
-
             if (should_update)
                 update_context_from_state<t_ctx2>(ctx, *flattened);
         } break;
         case ONE_SIDED_CONTEXT: {
             set_ctx_state<t_ctx1>(ptr_);
             t_ctx1* ctx = static_cast<t_ctx1*>(ptr_);
-            if (t_env::log_progress()) {
-                std::cout << repr() << " << gnode.register_context: "
-                          << " name => " << name << " type => " << type << " ctx => "
-                          << ctx->repr() << std::endl;
-            }
-
             ctx->reset();
-
             if (should_update)
                 update_context_from_state<t_ctx1>(ctx, *flattened);
         } break;
         case ZERO_SIDED_CONTEXT: {
             set_ctx_state<t_ctx0>(ptr_);
             t_ctx0* ctx = static_cast<t_ctx0*>(ptr_);
-            if (t_env::log_progress()) {
-                std::cout << repr() << " << gnode.register_context: "
-                          << " name => " << name << " type => " << type << " ctx => "
-                          << ctx->repr() << std::endl;
-            }
-
             ctx->reset();
-
             if (should_update)
                 update_context_from_state<t_ctx0>(ctx, *flattened);
         } break;
         case GROUPED_PKEY_CONTEXT: {
             set_ctx_state<t_ctx0>(ptr_);
             auto ctx = static_cast<t_ctx_grouped_pkey*>(ptr_);
-            if (t_env::log_progress()) {
-                std::cout << repr() << " << gnode.register_context: "
-                          << " name => " << name << " type => " << type << " ctx => "
-                          << ctx->repr() << std::endl;
-            }
-
             ctx->reset();
-
             if (should_update)
                 update_context_from_state<t_ctx_grouped_pkey>(ctx, *flattened);
         } break;

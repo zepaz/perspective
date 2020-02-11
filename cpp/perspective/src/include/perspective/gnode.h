@@ -142,7 +142,6 @@ public:
 
     std::vector<t_computed_column_lambda> get_computed_lambdas() const;
 
-<<<<<<< HEAD
     void pprint() const;
     std::string repr() const;
 protected:
@@ -184,19 +183,27 @@ protected:
      * @tparam CTX_T 
      * @param ptr 
      */
-    void _process_column(const t_column* fcolumn, const t_column* scolumn, t_column* dcolumn,
-        t_column* pcolumn, t_column* ccolumn, t_column* tcolumn, const t_process_state& process_state);
+    template <typename CTX_T>
+    void set_ctx_state(void* ptr);
 
     /**
-     * @brief 
-=======
-    /**
      * @brief For each context registered to the gnode, compute columns.
->>>>>>> WIP: everything except updates work
+     *
+     * @param tbl
+     */
+    void _compute_context_columns(std::shared_ptr<t_data_table> tbl);
+
+    /**
+     * @brief Add computed columns typed as `dtype` from each context
+     * registered to the gnode, but do not actually apply the computations onto
+     * the values of `tbl`. Used when the computed columns must be present
+     * on a table, but a computation cannot be found or applied - i.e. for the
+     * transitions table, which is a DTYPE_UINT8.
      * 
      * @param tbl 
      */
-    void _compute_context_columns(std::shared_ptr<t_data_table> tbl);
+    void _add_computed_columns_for_context(
+        std::shared_ptr<t_data_table> tbl, t_dtype dtype);
 
     /**
      * @brief 
@@ -217,6 +224,20 @@ protected:
      */
     template <typename CTX_T>
     void _compute_columns_sptr(CTX_T* ctx, std::shared_ptr<t_data_table> tbl);
+
+    /**
+     * @brief Add the computed columns typed as `dtype` from `ctx` to `tbl',
+     * but don't apply any computations. Used when computed columns are
+     * required to be present on a table but not actually read.
+     * 
+     * @tparam CTX_T 
+     * @param ctx 
+     * @param tbl 
+     */
+    template <typename CTX_T>
+    void _add_computed_column_sptr(
+        CTX_T* ctx, std::shared_ptr<t_data_table> tbl, t_dtype dtype);
+
 protected:
     void recompute_columns(std::shared_ptr<t_data_table> table);
     void append_computed_lambdas(std::vector<t_computed_column_lambda> new_lambdas);
@@ -237,6 +258,9 @@ protected:
 
     std::vector<std::string> _get_computed_columns_from_contexts();
 
+    void _process_column(const t_column* fcolumn, const t_column* scolumn, t_column* dcolumn,
+        t_column* pcolumn, t_column* ccolumn, t_column* tcolumn, const t_process_state& process_state);
+
     /**
      * @brief Calculate the transition state for a single cell, which depends
      * on whether the cell is/was valid, existed, or is new.
@@ -252,7 +276,6 @@ protected:
      */
     t_value_transition calc_transition(bool prev_existed, bool row_pre_existed, bool exists,
         bool prev_valid, bool cur_valid, bool prev_cur_eq, bool prev_pkey_eq);
-
 private:
     /**
      * @brief Process the input data table by flattening it, calculating
@@ -299,8 +322,8 @@ template <typename CTX_T>
 void
 t_gnode::notify_context(const t_data_table& flattened, const t_ctx_handle& ctxh) {
     CTX_T* ctx = ctxh.get<CTX_T>();
+    // These tables are guaranteed to have all computed columns.
     const t_data_table& delta = *(m_oports[PSP_PORT_DELTA]->get_table().get());
-    // TODO: each need to have the correct computed column state
     const t_data_table& prev = *(m_oports[PSP_PORT_PREV]->get_table().get());
     const t_data_table& current = *(m_oports[PSP_PORT_CURRENT]->get_table().get());
     const t_data_table& transitions = *(m_oports[PSP_PORT_TRANSITIONS]->get_table().get());
@@ -331,15 +354,9 @@ t_gnode::notify_context(CTX_T* ctx, const t_data_table& flattened, const t_data_
     auto ctx_config = ctx->get_config();
     auto computed_columns = ctx_config.get_computed_columns();
 
-    //std::cout << "Notifying" << std::endl;
-    //flattened.pprint();
-
-    if (computed_columns.size() > 0) {
-        // TODO: make sure all column lookups are by name
-        compute_columns<CTX_T>(ctx, flattened);
-    }
-
     ctx->step_begin();
+    // Flattened has the computed columns at this point, as it has
+    // passed through the body of `process_table`.
     ctx->notify(flattened, delta, prev, current, transitions, existed);
     ctx->step_end();
 }
@@ -392,8 +409,6 @@ t_gnode::compute_columns(CTX_T* ctx, const t_data_table& tbl) {
         std::string computed_column_name = std::get<0>(c);
         t_computed_function_name computed_function_name = std::get<1>(c);
         std::vector<std::string> input_column_names = std::get<2>(c);
-        
-        std::cout << "computing " << computed_column_name << std::endl;
 
         for (const auto& name : input_column_names) {
             auto column = flattened.get_column(name);
@@ -428,8 +443,6 @@ t_gnode::_compute_columns_sptr(CTX_T* ctx, std::shared_ptr<t_data_table> tbl) {
         std::string computed_column_name = std::get<0>(c);
         t_computed_function_name computed_function_name = std::get<1>(c);
         std::vector<std::string> input_column_names = std::get<2>(c);
-
-        std::cout << "computing " << computed_column_name << std::endl;
         
         for (const auto& name : input_column_names) {
             auto column = tbl->get_column(name);
@@ -449,6 +462,19 @@ t_gnode::_compute_columns_sptr(CTX_T* ctx, std::shared_ptr<t_data_table> tbl) {
             input_columns,
             output_column,
             computation);   
+    }
+}
+
+template <typename CTX_T>
+void
+t_gnode::_add_computed_column_sptr(
+    CTX_T* ctx, std::shared_ptr<t_data_table> tbl, t_dtype dtype) {
+    auto computed_columns = ctx->get_config().get_computed_columns();
+
+    for (auto c : computed_columns) {
+        std::string computed_column_name = std::get<0>(c);
+        auto output_column = tbl->add_column_sptr(
+            computed_column_name, dtype, true);
     }
 }
 

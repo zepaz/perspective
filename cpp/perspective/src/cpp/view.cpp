@@ -66,6 +66,7 @@ View<CTX_T>::View(
 
     // configure data window for `get_data` and `row_delta`
     is_column_only() ? m_row_offset = 1 : m_row_offset = 0;
+
     // TODO: make sure is 0 for column only - right now get_data returns row path for everything
     sides() > 0 ? m_col_offset = 1 : m_col_offset = 0;
 
@@ -81,8 +82,10 @@ View<CTX_T>::~View() {
     auto gnode = m_table->get_gnode();
     auto gnode_data_table = gnode->get_table_sptr();
     for (const auto& computed : m_computed_columns) {
+        // Frees underlying memory for the column and invalidates it
         gnode_data_table->drop_column(std::get<0>(computed));
     }
+    // Removes context from pool and gnode, thus removing its computed columns
     pool->unregister_context(gnode->get_id(), m_name);
 }
 

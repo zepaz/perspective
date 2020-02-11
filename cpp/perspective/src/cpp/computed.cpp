@@ -22,6 +22,9 @@ t_computation::t_computation(
 t_computation
 t_computed_column::get_computation(
     t_computed_function_name name, const std::vector<t_dtype>& input_types) {
+    for (auto t : input_types) {
+        std::cout << get_dtype_descr(t) << std::endl;
+    }
     for (const t_computation& computation : t_computed_column::computations) {
         if (computation.m_name == name && computation.m_input_types == input_types) {
             return computation;
@@ -279,8 +282,6 @@ t_computed_column::apply_computation(
             }
         }
     }
-
-    //output_column->pprint();
 }
 
 std::vector<t_computation> t_computed_column::computations = {};
