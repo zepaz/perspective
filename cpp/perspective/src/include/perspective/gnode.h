@@ -171,6 +171,12 @@ protected:
      * @tparam CTX_T 
      * @param ctx 
      * @param tbl 
+     * @param flattened 
+     * @param delta 
+     * @param prev 
+     * @param current 
+     * @param transitions 
+     * @param changed_rows 
      */
     template <typename CTX_T>
     void update_context_from_state(CTX_T* ctx, const t_data_table& tbl);
@@ -191,19 +197,14 @@ protected:
      *
      * @param tbl
      */
-    void _compute_context_columns(std::shared_ptr<t_data_table> tbl);
-
-    /**
-     * @brief Add computed columns typed as `dtype` from each context
-     * registered to the gnode, but do not actually apply the computations onto
-     * the values of `tbl`. Used when the computed columns must be present
-     * on a table, but a computation cannot be found or applied - i.e. for the
-     * transitions table, which is a DTYPE_UINT8.
-     * 
-     * @param tbl 
-     */
-    void _add_computed_columns_for_context(
-        std::shared_ptr<t_data_table> tbl, t_dtype dtype);
+    void _process_computed_columns(
+        std::shared_ptr<t_data_table> tbl,
+        std::shared_ptr<t_data_table> flattened,
+        std::shared_ptr<t_data_table> delta,
+        std::shared_ptr<t_data_table> prev,
+        std::shared_ptr<t_data_table> current,
+        std::shared_ptr<t_data_table> transitions,
+        const std::vector<t_rlookup>& changed_rows);
 
     /**
      * @brief 
@@ -213,7 +214,7 @@ protected:
      * @param tbl 
      */
     template <typename CTX_T>
-    void compute_columns(CTX_T* ctx, const t_data_table& tbl);
+    void _compute_columns(CTX_T* ctx, const t_data_table& tbl);
 
     /**
      * @brief 
@@ -224,6 +225,20 @@ protected:
      */
     template <typename CTX_T>
     void _compute_columns_sptr(CTX_T* ctx, std::shared_ptr<t_data_table> tbl);
+
+    /**
+     * @brief 
+     * 
+     * @tparam CTX_T 
+     * @param ctx 
+     * @param tbl 
+     */
+    template <typename CTX_T>
+    void _recompute_columns(
+        CTX_T* ctx,
+        std::shared_ptr<t_data_table> table,
+        std::shared_ptr<t_data_table> flattened,
+        const std::vector<t_rlookup>& changed_rows);
 
     /**
      * @brief Add the computed columns typed as `dtype` from `ctx` to `tbl',
@@ -239,7 +254,6 @@ protected:
         CTX_T* ctx, std::shared_ptr<t_data_table> tbl, t_dtype dtype);
 
 protected:
-    void recompute_columns(std::shared_ptr<t_data_table> table);
     void append_computed_lambdas(std::vector<t_computed_column_lambda> new_lambdas);
 
     bool have_context(const std::string& name) const;
@@ -381,13 +395,14 @@ t_gnode::update_context_from_state(CTX_T* ctx, const t_data_table& flattened) {
     if (flattened.size() == 0)
         return;
 
-    // Flattened won't have the computed columns if it didn't pass through
-    // `process_table`, i.e. creating a 1/2 sided context. Compute again here.
+    // Flattened won't have the computed columns if it didn't pass through the
+    // main body of `process_table`, i.e. creating a 1/2 sided context, so
+    // compute again here.
     auto ctx_config = ctx->get_config();
     auto computed_columns = ctx_config.get_computed_columns();
 
     if (computed_columns.size() > 0) {
-        compute_columns<CTX_T>(ctx, flattened);
+        _compute_columns<CTX_T>(ctx, flattened);
     }
 
     ctx->step_begin();
@@ -397,7 +412,7 @@ t_gnode::update_context_from_state(CTX_T* ctx, const t_data_table& flattened) {
 
 template <typename CTX_T>
 void
-t_gnode::compute_columns(CTX_T* ctx, const t_data_table& tbl) {
+t_gnode::_compute_columns(CTX_T* ctx, const t_data_table& tbl) {
     // `get_column` does not work on a const `t_data_table`
     t_data_table& flattened = const_cast<t_data_table&>(tbl);
     auto computed_columns = ctx->get_config().get_computed_columns();
@@ -460,6 +475,50 @@ t_gnode::_compute_columns_sptr(CTX_T* ctx, std::shared_ptr<t_data_table> tbl) {
 
         t_computed_column::apply_computation(
             input_columns,
+            output_column,
+            computation);   
+    }
+}
+
+
+template <typename CTX_T>
+void
+t_gnode::_recompute_columns(
+    CTX_T* ctx,
+    std::shared_ptr<t_data_table> table,
+    std::shared_ptr<t_data_table> flattened,
+    const std::vector<t_rlookup>& changed_rows) {
+    auto computed_columns = ctx->get_config().get_computed_columns();
+
+    for (auto c : computed_columns) {
+        std::vector<t_dtype> input_types;
+        std::vector<std::shared_ptr<t_column>> table_columns;
+        std::vector<std::shared_ptr<t_column>> flattened_columns;
+
+        std::string computed_column_name = std::get<0>(c);
+        t_computed_function_name computed_function_name = std::get<1>(c);
+        std::vector<std::string> input_column_names = std::get<2>(c);
+        
+        for (const auto& name : input_column_names) {
+            auto table_column = table->get_column(name);
+            auto flattened_column = flattened->get_column(name);
+            table_columns.push_back(table_column);
+            flattened_columns.push_back(flattened_column);
+            input_types.push_back(table_column->get_dtype());
+        }
+
+        t_computation computation = t_computed_column::get_computation(
+            computed_function_name, input_types);
+        t_dtype output_column_type = computation.m_return_type;
+
+        auto output_column = flattened->add_column_sptr(
+            computed_column_name, output_column_type, true);
+        output_column->reserve(table_columns[0]->size());
+
+        t_computed_column::reapply_computation(
+            table_columns,
+            flattened_columns,
+            changed_rows,
             output_column,
             computation);   
     }
