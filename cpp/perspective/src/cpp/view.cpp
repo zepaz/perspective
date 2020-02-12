@@ -74,6 +74,7 @@ View<CTX_T>::View(
     auto gnode = m_table->get_gnode();
     auto gnode_data_table = gnode->get_table_sptr();
     gnode->_compute_columns_sptr(m_ctx.get(), gnode_data_table);
+    // TODO: add index shifting ability
 }
 
 template <typename CTX_T>
@@ -85,6 +86,7 @@ View<CTX_T>::~View() {
         // Frees underlying memory for the column and invalidates it
         gnode_data_table->drop_column(std::get<0>(computed));
     }
+    // TODO: add index shifting ability
     // Removes context from pool and gnode, thus removing its computed columns
     pool->unregister_context(gnode->get_id(), m_name);
 }
