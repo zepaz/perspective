@@ -16,8 +16,32 @@
 
 namespace perspective {
 
+/**
+ * @brief Manages the intermediate data structures and transitional
+ * `t_data_table`s associated with a single call to `t_gnode::_process_table`.
+ */
 struct t_process_state {
     t_process_state();
+
+    /**
+     * @brief Clear each transitional `t_data_table`, i.e. all tables except
+     * `flattened` and `state`.
+     */
+    void clear_transitional_data_tables();
+
+    /**
+     * @brief Reserve `size` elements for each transitional table in the state.
+     * 
+     * @param size 
+     */
+    void reserve_transitional_data_tables(t_uindex size);
+
+    /**
+     * @brief For each transitional table in the state, set its size to `size`.
+     * 
+     * @param size 
+     */
+    void set_size_transitional_data_tables(t_uindex size);
 
     std::shared_ptr<t_data_table> m_state_data_table;
     std::shared_ptr<t_data_table> m_flattened_data_table;
@@ -25,6 +49,7 @@ struct t_process_state {
     std::shared_ptr<t_data_table> m_prev_data_table;
     std::shared_ptr<t_data_table> m_current_data_table;
     std::shared_ptr<t_data_table> m_transitions_data_table;
+    std::shared_ptr<t_data_table> m_existed_data_table;
 
     std::vector<t_rlookup> m_lookup;
     std::vector<t_uindex> m_col_translation;
