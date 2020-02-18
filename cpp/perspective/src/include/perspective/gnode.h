@@ -20,6 +20,7 @@
 #include <perspective/rlookup.h>
 #include <perspective/gnode_state.h>
 #include <perspective/sparse_tree.h>
+#include <perspective/process_state.h>
 #ifdef PSP_PARALLEL_FOR
 #include <tbb/parallel_sort.h>
 #include <tbb/tbb.h>
@@ -208,12 +209,6 @@ private:
     bool m_was_updated;
 };
 
-template <>
-void t_gnode::_process_helper<std::string>(const t_column* fcolumn, const t_column* scolumn,
-    t_column* dcolumn, t_column* pcolumn, t_column* ccolumn, t_column* tcolumn,
-    const std::uint8_t* op_base, std::vector<t_rlookup>& lkup,
-    std::vector<bool>& prev_pkey_eq_vec, std::vector<t_uindex>& added_vec);
-
 /**
  * @brief Given a t_data_table and a context handler, construct the t_tables relating to delta
  * calculation and notify the context with the constructed tables.
@@ -290,6 +285,12 @@ t_gnode::update_context_from_state(CTX_T* ctx, const t_data_table& flattened) {
     ctx->notify(flattened);
     ctx->step_end();
 }
+
+template <>
+void t_gnode::_process_helper<std::string>(const t_column* fcolumn, const t_column* scolumn,
+    t_column* dcolumn, t_column* pcolumn, t_column* ccolumn, t_column* tcolumn,
+    const std::uint8_t* op_base, std::vector<t_rlookup>& lkup,
+    std::vector<bool>& prev_pkey_eq_vec, std::vector<t_uindex>& added_vec);
 
 template <typename DATA_T>
 void
