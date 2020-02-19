@@ -142,22 +142,20 @@ public:
 
     std::vector<t_computed_column_lambda> get_computed_lambdas() const;
 
+    /**
+     * @brief Add computed columns from `ctx` to `tbl`.
+     * 
+     * @tparam CTX_T 
+     * @param ctx 
+     * @param tbl 
+     */
+    template <typename CTX_T>
+    void _compute_columns_sptr(CTX_T* ctx, std::shared_ptr<t_data_table> tbl);
+
     void pprint() const;
     std::string repr() const;
+
 protected:
-    void recompute_columns(std::shared_ptr<t_data_table> table);
-    void append_computed_lambdas(std::vector<t_computed_column_lambda> new_lambdas);
-
-    void notify_contexts(const t_data_table& flattened);
-
-    template <typename CTX_T>
-    void notify_context(const t_data_table& flattened, const t_ctx_handle& ctxh);
-
-    template <typename CTX_T>
-    void notify_context(CTX_T* ctx, const t_data_table& flattened, const t_data_table& delta,
-        const t_data_table& prev, const t_data_table& current, const t_data_table& transitions,
-        const t_data_table& existed);
-
     /**
      * @brief Given `tbl`, notify each registered context with `tbl`.
      * 
@@ -192,6 +190,81 @@ protected:
     template <typename CTX_T>
     void set_ctx_state(void* ptr);
 
+    bool have_context(const std::string& name) const;
+    void notify_contexts(const t_data_table& flattened);
+
+    template <typename CTX_T>
+    void notify_context(const t_data_table& flattened, const t_ctx_handle& ctxh);
+
+    template <typename CTX_T>
+    void notify_context(CTX_T* ctx, const t_data_table& flattened, const t_data_table& delta,
+        const t_data_table& prev, const t_data_table& current, const t_data_table& transitions,
+        const t_data_table& existed);
+
+    /**
+     * @brief Given the process state, create a `t_mask` bitset set to true for
+     * all rows in `flattened`, UNLESS the row is an `OP_DELETE`.
+     * 
+     * Mutates the `t_process_state` object that is passed in.
+     * 
+     * @param process_state
+     */
+    t_mask _process_mask_existed_rows(t_process_state& process_state);
+
+    /**
+     * @brief Given a flattened column, the master column from `m_gstate`, and
+     * all transitional columns containing metadata, process and calculate
+     * transitional values.
+     * 
+     * @tparam DATA_T 
+     * @param fcolumn 
+     * @param scolumn 
+     * @param dcolumn 
+     * @param pcolumn 
+     * @param ccolumn 
+     * @param tcolumn 
+     * @param process_state 
+     */
+    template <typename T>
+    void _process_column(const t_column* fcolumn, const t_column* scolumn, t_column* dcolumn,
+        t_column* pcolumn, t_column* ccolumn, t_column* tcolumn, const t_process_state& process_state);
+
+    /**
+     * @brief Calculate the transition state for a single cell, which depends
+     * on whether the cell is/was valid, existed, or is new.
+     * 
+     * @param prev_existed 
+     * @param row_pre_existed 
+     * @param exists 
+     * @param prev_valid 
+     * @param cur_valid 
+     * @param prev_cur_eq 
+     * @param prev_pkey_eq 
+     * @return t_value_transition 
+     */
+    t_value_transition calc_transition(bool prev_existed, bool row_pre_existed, bool exists,
+        bool prev_valid, bool cur_valid, bool prev_cur_eq, bool prev_pkey_eq);
+
+    /**
+     * @brief 
+     * 
+     * @param new_lambdas 
+     */
+    void append_computed_lambdas(std::vector<t_computed_column_lambda> new_lambdas);
+
+    /**
+     * @brief Add the computed columns typed as `dtype` from `ctx` to `tbl',
+     * but don't apply any computations. Used when computed columns are
+     * required to be present on a table but not actually read.
+     * 
+     * @tparam CTX_T 
+     * @param ctx 
+     * @param tbl 
+     */
+    template <typename CTX_T>
+    void _add_computed_column_sptr(
+        CTX_T* ctx, std::shared_ptr<t_data_table> tbl, t_dtype dtype);
+
     /**
      * @brief For each context registered to the gnode, compute columns.
      *
@@ -224,72 +297,11 @@ protected:
      * @param tbl 
      */
     template <typename CTX_T>
-    void _compute_columns_sptr(CTX_T* ctx, std::shared_ptr<t_data_table> tbl);
-
-    /**
-     * @brief 
-     * 
-     * @tparam CTX_T 
-     * @param ctx 
-     * @param tbl 
-     */
-    template <typename CTX_T>
     void _recompute_columns(
         CTX_T* ctx,
         std::shared_ptr<t_data_table> table,
         std::shared_ptr<t_data_table> flattened,
         const std::vector<t_rlookup>& changed_rows);
-
-    /**
-     * @brief Add the computed columns typed as `dtype` from `ctx` to `tbl',
-     * but don't apply any computations. Used when computed columns are
-     * required to be present on a table but not actually read.
-     * 
-     * @tparam CTX_T 
-     * @param ctx 
-     * @param tbl 
-     */
-    template <typename CTX_T>
-    void _add_computed_column_sptr(
-        CTX_T* ctx, std::shared_ptr<t_data_table> tbl, t_dtype dtype);
-
-protected:
-    void append_computed_lambdas(std::vector<t_computed_column_lambda> new_lambdas);
-
-    bool have_context(const std::string& name) const;
-    void notify_contexts(const t_data_table& flattened);
-
-    template <typename CTX_T>
-    void notify_context(const t_data_table& flattened, const t_ctx_handle& ctxh);
-
-    template <typename CTX_T>
-    void notify_context(CTX_T* ctx, const t_data_table& flattened, const t_data_table& delta,
-        const t_data_table& prev, const t_data_table& current, const t_data_table& transitions,
-        const t_data_table& existed);
-
-    template <typename CTX_T>
-    void update_context_from_state(CTX_T* ctx, const t_data_table& tbl);
-
-    std::vector<std::string> _get_computed_columns_from_contexts();
-
-    void _process_column(const t_column* fcolumn, const t_column* scolumn, t_column* dcolumn,
-        t_column* pcolumn, t_column* ccolumn, t_column* tcolumn, const t_process_state& process_state);
-
-    /**
-     * @brief Calculate the transition state for a single cell, which depends
-     * on whether the cell is/was valid, existed, or is new.
-     * 
-     * @param prev_existed 
-     * @param row_pre_existed 
-     * @param exists 
-     * @param prev_valid 
-     * @param cur_valid 
-     * @param prev_cur_eq 
-     * @param prev_pkey_eq 
-     * @return t_value_transition 
-     */
-    t_value_transition calc_transition(bool prev_existed, bool row_pre_existed, bool exists,
-        bool prev_valid, bool cur_valid, bool prev_cur_eq, bool prev_pkey_eq);
 private:
     /**
      * @brief Process the input data table by flattening it, calculating
@@ -538,8 +550,14 @@ t_gnode::_add_computed_column_sptr(
 }
 
 template <>
-void t_gnode::_process_column<std::string>(const t_column* fcolumn, const t_column* scolumn,
-    t_column* dcolumn, t_column* pcolumn, t_column* ccolumn, t_column* tcolumn,
+void
+t_gnode::_process_column<std::string>(
+    const t_column* fcolumn,
+    const t_column* scolumn,
+    t_column* dcolumn,
+    t_column* pcolumn,
+    t_column* ccolumn,
+    t_column* tcolumn,
     const t_process_state& process_state);
 
 template <typename DATA_T>

@@ -775,7 +775,7 @@ module.exports = perspective => {
                 table.delete();
             });
 
-            it("Updating with `undefined` should clear the output computed column.", async function() {
+            it("Updating with `undefined` should not clear the output computed column.", async function() {
                 const table = perspective.table(
                     {
                         w: [1.5, 2.5, 3.5, 4.5],
@@ -799,12 +799,12 @@ module.exports = perspective => {
                 table.update({x: [2, 4], w: [undefined, 12.5]});
 
                 const after = await view.to_columns();
-                expect(after["int + float"]).toEqual([6.5, null, 10.5, 20.5]);
+                expect(after["int + float"]).toEqual([6.5, 8.5, 10.5, 20.5]);
 
                 table.update({x: [2, 3], w: [20.5, undefined]});
 
                 const after2 = await view.to_columns();
-                expect(after2["int + float"]).toEqual([6.5, 22.5, null, 20.5]);
+                expect(after2["int + float"]).toEqual([6.5, 26.5, 10.5, 20.5]);
                 view.delete();
                 table.delete();
             });

@@ -250,13 +250,10 @@ t_gnode::_process_table() {
         row_lookup[idx] = m_gstate->lookup(pkey);
     }
 
-    // Ensure that old code path works
-    recompute_columns(get_table_sptr());
-
     if (m_gstate->mapping_size() == 0) {
-        // Updates have already been processed - break early.
-        m_gstate->update_master_table(flattened.get());
+        // Update context from state first - computes columns during update
         _update_contexts_from_state(*flattened);
+        m_gstate->update_master_table(flattened.get());
         m_oports[PSP_PORT_FLATTENED]->set_table(flattened);
         release_inputs();
         release_outputs();
