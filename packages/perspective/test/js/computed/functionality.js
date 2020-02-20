@@ -511,7 +511,6 @@ module.exports = perspective => {
 
             const after = await view.to_columns();
             const after2 = await view2.to_columns();
-            console.log(after, after2);
             expect(after["int + float"]).toEqual([2.5, 12.5, 6.5, 16.5]);
             expect(after2["int - float"]).toEqual([0.5, 8.5, 0.5, 8.5]);
             view2.delete();
