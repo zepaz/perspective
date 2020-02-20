@@ -342,7 +342,6 @@ t_computed_column::reapply_computation(
         bool skip_row = false;
         for (t_uindex cidx = 0; cidx < arity; ++cidx) {
             t_tscalar arg = flattened_columns[cidx]->get_scalar(idx);
-            std::cout << "t: " << table_columns[cidx]->get_scalar(ridx) << ", f:" << arg << std::endl;
 
             if (!arg.is_valid()) {
                 arg = table_columns[cidx]->get_scalar(ridx);
