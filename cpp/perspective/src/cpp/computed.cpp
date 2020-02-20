@@ -532,6 +532,7 @@ void t_computed_column::make_computations() {
     );    
 }
 
+// TODO: add this to the Table API
 std::map<std::string, std::map<std::string, std::string>>
 t_computed_column::computed_functions = {
     {"add", {
