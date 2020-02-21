@@ -15,6 +15,236 @@ const common = require("./common.js");
 module.exports = perspective => {
     describe("Numeric computed columns", function() {
         describe("Numeric, arity 1", function() {
+            describe("All data types", function() {
+                it("Should compute functions between all types, abs", async function() {
+                    let table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        const x = common.cols[i];
+                        const name = `abs(${x})`;
+                        let view = table.view({
+                            columns: [name, x],
+                            computed_columns: [
+                                {
+                                    computed_function_name: "abs",
+                                    inputs: [x],
+                                    column: name
+                                }
+                            ]
+                        });
+
+                        let results = await view.to_columns();
+                        expect(results[name]).toEqual(results[x]);
+                        view.delete();
+                    }
+                });
+
+                it("Should compute functions between all types, sqrt", async function() {
+                    let table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        const x = common.cols[i];
+                        const name = `sqrt(${x})`;
+                        let view = table.view({
+                            columns: [name, x],
+                            computed_columns: [
+                                {
+                                    computed_function_name: "sqrt",
+                                    inputs: [x],
+                                    column: name
+                                }
+                            ]
+                        });
+
+                        let results = await view.to_columns();
+                        expect(results[name]).toEqual(results[x].map(val => Math.sqrt(val)));
+                        view.delete();
+                    }
+                });
+
+                it("Should compute functions between all types, invert", async function() {
+                    let table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        const x = common.cols[i];
+                        const name = `invert(${x})`;
+                        let view = table.view({
+                            columns: [name, x],
+                            computed_columns: [
+                                {
+                                    computed_function_name: "1/x",
+                                    inputs: [x],
+                                    column: name
+                                }
+                            ]
+                        });
+
+                        let results = await view.to_columns();
+                        let expected = results[x].map(val => 1 / val);
+                        expected[0] = null;
+                        expect(results[name]).toEqual(expected);
+                        view.delete();
+                    }
+                });
+
+                it("Should compute functions between all types, pow", async function() {
+                    let table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        const x = common.cols[i];
+                        const name = `pow(${x})`;
+                        let view = table.view({
+                            columns: [name, x],
+                            computed_columns: [
+                                {
+                                    computed_function_name: "x^2",
+                                    inputs: [x],
+                                    column: name
+                                }
+                            ]
+                        });
+
+                        let results = await view.to_columns();
+                        let expected = results[x].map(val => Math.pow(val, 2));
+                        expect(results[name]).toEqual(expected);
+                        view.delete();
+                    }
+                });
+
+                it("Should compute functions between all types, bucket 10", async function() {
+                    let table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        const x = common.cols[i];
+                        const name = `bucket(${x})`;
+                        let view = table.view({
+                            columns: [name, x],
+                            computed_columns: [
+                                {
+                                    computed_function_name: "Bucket (10)",
+                                    inputs: [x],
+                                    column: name
+                                }
+                            ]
+                        });
+
+                        let results = await view.to_columns();
+                        let expected = results[x].map(val => Math.floor(val / 10) * 10);
+                        expect(results[name]).toEqual(expected);
+                        view.delete();
+                    }
+                });
+
+                it("Should compute functions between all types, bucket 100", async function() {
+                    let table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        const x = common.cols[i];
+                        const name = `bucket(${x})`;
+                        let view = table.view({
+                            columns: [name, x],
+                            computed_columns: [
+                                {
+                                    computed_function_name: "Bucket (100)",
+                                    inputs: [x],
+                                    column: name
+                                }
+                            ]
+                        });
+
+                        let results = await view.to_columns();
+                        let expected = results[x].map(val => Math.floor(val / 100) * 100);
+                        expect(results[name]).toEqual(expected);
+                        view.delete();
+                    }
+                });
+
+                it("Should compute functions between all types, bucket 1000", async function() {
+                    let table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        const x = common.cols[i];
+                        const name = `bucket(${x})`;
+                        let view = table.view({
+                            columns: [name, x],
+                            computed_columns: [
+                                {
+                                    computed_function_name: "Bucket (1000)",
+                                    inputs: [x],
+                                    column: name
+                                }
+                            ]
+                        });
+
+                        let results = await view.to_columns();
+                        let expected = results[x].map(val => Math.floor(val / 1000) * 1000);
+                        expect(results[name]).toEqual(expected);
+                        view.delete();
+                    }
+                });
+
+                it("Should compute functions between all types, bucket 1/10", async function() {
+                    let table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        const x = common.cols[i];
+                        const name = `bucket(${x})`;
+                        let view = table.view({
+                            columns: [name, x],
+                            computed_columns: [
+                                {
+                                    computed_function_name: "Bucket (1/10)",
+                                    inputs: [x],
+                                    column: name
+                                }
+                            ]
+                        });
+
+                        let results = await view.to_columns();
+                        let expected = results[x].map(val => Math.floor(val / 0.1) * 0.1);
+                        expect(results[name]).toEqual(expected);
+                        view.delete();
+                    }
+                });
+
+                it("Should compute functions between all types, bucket 1/100", async function() {
+                    let table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        const x = common.cols[i];
+                        const name = `bucket(${x})`;
+                        let view = table.view({
+                            columns: [name, x],
+                            computed_columns: [
+                                {
+                                    computed_function_name: "Bucket (1/100)",
+                                    inputs: [x],
+                                    column: name
+                                }
+                            ]
+                        });
+
+                        let results = await view.to_columns();
+                        let expected = results[x].map(val => Math.floor(val / 0.01) * 0.01);
+                        expect(results[name]).toEqual(expected);
+                        view.delete();
+                    }
+                });
+
+                it("Should compute functions between all types, bucket 1/1000", async function() {
+                    let table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        const x = common.cols[i];
+                        const name = `bucket(${x})`;
+                        let view = table.view({
+                            columns: [name, x],
+                            computed_columns: [
+                                {
+                                    computed_function_name: "Bucket (1/1000)",
+                                    inputs: [x],
+                                    column: name
+                                }
+                            ]
+                        });
+                        let results = await view.to_columns();
+                        let expected = results[x].map(val => Math.floor(val / 0.001) * 0.001);
+                        expect(results[name]).toEqual(expected);
+                        view.delete();
+                    }
+                });
+            });
+
             it("Square root of int", async function() {
                 const table = perspective.table({
                     a: [4, 9, 16, 20, 81, 1000]
@@ -257,6 +487,203 @@ module.exports = perspective => {
         });
 
         describe("Numeric, arity 2", function() {
+            describe("All data types", function() {
+                it("Should compute functions between all types, add", async function() {
+                    const int_result = [0, 2, 6, 8, 12, 14, 18, 20, 24, 26];
+                    const int_float_result = [0, 2.5, 6, 8.5, 12, 14.5, 18, 20.5, 24, 26.5];
+                    const float_result = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27];
+                    const table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        for (let j = 0; j < common.cols.length; j++) {
+                            const x = common.cols[i];
+                            const y = common.cols[j];
+                            const name = `(${x} + ${y})`;
+                            const view = table.view({
+                                columns: [name, x, y],
+                                computed_columns: [
+                                    {
+                                        computed_function_name: "+",
+                                        inputs: [x, y],
+                                        column: name
+                                    }
+                                ]
+                            });
+
+                            let results = await view.to_columns();
+                            let comparison;
+
+                            if (i > 7 && j > 7) {
+                                comparison = float_result;
+                            } else if (i > 7 || j > 7) {
+                                comparison = int_float_result;
+                            } else {
+                                comparison = int_result;
+                            }
+
+                            expect(results[name]).toEqual(comparison);
+                            view.delete();
+                        }
+                    }
+                });
+
+                it("Should compute functions between all types, subtract", async function() {
+                    const int_result = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                    const int_float_result = [0, -0.5, 0, -0.5, 0, -0.5, 0, -0.5, 0, -0.5];
+                    const float_int_result = [0, 0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0.5];
+                    const table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        for (let j = 0; j < common.cols.length; j++) {
+                            const x = common.cols[i];
+                            const y = common.cols[j];
+                            const name = `(${x} - ${y})`;
+                            const view = table.view({
+                                columns: [name, x, y],
+                                computed_columns: [
+                                    {
+                                        computed_function_name: "-",
+                                        inputs: [x, y],
+                                        column: name
+                                    }
+                                ]
+                            });
+
+                            let results = await view.to_columns();
+                            let comparison;
+
+                            if (x.includes("i") && y.includes("f")) {
+                                comparison = int_float_result;
+                            } else if (x.includes("f") && y.includes("i")) {
+                                comparison = float_int_result;
+                            } else {
+                                comparison = int_result;
+                            }
+
+                            expect(results[name]).toEqual(comparison);
+                            view.delete();
+                        }
+                    }
+                });
+
+                it("Should compute functions between all types, multiply", async function() {
+                    const int_result = [0, 1, 9, 16, 36, 49, 81, 100, 144, 169];
+                    const int_float_result = [0, 1.5, 9, 18, 36, 52.5, 81, 105, 144, 175.5];
+                    const float_result = [0, 2.25, 9, 20.25, 36, 56.25, 81, 110.25, 144, 182.25];
+                    const table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        for (let j = 0; j < common.cols.length; j++) {
+                            const x = common.cols[i];
+                            const y = common.cols[j];
+                            const name = `(${x} * ${y})`;
+                            const view = table.view({
+                                columns: [name, x, y],
+                                computed_columns: [
+                                    {
+                                        computed_function_name: "*",
+                                        inputs: [x, y],
+                                        column: name
+                                    }
+                                ]
+                            });
+
+                            let results = await view.to_columns();
+                            let comparison;
+
+                            if (x.includes("f") && y.includes("f")) {
+                                comparison = float_result;
+                            } else if (x.includes("f") || y.includes("f")) {
+                                comparison = int_float_result;
+                            } else {
+                                comparison = int_result;
+                            }
+
+                            expect(results[name]).toEqual(comparison);
+                            view.delete();
+                        }
+                    }
+                });
+
+                it("Should compute functions between all types, divide", async function() {
+                    const int_result = [null, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+                    const int_float_result = [null, 0.6666666666666666, 1, 0.8888888888888888, 1, 0.9333333333333333, 1, 0.9523809523809523, 1, 0.9629629629629629];
+                    const int_float_result_precise = [null, 0.6666666865348816, 1, 0.8888888955116272, 1, 0.9333333373069763, 1, 0.9523809552192688, 1, 0.9629629850387573];
+                    const float_int_result = [null, 1.5, 1, 1.125, 1, 1.0714285714285714, 1, 1.05, 1, 1.0384615384615385];
+                    const table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        for (let j = 0; j < common.cols.length; j++) {
+                            const x = common.cols[i];
+                            const y = common.cols[j];
+                            const name = `(${x} / ${y})`;
+                            const view = table.view({
+                                columns: [name, x, y],
+                                computed_columns: [
+                                    {
+                                        computed_function_name: "/",
+                                        inputs: [x, y],
+                                        column: name
+                                    }
+                                ]
+                            });
+
+                            let results = await view.to_columns();
+                            let comparison;
+
+                            // 8 and 16-bit less precise when divided out
+                            const narrow = i < 8 && j > 7;
+
+                            if (narrow) {
+                                comparison = int_float_result;
+                            } else if (x.includes("f") && y.includes("i")) {
+                                comparison = float_int_result;
+                            } else if (x.includes("i") && y.includes("f")) {
+                                comparison = int_float_result_precise;
+                            } else {
+                                comparison = int_result;
+                            }
+
+                            expect(results[name]).toEqual(comparison);
+                            view.delete();
+                        }
+                    }
+                });
+
+                it("Should compute functions between all types, percent a of b", async function() {
+                    const int_result = [null, 100, 100, 100, 100, 100, 100, 100, 100, 100];
+                    const int_float_result = [null, 66.66666666666666, 100, 88.8888888888888888, 100, 93.33333333333333, 100, 95.23809523809523, 100, 96.29629629629629];
+                    const float_int_result = [null, 150, 100, 112.5, 100, 107.14285714285714, 100, 105, 100, 103.84615384615385];
+                    const table = perspective.table(common.arrow.slice());
+                    for (let i = 0; i < common.cols.length; i++) {
+                        for (let j = 0; j < common.cols.length; j++) {
+                            const x = common.cols[i];
+                            const y = common.cols[j];
+                            const name = `(${x} % ${y})`;
+                            const view = table.view({
+                                columns: [name, x, y],
+                                computed_columns: [
+                                    {
+                                        computed_function_name: "%",
+                                        inputs: [x, y],
+                                        column: name
+                                    }
+                                ]
+                            });
+
+                            let results = await view.to_columns();
+                            let expected;
+
+                            if (x.includes("i") && y.includes("f")) {
+                                expected = int_float_result;
+                            } else if (x.includes("f") && y.includes("i")) {
+                                expected = float_int_result;
+                            } else {
+                                expected = int_result;
+                            }
+                            expect(results[name]).toEqual(expected);
+                            view.delete();
+                        }
+                    }
+                });
+            });
+
             it("Computed column of arity 2, add ints", async function() {
                 const table = perspective.table(common.int_float_data);
 
