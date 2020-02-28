@@ -1223,10 +1223,12 @@ export default function(Module) {
 
         if (typeof config.computed_columns === "string") {
             const parsed = expression_to_computed_column_config(config.computed_columns);
-            config.computed_columns = [parsed];
+            config.computed_columns = parsed;
         } else {
             config.computed_columns = config.computed_columns || [];
         }
+
+        console.log(config.computed_columns);
 
         if (config.columns === undefined) {
             // If columns are not provided, use all columns

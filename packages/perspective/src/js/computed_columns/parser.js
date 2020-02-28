@@ -13,48 +13,47 @@ export class ComputedColumnParser extends CstParser {
     constructor() {
         super(vocabulary);
 
+        this.RULE("Expression", () => {
+            this.SUBRULE(this.FunctionComputedColumn);
+        });
+
+        this.RULE("FunctionComputedColumn", () => {
+            this.SUBRULE(this.ComputedColumn);
+            this.MANY(() => {
+                this.SUBRULE(this.Function);
+                this.CONSUME(LeftParen);
+                this.AT_LEAST_ONE_SEP({
+                    SEP: Comma,
+                    DEF: () => {
+                        // TODO: make this work
+                        this.SUBRULE(this.ColumnName);
+                    }
+                });
+                this.CONSUME(RightParen);
+            });
+            this.OPTION(() => {
+                this.SUBRULE(this.As, {LABEL: "as"});
+            });
+        });
+
         this.RULE("ComputedColumn", () => {
-            this.OR([
-                {
-                    ALT: () => {
-                        this.SUBRULE(this.FunctionComputedColumn);
-                    }
-                },
-                {
-                    ALT: () => {
-                        this.SUBRULE(this.ColumnName, {LABEL: "left"});
-                        this.SUBRULE(this.Operator);
-                        this.SUBRULE2(this.ColumnName, {LABEL: "right"});
-                        this.OPTION(() => {
-                            this.SUBRULE(this.As, {LABEL: "as"});
-                        });
-                    }
-                }
-            ]);
+            this.SUBRULE(this.ColumnName, {LABEL: "left"});
+            this.MANY(() => {
+                this.SUBRULE(this.Operator);
+                this.SUBRULE2(this.ColumnName, {LABEL: "right"});
+            });
+            this.OPTION(() => {
+                this.SUBRULE(this.As, {LABEL: "as"});
+            });
         });
 
         this.RULE("ColumnName", () => {
-            this.CONSUME(ColumnName);
+            this.OR([{ALT: () => this.SUBRULE(this.ParentheticalExpression)}, {ALT: () => this.CONSUME(ColumnName)}]);
         });
 
         this.RULE("As", () => {
             this.CONSUME(As);
             this.SUBRULE(this.ColumnName);
-        });
-
-        this.RULE("FunctionComputedColumn", () => {
-            this.SUBRULE(this.Function);
-            this.CONSUME(LeftParen);
-            this.AT_LEAST_ONE_SEP({
-                SEP: Comma,
-                DEF: () => {
-                    this.SUBRULE(this.ColumnName);
-                }
-            });
-            this.CONSUME(RightParen);
-            this.OPTION(() => {
-                this.SUBRULE(this.As, {LABEL: "as"});
-            });
         });
 
         this.RULE("Function", () => {
@@ -71,6 +70,16 @@ export class ComputedColumnParser extends CstParser {
 
         this.RULE("Operator", () => {
             this.OR([{ALT: () => this.CONSUME(Add)}, {ALT: () => this.CONSUME(Subtract)}, {ALT: () => this.CONSUME(Multiply)}, {ALT: () => this.CONSUME(Divide)}]);
+        });
+
+        /**
+         * The rule for parenthetical expressions, which consume parentheses
+         * and resolve to this.Expression.
+         */
+        this.RULE("ParentheticalExpression", () => {
+            this.CONSUME(LeftParen);
+            this.SUBRULE(this.Expression);
+            this.CONSUME(RightParen);
         });
 
         this.performSelfAnalysis();
