@@ -7,30 +7,28 @@
  *
  */
 import {CstParser} from "chevrotain";
-import {vocabulary, ColumnName, Comma, As, LeftParen, RightParen, Sqrt, Pow2, Abs, Add, Subtract, Multiply, Divide, Lowercase, Uppercase, ConcatComma, ConcatSpace} from "./lexer";
+import {vocabulary, ColumnName, As, LeftParen, RightParen, Sqrt, Pow2, Abs, Add, Subtract, Multiply, Divide, Lowercase, Uppercase, ConcatComma, ConcatSpace} from "./lexer";
 
 export class ComputedColumnParser extends CstParser {
     constructor() {
         super(vocabulary);
+
+        this.RULE("SuperExpression", () => {
+            this.SUBRULE(this.Expression);
+        });
 
         this.RULE("Expression", () => {
             this.SUBRULE(this.FunctionComputedColumn);
         });
 
         this.RULE("FunctionComputedColumn", () => {
-            this.SUBRULE(this.ComputedColumn);
             this.MANY(() => {
                 this.SUBRULE(this.Function);
                 this.CONSUME(LeftParen);
-                this.AT_LEAST_ONE_SEP({
-                    SEP: Comma,
-                    DEF: () => {
-                        // TODO: make this work
-                        this.SUBRULE(this.ColumnName);
-                    }
-                });
+                this.SUBRULE(this.ColumnName);
                 this.CONSUME(RightParen);
             });
+            this.SUBRULE(this.ComputedColumn);
             this.OPTION(() => {
                 this.SUBRULE(this.As, {LABEL: "as"});
             });

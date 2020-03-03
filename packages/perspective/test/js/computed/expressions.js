@@ -33,7 +33,80 @@ module.exports = perspective => {
             table.delete();
         });
 
-        it("Should be able to create a computed column in `view()` using a functional operator", async function() {
+        it("Should be able to create recursed computed columns in `view()` using parentheses", async function() {
+            const table = perspective.table(common.int_float_data);
+            const view = table.view({
+                computed_columns: '"w" / (("w" + "x") * ("w" - "x"))'
+            });
+            const columns = await view.column_paths();
+            expect(columns.includes("(w / ((w + x) * (w - x)))")).toBeTruthy();
+            expect(columns.includes("((w + x) * (w - x))")).toBeTruthy();
+            expect(columns.includes("(w + x)")).toBeTruthy();
+            expect(columns.includes("(w - x)")).toBeTruthy();
+
+            const result = await view.to_columns();
+
+            expect(result["(w + x)"]).toEqual(result.w.map((item, idx) => item + result.x[idx]));
+            expect(result["(w - x)"]).toEqual(result.w.map((item, idx) => item - result.x[idx]));
+            let expected_final = [];
+            for (let i = 0; i < result.w.length; i++) {
+                const w = result.w[i];
+                const x = result.x[i];
+                expected_final.push(w / ((w + x) * (w - x)));
+            }
+            expect(result["(w / ((w + x) * (w - x)))"]).toEqual(expected_final);
+
+            view.delete();
+            table.delete();
+        });
+
+        it("Should be able to create recursed computed columns in `view()` using parentheses and 'AS'", async function() {
+            const table = perspective.table(common.int_float_data);
+            const view = table.view({
+                computed_columns: '"w" / (("w" + ("x" + "w" as "sub0") AS "sub1") * ("w" - "x" As "sub2") as "sub3") as "final"'
+            });
+
+            const columns = await view.column_paths();
+            expect(columns.includes("final")).toBeTruthy();
+            expect(columns.includes("sub0")).toBeTruthy();
+            expect(columns.includes("sub1")).toBeTruthy();
+            expect(columns.includes("sub2")).toBeTruthy();
+            expect(columns.includes("sub3")).toBeTruthy();
+
+            const result = await view.to_columns();
+            expect(result["sub0"]).toEqual(result.w.map((item, idx) => item + result.x[idx]));
+
+            let expected_sub1 = [];
+            for (let i = 0; i < result.w.length; i++) {
+                const w = result.w[i];
+                const x = result.x[i];
+                expected_sub1.push(w + (w + x));
+            }
+
+            expect(result["sub1"]).toEqual(expected_sub1);
+            expect(result["sub2"]).toEqual(result.w.map((item, idx) => item - result.x[idx]));
+
+            let expected_sub3 = [];
+            for (let i = 0; i < result.w.length; i++) {
+                const w = result.w[i];
+                const x = result.x[i];
+                expected_sub3.push((w + (w + x)) * (w - x));
+            }
+            expect(result["sub3"]).toEqual(expected_sub3);
+
+            let expected_final = [];
+            for (let i = 0; i < result.w.length; i++) {
+                const w = result.w[i];
+                const x = result.x[i];
+                expected_final.push(w / ((w + (w + x)) * (w - x)));
+            }
+            expect(result["final"]).toEqual(expected_final);
+
+            view.delete();
+            table.delete();
+        });
+
+        it.skip("Should be able to create a computed column in `view()` using a functional operator", async function() {
             const table = perspective.table(common.int_float_data);
             const view = table.view({
                 computed_columns: 'sqrt("x")'
@@ -44,7 +117,7 @@ module.exports = perspective => {
             table.delete();
         });
 
-        it("Should be able to create a computed column in `view()` using a functional operator and 'AS'", async function() {
+        it.skip("Should be able to create a computed column in `view()` using a functional operator and 'AS'", async function() {
             const table = perspective.table(common.int_float_data);
             const view = table.view({
                 computed_columns: 'sqrt("x") as "custom column"'

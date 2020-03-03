@@ -19,48 +19,70 @@ export class ComputedColumnVisitor extends base_visitor {
         this.validateVisitor();
     }
 
-    Expression(ctx) {
-        console.log(ctx);
-        return this.visit(ctx.FunctionComputedColumn);
+    SuperExpression(ctx) {
+        let columns = [];
+        this.visit(ctx.Expression, columns);
+        return columns;
     }
 
-    FunctionComputedColumn(ctx) {
-        let columns = [];
-        let result = this.visit(ctx.ComputedColumn);
-        columns.push(result);
+    Expression(ctx, columns) {
+        this.visit(ctx.FunctionComputedColumn, columns);
+    }
+
+    FunctionComputedColumn(ctx, columns) {
+        this.visit(ctx.ComputedColumn, columns);
+
         if (ctx.FunctionComputedColumn) {
-            const fn = this.visit(ctx.children.Function[0]);
-            const column = this.visit(ctx.children.ColumnName);
-            const as = this.visit(ctx.children.as);
+            ctx.FunctionComputedColumn.forEach(col => {
+                const fn = this.visit(col.Function);
+                const column = this.visit(col.ColumnName, columns);
 
-            let column_name = COMPUTED_FUNCTION_FORMATTERS[fn](column);
+                // TODO: must parse recursive here and add to list in correct
+                // order
+                const as = this.visit(col.as);
 
-            // Use custom name if provided through `AS/as/As`
-            if (as) {
-                column_name = as;
-            }
+                let column_name = COMPUTED_FUNCTION_FORMATTERS[fn](column);
 
-            const col = {
-                column: column_name,
-                computed_function_name: fn,
-                inputs: [column]
-            };
+                // Use custom name if provided through `AS/as/As`
+                if (as) {
+                    column_name = as;
+                }
 
-            columns.push(col);
+                const computed = {
+                    column: column_name,
+                    computed_function_name: fn,
+                    inputs: [column]
+                };
+
+                columns.push(computed);
+            });
         }
-
-        return columns;
     }
 
     /**
      * Generate a single computed column configuration.
      * @param {*} ctx
      */
-    ComputedColumn(ctx) {
-        const left = this.visit(ctx.left[0]);
-        const operator = this.visit(ctx.Operator);
-        const right = this.visit(ctx.right[0]);
-        const as = this.visit(ctx.as);
+    ComputedColumn(ctx, columns) {
+        let left = this.visit(ctx.left, columns);
+
+        if (typeof left === "undefined") {
+            left = columns[columns.length - 1].column;
+        }
+
+        let operator = this.visit(ctx.Operator);
+
+        if (!operator) {
+            return;
+        }
+
+        let right = this.visit(ctx.right, columns);
+
+        if (typeof right === "undefined") {
+            right = columns[columns.length - 1].column;
+        }
+
+        let as = this.visit(ctx.as);
 
         let column_name = COMPUTED_FUNCTION_FORMATTERS[operator](left, right);
 
@@ -69,22 +91,22 @@ export class ComputedColumnVisitor extends base_visitor {
             column_name = as;
         }
 
-        return {
+        columns.push({
             column: column_name,
             computed_function_name: operator,
             inputs: [left, right]
-        };
+        });
     }
 
     /**
      * Parse and return a column name to be included in the computed config.
      * @param {*} ctx
      */
-    ColumnName(ctx) {
+    ColumnName(ctx, columns) {
         // `image` contains the raw string, `payload` contains the string
         // without quotes.
         if (ctx.ParentheticalExpression) {
-            return this.visit(ctx.ParentheticalExpression);
+            return this.visit(ctx.ParentheticalExpression, columns);
         } else {
             // FIXME: multiple column names in list?
             return ctx.columnName[0].payload;
@@ -137,8 +159,8 @@ export class ComputedColumnVisitor extends base_visitor {
         return ctx.ColumnName[0].children.columnName[0].payload;
     }
 
-    ParentheticalExpression(ctx) {
-        return this.visit(ctx.Expression);
+    ParentheticalExpression(ctx, columns) {
+        return this.visit(ctx.Expression, columns);
     }
 }
 
@@ -157,13 +179,11 @@ export const expression_to_computed_column_config = function(expression) {
     // calling `parser.input` resets state.
     parser.input = lex_result.tokens;
 
-    const cst = parser.Expression();
+    const cst = parser.SuperExpression();
 
     if (parser.errors.length > 0) {
         throw new Error(parser.errors);
     }
 
-    const config = visitor.visit(cst);
-
-    return config;
+    return visitor.visit(cst);
 };
