@@ -106,7 +106,7 @@ module.exports = perspective => {
             table.delete();
         });
 
-        it.skip("Should be able to create a computed column in `view()` using a functional operator", async function() {
+        it("Should be able to create a computed column in `view()` using a functional operator", async function() {
             const table = perspective.table(common.int_float_data);
             const view = table.view({
                 computed_columns: 'sqrt("x")'
