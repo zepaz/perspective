@@ -6,6 +6,9 @@
  * the Apache License 2.0.  The full license can be found in the LICENSE file.
  *
  */
+
+// TODO: these have been renamed compared to old computed columns, make sure
+// names are consistent throughout.
 export const COMPUTED_FUNCTION_FORMATTERS = {
     "+": (x, y) => `(${x} + ${y})`,
     "-": (x, y) => `(${x} - ${y})`,

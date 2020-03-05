@@ -133,6 +133,16 @@ export class ComputedColumnVisitor extends base_visitor {
     }
 
     /**
+     * Parse and return a column name to be included in the computed config, and
+     * explicitly not parsed as a parenthetical expression.
+     *
+     * @param {*} ctx
+     */
+    TerminalColumnName(ctx) {
+        return ctx.columnName[0].payload;
+    }
+
+    /**
      * Parse a single mathematical operator (+, -, *, /, %).
      * @param {*} ctx
      */
@@ -215,7 +225,7 @@ export class ComputedColumnVisitor extends base_visitor {
      * @param {*} ctx
      */
     As(ctx) {
-        return ctx.ColumnName[0].children.columnName[0].payload;
+        return ctx.TerminalColumnName[0].children.columnName[0].payload;
     }
 
     /**

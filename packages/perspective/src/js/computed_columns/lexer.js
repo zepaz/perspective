@@ -31,7 +31,7 @@ const UpperLowerCaseTokenType = createToken({
 });
 
 // Create tokens for column names and computed function names
-const column_name_regex_pattern = /(["'])(?<column_name>[\s\d\w]*?[^\\])\1/y;
+const column_name_regex_pattern = /(["'])(?<column_name>.*?[^\\])\1/y;
 
 /**
  * Given a string from which to extract a column name, extract the column name

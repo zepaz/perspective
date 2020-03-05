@@ -97,9 +97,13 @@ export class ComputedColumnParser extends CstParser {
             this.OR([{ALT: () => this.SUBRULE(this.ParentheticalExpression)}, {ALT: () => this.CONSUME(ColumnName)}]);
         });
 
+        this.RULE("TerminalColumnName", () => {
+            this.CONSUME(ColumnName);
+        });
+
         this.RULE("As", () => {
             this.CONSUME(As);
-            this.SUBRULE(this.ColumnName);
+            this.SUBRULE(this.TerminalColumnName);
         });
 
         this.RULE("Function", () => {

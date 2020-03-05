@@ -313,7 +313,7 @@ str_to_computed_function_name(const std::string& name) {
         return t_computed_function_name::DIVIDE;
     } else if (name == "1/x" || name == "invert") {
         return t_computed_function_name::INVERT;
-    } else if (name == "x^2" || name == "pow") {
+    } else if (name == "x^2" || name == "pow2") {
         return t_computed_function_name::POW;
     } else if (name == "sqrt") {
         return t_computed_function_name::SQRT;
