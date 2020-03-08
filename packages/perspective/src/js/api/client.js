@@ -128,7 +128,6 @@ export class Client {
                 } else {
                     // intercept calls to view and sub in the view API shell
                     if (e.data.cmd === "view" && e.data.view_name) {
-                        // Does this break a worker interface? since it would be on the client worker and NOT the table worker
                         const _view_interface = new view_interface(this, e.data.view_name);
                         handler.resolve(_view_interface);
                     } else {

@@ -8,7 +8,6 @@
  */
 
 import {unsubscribe, subscribe, async_queue} from "./dispatch.js";
-import {view as view_interface} from "./view_api.js";
 import {bindall} from "../utils.js";
 
 /**

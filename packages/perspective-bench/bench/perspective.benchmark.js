@@ -76,7 +76,7 @@ describe("Table", async () => {
 describe("Update", async () => {
     // Generate update data from Perspective
     const static_table = worker.table(data.arrow.slice());
-    const static_view = static_table.view();
+    const static_view = await static_table.view();
 
     let table;
 
@@ -127,7 +127,7 @@ describe("View", async () => {
                         });
 
                         benchmark(`view`, async () => {
-                            view = table.view(config);
+                            view = await table.view(config);
                             await view.schema();
                         });
                     });
@@ -136,7 +136,7 @@ describe("View", async () => {
                         let view;
 
                         beforeAll(async () => {
-                            view = table.view(config);
+                            view = await table.view(config);
                             await view.schema();
                         });
 
@@ -156,28 +156,28 @@ describe("View", async () => {
     }
 });
 
-describe("Computed Column", async () => {
-    // Use a single source table for computed
-    let table;
+// describe("Computed Column", async () => {
+//     // Use a single source table for computed
+//     let table;
 
-    afterEach(async () => {
-        await table.delete();
-    });
+//     afterEach(async () => {
+//         await table.delete();
+//     });
 
-    for (const name of Object.keys(COMPUTED_FUNCS)) {
-        describe("mixed", async () => {
-            describe("table", () => {
-                table = worker.table(data.arrow.slice());
-                benchmark(`computed: \`${name}\``, async () => {
-                    COMPUTED_CONFIG.computed_function_name = name;
-                    COMPUTED_CONFIG.func = COMPUTED_FUNCS[name];
-                    table = table.add_computed([COMPUTED_CONFIG]);
-                    await table.size();
-                });
-            });
-        });
-    }
-});
+//     for (const name of Object.keys(COMPUTED_FUNCS)) {
+//         describe("mixed", async () => {
+//             describe("table", () => {
+//                 table = worker.table(data.arrow.slice());
+//                 benchmark(`computed: \`${name}\``, async () => {
+//                     COMPUTED_CONFIG.computed_function_name = name;
+//                     COMPUTED_CONFIG.func = COMPUTED_FUNCS[name];
+//                     table = table.add_computed([COMPUTED_CONFIG]);
+//                     await table.size();
+//                 });
+//             });
+//         });
+//     }
+// });
 
 /******************************************************************************
  *
@@ -239,7 +239,7 @@ async function get_data_browser(worker) {
 
     console.log("Generating JSON");
     const tbl = worker.table(arrow.slice());
-    const view = tbl.view();
+    const view = await tbl.view();
     const json = await view.to_json();
     const columns = await view.to_columns();
     view.delete();
@@ -258,7 +258,7 @@ async function get_data_node(worker) {
 
     console.log("Generating JSON");
     const tbl = worker.table(arrow.slice());
-    const view = tbl.view();
+    const view = await tbl.view();
     const rows = await view.to_json();
     const columns = await view.to_columns();
     const csv = await view.to_csv();

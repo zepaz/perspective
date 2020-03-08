@@ -372,6 +372,7 @@ export class PerspectiveElement extends StateElement {
             computed_columns: computed_columns
         };
 
+        // Will throw if promise is rejected - TODO: add catch here
         let new_view = await this._table.view(config);
 
         if (this._view) {
@@ -382,26 +383,6 @@ export class PerspectiveElement extends StateElement {
         this._view = new_view;
         this._view_updater = () => this._view_on_update(limit_points);
         this._view.on_update(this._view_updater);
-
-        // const self = this;
-
-        // this._table
-        //     .view(config)
-        //     .then(view => {
-        //         if (self._view) {
-        //             self._view.remove_update(self._view_updater);
-        //             self._view.delete();
-        //         }
-
-        //         self._view = view;
-        //         self._view_updater = () => self._view_on_update(limit_points);
-        //         self._view.on_update(self._view_updater);
-        //     })
-        //     .catch(e => {
-        //         console.error("Error creating `view` for viewer:", e);
-        //         // View has not changed, so return
-        //         return;
-        //     });
 
         const timer = this._render_time();
         this._render_count = (this._render_count || 0) + 1;
