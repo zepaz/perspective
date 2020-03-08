@@ -1212,10 +1212,11 @@ export default function(Module) {
      *      sort: [["value", "asc"]]
      * });
      *
-     * @returns {view} A new {@link module:perspective~view} object for the
-     * supplied configuration, bound to this table
+     * @returns {Promise<view>} A promise that resolves to a new
+     * {@link module:perspective~view} object for the supplied configuration,
+     * bound to this table.
      */
-    table.prototype.view = function(_config = {}) {
+    table.prototype.view = async function(_config = {}) {
         _call_process(this.get_id());
         let config = {};
         for (const key of Object.keys(_config)) {
@@ -1268,7 +1269,6 @@ export default function(Module) {
             }
         }
 
-        let name = Math.random() + "";
         let sides;
 
         if (config.row_pivots.length > 0 || config.column_pivots.length > 0) {
@@ -1281,10 +1281,11 @@ export default function(Module) {
             sides = 0;
         }
 
-        let vc = new view_config(config);
-        let v = new view(this, sides, config, vc, name, this.callbacks, this.overridden_types);
-        this.views.push(v);
-        return v;
+        const name = Math.random() + "";
+        const _view_config = new view_config(config);
+        const _view = new view(this, sides, config, _view_config, name, this.callbacks, this.overridden_types);
+        this.views.push(_view);
+        return _view;
     };
 
     /* eslint-enable max-len */

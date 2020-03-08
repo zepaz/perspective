@@ -8,7 +8,7 @@
  */
 
 import {unsubscribe, subscribe, async_queue} from "./dispatch.js";
-import {view} from "./view_api.js";
+import {view as view_interface} from "./view_api.js";
 import {bindall} from "../utils.js";
 
 /**
@@ -96,7 +96,20 @@ table.prototype.add_computed = function(computed) {
 };
 
 table.prototype.view = function(config) {
-    return new view(this._worker, this._name, config);
+    return new Promise(
+        function(resolve, reject) {
+            const msg = {
+                cmd: "view",
+                view_name: Math.random() + "",
+                table_name: this._name,
+                config: config
+            };
+            // We can't manually call resolve or reject - the client has to
+            // call it after getting a message. So the server needs to return
+            // A message.
+            this._worker.post(msg, resolve, reject);
+        }.bind(this)
+    );
 };
 
 // Dispatch table methods that do not create new objects (getters, setters etc.)

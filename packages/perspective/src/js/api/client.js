@@ -8,7 +8,7 @@
  */
 
 import {table, proxy_table} from "./table_api.js";
-import {proxy_view} from "./view_api.js";
+import {proxy_view, view as view_interface} from "./view_api.js";
 import {bindall} from "../utils.js";
 
 /**
@@ -119,13 +119,21 @@ export class Client {
                 }
             }
         }
+
         if (e.data.id) {
             var handler = this._worker.handlers[e.data.id];
             if (handler) {
                 if (e.data.error) {
                     handler.reject(e.data.error);
                 } else {
-                    handler.resolve(e.data.data);
+                    // intercept calls to view and sub in the view API shell
+                    if (e.data.cmd === "view" && e.data.view_name) {
+                        // Does this break a worker interface? since it would be on the client worker and NOT the table worker
+                        const _view_interface = new view_interface(this, e.data.view_name);
+                        handler.resolve(_view_interface);
+                    } else {
+                        handler.resolve(e.data.data);
+                    }
                 }
                 if (!handler.keep_alive) {
                     delete this._worker.handlers[e.data.id];

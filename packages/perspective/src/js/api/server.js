@@ -125,9 +125,25 @@ export class Server {
                 this.process_method_call(msg);
                 break;
             case "view":
-                // create a new view and track it with `client_id`
-                this._views[msg.view_name] = this._tables[msg.table_name].view(msg.config);
-                this._views[msg.view_name].client_id = client_id;
+                // create a new view and track it with `client_id
+                // TODO: this calls into the actual `Table` object
+                this._tables[msg.table_name]
+                    .view(msg.config)
+                    .then(v => {
+                        this._views[msg.view_name] = v;
+                        this._views[msg.view_name].client_id = client_id;
+                        // Send back msg to the client stating that view is
+                        // created
+                        this.post({
+                            id: msg.id,
+                            cmd: msg.cmd,
+                            view_name: msg.view_name
+                        });
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        this.process_error(msg, e);
+                    });
                 break;
         }
     }

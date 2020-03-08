@@ -95,11 +95,11 @@ export class DomElement extends PerspectiveElement {
             row.setAttribute("filter", filter);
 
             if (type === "string") {
-                const view = this._table.view({row_pivots: [name], aggregates: {}});
-                view.to_json().then(json => {
+                this._table.view({row_pivots: [name], aggregates: {}}).then(async view => {
+                    const json = await view.to_json();
                     row.choices(this._autocomplete_choices(json));
+                    view.delete();
                 });
-                view.delete();
             }
         }
 

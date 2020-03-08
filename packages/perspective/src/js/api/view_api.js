@@ -14,21 +14,16 @@ import {bindall} from "../utils.js";
  * Construct a proxy for the view object by creating a "view" message and
  * sending it through the worker.
  *
+ * This proxy handles all communication between the client and server, and
+ * has all the `view.prototype.*` properties defined in the rest of this API.
+ *
  * @param {*} worker
  * @param {*} table_name
  * @param {*} config
  */
-export function view(worker, table_name, config) {
+export function view(worker, name) {
     this._worker = worker;
-    //this._config = config;
-    this._name = Math.random() + "";
-    var msg = {
-        cmd: "view",
-        view_name: this._name,
-        table_name: table_name,
-        config: config
-    };
-    this._worker.post(msg);
+    this._name = name;
     bindall(this);
 }
 
