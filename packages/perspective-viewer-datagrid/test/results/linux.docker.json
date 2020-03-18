@@ -4,7 +4,7 @@
     "empty_empty_grids_do_not_explode": "aa543e4c02cfa2d179a46eba82653f23",
     "regressions_Updates_should_not_render_an_extra_row_for_column_only_views": "8e8a6caf1b1673920dc074760b9cc7f0",
     "regressions_Updates_regular_updates": "63b9bd2853a27ef28302200804cc63f1",
-    "regressions_Updates_saving_a_computed_column_does_not_interrupt_update_rendering": "f3eadc94a3a0814a7ff91ded86901158",
+    "regressions_Updates_saving_a_computed_expression_column_does_not_interrupt_update_rendering": "5072fb06d10396ced88fa2f30a585207",
     "superstore_shows_a_grid_without_any_settings_applied_": "e8d1f151d9c739f2849e5e03eb2adabe",
     "superstore_pivots_by_a_row_": "6712c0a71ce36a3412ea2ccc4861a031",
     "superstore_pivots_by_two_rows_": "d41f1de64bd5eadfb135c20a48f30d5a",
