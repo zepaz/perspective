@@ -552,12 +552,14 @@ elseif(PSP_CPP_BUILD OR PSP_PYTHON_BUILD)
         set(CMAKE_SKIP_BUILD_RPATH FALSE)
 		set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
         set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-        set(CMAKE_INSTALL_NAME_DIR "@rpath/")
+        set(CMAKE_INSTALL_NAME_DIR "@rpath")
 
-        if(MACOS)
-            set(module_install_rpath "@loader_path/")
-	    else()
-            set(module_install_rpath "\$ORIGIN")
+		# `module_origin_path` refers to the location of the built binary,
+		# which should be added to `@rpath`.
+		if(MACOS)
+            set(module_origin_path "@loader_path")
+		else()
+            set(module_origin_path "\$ORIGIN")
 		endif()
 	else()
 		set(CMAKE_SHARED_LIBRARY_PREFIX lib)
@@ -586,8 +588,13 @@ elseif(PSP_CPP_BUILD OR PSP_PYTHON_BUILD)
 			set_property(TARGET binding PROPERTY SUFFIX .pyd)
 		else()
 			target_compile_options(binding PRIVATE -Wdeprecated-declarations)
-            set_property(TARGET psp PROPERTY INSTALL_RPATH ${CMAKE_INSTALL_RPATH} ${module_install_rpath}  ${PYTHON_PYARROW_LIBRARY_DIR})
-            set_property(TARGET binding PROPERTY INSTALL_RPATH ${CMAKE_INSTALL_RPATH} ${module_install_rpath}  ${PYTHON_PYARROW_LIBRARY_DIR})
+			# Add a relative path to search for PyArrow - when Perspective is
+			# installed from a wheel, PyArrow may not be in the same directory
+			# as the PyArrow which was used to build the wheel. Assuming that
+			# both Pyarrow and Perspective are installed in `site-packages`,
+			# the relative search path should be able to pick up pyarrow.
+            set_property(TARGET psp PROPERTY INSTALL_RPATH ${CMAKE_INSTALL_RPATH} ${module_origin_path} "${module_origin_path}/../../pyarrow" ${PYTHON_PYARROW_LIBRARY_DIR})
+            set_property(TARGET binding PROPERTY INSTALL_RPATH ${CMAKE_INSTALL_RPATH} ${module_origin_path} "${module_origin_path}/../../pyarrow" ${PYTHON_PYARROW_LIBRARY_DIR})
 		endif()
 
 		target_link_libraries(psp ${PYTHON_PYARROW_LIBRARIES})
