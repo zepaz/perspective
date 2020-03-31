@@ -172,6 +172,7 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
     }
 
     restore(value) {
+        const restore_promises = [];
         const {sizes, master, detail, viewers: viewer_configs = [], mode = MODE.GLOBAL_FILTERS} = cloneDeep(value);
         this.mode = mode;
 
@@ -184,7 +185,7 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         // Using ES generators as context managers ..
         for (const viewers of this._capture_viewers()) {
             for (const widgets of this._capture_widgets()) {
-                const callback = this._restore_callback.bind(this, viewer_configs, viewers, widgets);
+                const callback = this._restore_callback.bind(this, viewer_configs, viewers, widgets, restore_promises);
 
                 if (detail) {
                     const detailLayout = PerspectiveDockPanel.mapWidgets(callback.bind(this, false), detail);
@@ -204,6 +205,7 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
                 }
             }
         }
+        return Promise.all(restore_promises);
     }
 
     *_capture_widgets() {
@@ -229,8 +231,9 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         }
     }
 
-    _restore_callback(viewers, starting_viewers, starting_widgets, master, widgetName) {
+    _restore_callback(viewers, starting_viewers, starting_widgets, restore_promises, master, widgetName) {
         let viewer_config;
+        master = this.mode === MODE.GLOBAL_FILTERS ? master : undefined;
         if (typeof widgetName === "string") {
             viewer_config = viewers[widgetName];
         } else {
@@ -242,12 +245,17 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         if (viewer) {
             widget = starting_widgets.find(x => x.viewer === viewer);
             if (widget) {
-                widget.restore({...viewer_config, master});
+                restore_promises.push(widget.restore({...viewer_config, master}));
             } else {
-                widget = this._createWidget({
-                    config: {...viewer_config, master},
-                    viewer
-                });
+                restore_promises.push(
+                    new Promise(resolve => {
+                        widget = this._createWidget({
+                            config: {...viewer_config, master},
+                            viewer,
+                            onRestore: resolve
+                        });
+                    })
+                );
             }
         } else if (viewer_config) {
             widget = this._createWidgetAndNode({
@@ -265,7 +273,7 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         }
 
         if (widget.linked) {
-            this._linkWidget(widget);
+            restore_promises.push(this._linkWidget(widget));
         }
         return widget;
     }
@@ -479,18 +487,20 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
 
     _linkWidget(widget) {
         widget.title.className += " linked";
+        const _promises = [];
         if (this._linkedViewers.indexOf(widget.viewer) === -1) {
             this._linkedViewers.push(widget.viewer);
             // if this is the first linked viewer, make viewers with row-pivots selectable
             if (this._linkedViewers.length === 1) {
-                this.getAllWidgets().forEach(widget => {
+                this.getAllWidgets().forEach(async widget => {
                     const config = widget.viewer.save();
                     if (config["row-pivots"]) {
-                        widget.viewer.restore({selectable: true});
+                        _promises.push(widget.viewer.restore({selectable: true}));
                     }
                 });
             }
         }
+        return Promise.all(_promises);
     }
 
     toggleLink(widget) {
@@ -668,7 +678,7 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         return node;
     }
 
-    _createWidget({config, node, viewer}) {
+    _createWidget({config, node, viewer, onRestore}) {
         config.name = config.name || viewer.getAttribute("name");
         if (!node) {
             const slotname = viewer.getAttribute("slot");
@@ -692,6 +702,7 @@ export class PerspectiveWorkspace extends DiscreteSplitPanel {
         }
         widget.restore(config).then(() => {
             this._addWidgetEventListeners(widget);
+            onRestore && onRestore();
         });
         return widget;
     }

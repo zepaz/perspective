@@ -176,6 +176,13 @@ class PerspectiveWorkspaceElement extends HTMLElement {
         this.workspace.update();
     }
 
+    get workspace() {
+        if (!this._workspace) {
+            this._workspace = new PerspectiveWorkspace(this, {side: this.side});
+        }
+        return this._workspace;
+    }
+
     _light_dom_changed() {
         const viewers = Array.from(this.childNodes);
         for (const viewer of viewers) {
@@ -198,7 +205,6 @@ class PerspectiveWorkspaceElement extends HTMLElement {
         this.side = this.side || SIDE.LEFT;
 
         const container = this.shadowRoot.querySelector("#container");
-        this.workspace = new PerspectiveWorkspace(this, {side: this.side});
 
         this._register_light_dom_listener();
 
