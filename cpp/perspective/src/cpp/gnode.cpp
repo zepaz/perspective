@@ -483,16 +483,16 @@ t_gnode::_process_table() {
     // Read the diff data table - if all columns have no new values, then
     // don't notify userspace.
     bool should_notify_userspace = false;
+    _process_state.m_diff_data_table->pprint();
 
     for (t_uindex colidx = 0; colidx < ncols; ++colidx) {
         const std::string& cname = column_names[colidx];
-        auto diff_column = _process_state.m_diff_data_table->get_column(cname).get();
-        bool column_should_notify = diff_column->get_nth<bool>(0);
+        auto diff_column = _process_state.m_diff_data_table->get_const_column(cname);
+        bool column_should_notify = *(diff_column->get_nth<bool>(0));
 
-        if (column_should_notify && !should_notify_userspace) {
-            // Once `should_notify_userspace` is true, it cannot be set back
-            // to false.
-            should_notify_userspace = column_should_notify;
+        if (column_should_notify) {
+            should_notify_userspace = true;
+            break;
         }
     }
 
@@ -574,7 +574,6 @@ t_gnode::_process_column<std::string>(
                 // `on_update` callbacks are triggered. Once `m_has_new_values`
                 // is true, it cannot be set to false.
                 if (!prev_cur_eq && !should_notify_userspace) {
-                    //std::cout << "`" << prev_value << "`, `" << current_value_string << std::boolalpha << "`, " << strcmp(prev_value, current_value) << ", " << prev_cur_eq << std::endl;
                     should_notify_userspace = true;
                 }
 

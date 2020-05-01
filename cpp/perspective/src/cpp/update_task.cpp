@@ -24,11 +24,11 @@ t_update_task::run() {
         for (auto g : m_pool.m_gnodes) {
             if (g) {
                 bool _should_notify = g->_process();
-                if (!should_notify_userspace) {
+                if (!should_notify_userspace && _should_notify) {
                     // If it's false, set it with the value from the gnode.
                     // Otherwise, if true, it will never be set to false by a
                     // later _process that returns false.
-                    should_notify_userspace = _should_notify;
+                    should_notify_userspace = true;
                 }
             }
         }
@@ -55,11 +55,11 @@ t_update_task::run(t_uindex gnode_id) {
         for (auto g : m_pool.m_gnodes) {
             if (g) {
                 bool _should_notify = g->_process();
-                if (!should_notify_userspace) {
+                if (!should_notify_userspace && _should_notify) {
                     // If it's false, set it with the value from the gnode.
                     // Otherwise, if true, it will never be set to false by a
                     // later _process that returns false.
-                    should_notify_userspace = _should_notify;
+                    should_notify_userspace = true;
                 }
             }
         }

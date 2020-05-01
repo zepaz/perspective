@@ -609,8 +609,25 @@ class TestView(object):
         tbl = Table(data)
         view = tbl.view()
         view.on_update(callback)
-        tbl.update(data)
+
+        tbl.update({
+            "a": [4],
+            "b": [5]
+        })
         assert s.get() is True
+
+    def test_view_on_update_duplicates_should_not_fire(self, sentinel):
+        s = sentinel(False)
+
+        def callback():
+            s.set(True)
+
+        data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
+        tbl = Table(data, index="a")
+        view = tbl.view()
+        view.on_update(callback)
+        tbl.update(data)
+        assert s.get() is False
 
     def test_view_on_update_multiple_callback(self, sentinel):
         s = sentinel(0)

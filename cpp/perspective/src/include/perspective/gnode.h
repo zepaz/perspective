@@ -528,7 +528,6 @@ t_gnode::_process_column(
                 // equal, set `m_has_new_values` to true to make sure that
                 // `on_update` callbacks are triggered.
                 if (!prev_cur_eq && !should_notify_userspace) {
-                    std::cout << "`" << prev_value << "`, `" << current_value << "`, " << std::boolalpha  << prev_cur_eq << std::endl;
                     should_notify_userspace = true;
                 }
 
