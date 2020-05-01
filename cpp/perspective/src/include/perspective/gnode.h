@@ -228,17 +228,26 @@ protected:
      * transitional values.
      * 
      * @tparam DATA_T 
-     * @param fcolumn 
-     * @param scolumn 
-     * @param dcolumn 
-     * @param pcolumn 
-     * @param ccolumn 
-     * @param tcolumn 
+     * @param flattened_column the column from the flattened data table, i.e.
+     * the data with which to update the master table.
+     * @param gstate_column the column from the master data table on `m_gstate`.
+     * @param delta_column the column containing deltas for each value.
+     * @param prev_column 
+     * @param current_column 
+     * @param transitions_column
+     * @param diff_column
      * @param process_state 
      */
     template <typename T>
-    void _process_column(const t_column* fcolumn, const t_column* scolumn, t_column* dcolumn,
-        t_column* pcolumn, t_column* ccolumn, t_column* tcolumn, t_process_state& process_state);
+    void _process_column(
+        const t_column* flattened_column,
+        const t_column* gstate_column,
+        t_column* delta_column,
+        t_column* prev_column,
+        t_column* current_column,
+        t_column* transitions_column,
+        t_column* diff_column,
+        const t_process_state& process_state);
 
     /**
      * @brief Calculate the transition state for a single cell, which depends
@@ -458,25 +467,29 @@ t_gnode::update_context_from_state(
 template <>
 void
 t_gnode::_process_column<std::string>(
-    const t_column* fcolumn,
-    const t_column* scolumn,
-    t_column* dcolumn,
-    t_column* pcolumn,
-    t_column* ccolumn,
-    t_column* tcolumn,
-    t_process_state& process_state);
+    const t_column* flattened_column,
+    const t_column* gstate_column,
+    t_column* delta_column,
+    t_column* prev_column,
+    t_column* current_column,
+    t_column* transitions_column,
+    t_column* diff_column,
+    const t_process_state& process_state);
 
 template <typename DATA_T>
 void
 t_gnode::_process_column(
-    const t_column* fcolumn,
-    const t_column* scolumn,
-    t_column* dcolumn,
-    t_column* pcolumn,
-    t_column* ccolumn,
-    t_column* tcolumn,
-    t_process_state& process_state) {
-    for (t_uindex idx = 0, loop_end = fcolumn->size(); idx < loop_end; ++idx) {
+    const t_column* flattened_column,
+    const t_column* gstate_column,
+    t_column* delta_column,
+    t_column* prev_column,
+    t_column* current_column,
+    t_column* transitions_column,
+    t_column* diff_column,
+    const t_process_state& process_state) {
+    bool should_notify_userspace = false;
+
+    for (t_uindex idx = 0, loop_end = flattened_column->size(); idx < loop_end; ++idx) {
         std::uint8_t op_ = process_state.m_op_base[idx];
         t_op op = static_cast<t_op>(op_);
         t_uindex added_count = process_state.m_added_offset[idx];
@@ -493,12 +506,12 @@ t_gnode::_process_column(
                 memset(&prev_value, 0, sizeof(DATA_T));
                 bool prev_valid = false;
 
-                DATA_T current_value = *(fcolumn->get_nth<DATA_T>(idx));
-                bool cur_valid = fcolumn->is_valid(idx);
+                DATA_T current_value = *(flattened_column->get_nth<DATA_T>(idx));
+                bool cur_valid = flattened_column->is_valid(idx);
 
                 if (row_already_exists) {
-                    prev_value = *(scolumn->get_nth<DATA_T>(rlookup.m_idx));
-                    prev_valid = scolumn->is_valid(rlookup.m_idx);
+                    prev_value = *(gstate_column->get_nth<DATA_T>(rlookup.m_idx));
+                    prev_valid = gstate_column->is_valid(rlookup.m_idx);
                 }
 
                 bool exists = cur_valid;
@@ -514,49 +527,51 @@ t_gnode::_process_column(
                 // If at any point, the previous and current values are not
                 // equal, set `m_has_new_values` to true to make sure that
                 // `on_update` callbacks are triggered.
-                if (!prev_cur_eq && !process_state.m_has_new_values) {
+                if (!prev_cur_eq && !should_notify_userspace) {
                     std::cout << "`" << prev_value << "`, `" << current_value << "`, " << std::boolalpha  << prev_cur_eq << std::endl;
-                    process_state.m_has_new_values = true;
+                    should_notify_userspace = true;
                 }
 
                 auto trans = calc_transition(prev_existed, row_already_exists, exists, prev_valid,
                     cur_valid, prev_cur_eq, prev_pkey_eq);
 
-                dcolumn->set_nth<DATA_T>(
+                delta_column->set_nth<DATA_T>(
                     added_count, cur_valid ? current_value - prev_value : DATA_T(0));
-                dcolumn->set_valid(added_count, true);
+                delta_column->set_valid(added_count, true);
 
-                pcolumn->set_nth<DATA_T>(added_count, prev_value);
-                pcolumn->set_valid(added_count, prev_valid);
+                prev_column->set_nth<DATA_T>(added_count, prev_value);
+                prev_column->set_valid(added_count, prev_valid);
 
-                ccolumn->set_nth<DATA_T>(added_count, cur_valid ? current_value : prev_value);
+                current_column->set_nth<DATA_T>(added_count, cur_valid ? current_value : prev_value);
 
-                ccolumn->set_valid(added_count, cur_valid ? cur_valid : prev_valid);
+                current_column->set_valid(added_count, cur_valid ? cur_valid : prev_valid);
 
-                tcolumn->set_nth<std::uint8_t>(idx, trans);
+                transitions_column->set_nth<std::uint8_t>(idx, trans);
             } break;
             case OP_DELETE: {
                 if (row_already_exists) {
-                    DATA_T prev_value = *(scolumn->get_nth<DATA_T>(rlookup.m_idx));
-                    bool prev_valid = scolumn->is_valid(rlookup.m_idx);
+                    DATA_T prev_value = *(gstate_column->get_nth<DATA_T>(rlookup.m_idx));
+                    bool prev_valid = gstate_column->is_valid(rlookup.m_idx);
 
-                    pcolumn->set_nth<DATA_T>(added_count, prev_value);
-                    pcolumn->set_valid(added_count, prev_valid);
+                    prev_column->set_nth<DATA_T>(added_count, prev_value);
+                    prev_column->set_valid(added_count, prev_valid);
 
-                    ccolumn->set_nth<DATA_T>(added_count, prev_value);
-                    ccolumn->set_valid(added_count, prev_valid);
+                    current_column->set_nth<DATA_T>(added_count, prev_value);
+                    current_column->set_valid(added_count, prev_valid);
 
                     SUPPRESS_WARNINGS_VC(4146)
-                    dcolumn->set_nth<DATA_T>(added_count, -prev_value);
+                    delta_column->set_nth<DATA_T>(added_count, -prev_value);
                     RESTORE_WARNINGS_VC()
-                    dcolumn->set_valid(added_count, true);
+                    delta_column->set_valid(added_count, true);
 
-                    tcolumn->set_nth<std::uint8_t>(added_count, VALUE_TRANSITION_NEQ_TDF);
+                    transitions_column->set_nth<std::uint8_t>(added_count, VALUE_TRANSITION_NEQ_TDF);
                 }
             } break;
             default: { PSP_COMPLAIN_AND_ABORT("Unknown OP"); }
         }
     }
+
+    diff_column->set_nth<bool>(0, should_notify_userspace);
 }
 
 } // end namespace perspective

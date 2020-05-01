@@ -20,6 +20,7 @@ t_process_state::clear_transitional_data_tables() {
     m_current_data_table->clear();
     m_transitions_data_table->clear();
     m_existed_data_table->clear();
+    m_diff_data_table->clear();
 };
 
 void
@@ -29,6 +30,7 @@ t_process_state::reserve_transitional_data_tables(t_uindex size) {
     m_current_data_table->reserve(size);
     m_transitions_data_table->reserve(size);
     m_existed_data_table->reserve(size);
+    // don't reserve for diff table here - size should always be 1
 };
 
 void
@@ -38,6 +40,7 @@ t_process_state::set_size_transitional_data_tables(t_uindex size) {
     m_current_data_table->set_size(size);
     m_transitions_data_table->set_size(size);
     m_existed_data_table->set_size(size);
+    // don't set size for diff table here - size should always be 1
 };
 
 } // end namespace persective

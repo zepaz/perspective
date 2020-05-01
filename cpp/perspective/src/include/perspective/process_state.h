@@ -43,13 +43,17 @@ struct t_process_state {
      */
     void set_size_transitional_data_tables(t_uindex size);
 
-    std::shared_ptr<t_data_table> m_state_data_table;
+    std::shared_ptr<t_data_table> m_gstate_data_table;
     std::shared_ptr<t_data_table> m_flattened_data_table;
     std::shared_ptr<t_data_table> m_delta_data_table;
     std::shared_ptr<t_data_table> m_prev_data_table;
     std::shared_ptr<t_data_table> m_current_data_table;
     std::shared_ptr<t_data_table> m_transitions_data_table;
     std::shared_ptr<t_data_table> m_existed_data_table;
+
+    // Each column is a boolean with one value - true if the column in the
+    // update contains new values, and false otherwise.
+    std::shared_ptr<t_data_table> m_diff_data_table;
 
     std::vector<t_rlookup> m_lookup;
     std::vector<t_uindex> m_col_translation;

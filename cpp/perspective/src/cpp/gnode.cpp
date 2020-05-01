@@ -51,16 +51,40 @@ t_gnode::t_gnode(const t_schema& input_schema, const t_schema& output_schema)
     LOG_CONSTRUCTOR("t_gnode");
 
     std::vector<t_dtype> trans_types(m_output_schema.size());
+    std::vector<t_dtype> diff_types(m_output_schema.size());
+
     for (t_uindex idx = 0; idx < trans_types.size(); ++idx) {
         trans_types[idx] = DTYPE_UINT8;
+        diff_types[idx] = DTYPE_BOOL;
     }
 
+    // Each row contains the transition type of the cell, i.e. on each update
+    // how the new value relates to the old value in terms of equality and
+    // validity.
     t_schema trans_schema(m_output_schema.columns(), trans_types);
+
+    // Create a schema for the diff data table - columns match that of the
+    // master table, but each column contains one boolean value - true
+    // when the update contains new values and `on_update` callbacks need
+    // to be called, and `false` otherwise.
+    t_schema diff_schema(m_output_schema.columns(), diff_types);
+
+    // Each row contains a boolean on whether the row already exists in the
+    // master table on `m_state`.
     t_schema existed_schema(
         std::vector<std::string>{"psp_existed"}, std::vector<t_dtype>{DTYPE_BOOL});
 
+    // Schemas for transitional tables
     m_transitional_schemas = std::vector<t_schema>{
-        m_input_schema, m_output_schema, m_output_schema, m_output_schema, trans_schema, existed_schema};
+        m_input_schema, // flattened table
+        m_output_schema, // delta table
+        m_output_schema, // prev value table
+        m_output_schema, // current value table
+        trans_schema, // transitions table
+        existed_schema, // existed table
+        diff_schema // diff table
+    };
+
     m_epoch = std::chrono::high_resolution_clock::now();
 }
 
@@ -269,7 +293,7 @@ t_gnode::_process_table() {
     // Use `t_process_state` to manage intermediate structures
     t_process_state _process_state;
 
-    _process_state.m_state_data_table = get_table_sptr();
+    _process_state.m_gstate_data_table = get_table_sptr();
     _process_state.m_flattened_data_table = flattened;
     _process_state.m_lookup = row_lookup;
 
@@ -279,11 +303,17 @@ t_gnode::_process_table() {
     _process_state.m_current_data_table = m_oports[PSP_PORT_CURRENT]->get_table();
     _process_state.m_transitions_data_table = m_oports[PSP_PORT_TRANSITIONS]->get_table();
     _process_state.m_existed_data_table = m_oports[PSP_PORT_EXISTED]->get_table();
+    _process_state.m_diff_data_table = m_oports[PSP_PORT_DIFF]->get_table();
     
     // Add computed columns to transitions_data_table
     _add_all_computed_columns(
         _process_state.m_transitions_data_table,
         DTYPE_UINT8);
+
+    // And the diff table
+    _add_all_computed_columns(
+        _process_state.m_diff_data_table,
+        DTYPE_BOOL);
 
     // Recompute values for flattened and m_state->get_table
     _recompute_all_columns(
@@ -305,11 +335,17 @@ t_gnode::_process_table() {
     // And re-reserved for the amount of data in `flattened`
     _process_state.reserve_transitional_data_tables(flattened_num_rows);
 
+    // Diff table should always only have one row.
+    _process_state.m_diff_data_table->reserve(1);
+
     t_mask existed_mask = _process_mask_existed_rows(_process_state);
     auto mask_count = existed_mask.count();
 
     // mask_count = flattened_num_rows - number of rows that were removed
     _process_state.set_size_transitional_data_tables(mask_count);
+
+    // With space reserved, set the diff table's size
+    _process_state.m_diff_data_table->set_size(1);
 
     // Reconcile column names - only attempt to process valid computed columns
     std::vector<std::string> column_names = get_output_schema().m_columns;
@@ -338,57 +374,58 @@ t_gnode::_process_table() {
 #endif
         {
             const std::string& cname = column_names[colidx];
-            auto fcolumn = _process_state.m_flattened_data_table->get_column(cname).get();
-            auto scolumn = _process_state.m_state_data_table->get_column(cname).get();
-            auto dcolumn = _process_state.m_delta_data_table->get_column(cname).get();
-            auto pcolumn = _process_state.m_prev_data_table->get_column(cname).get();
-            auto ccolumn = _process_state.m_current_data_table->get_column(cname).get();
-            auto tcolumn = _process_state.m_transitions_data_table->get_column(cname).get();
+            auto flattened_column = _process_state.m_flattened_data_table->get_column(cname).get();
+            auto gstate_column = _process_state.m_gstate_data_table->get_column(cname).get();
+            auto delta_column = _process_state.m_delta_data_table->get_column(cname).get();
+            auto prev_column = _process_state.m_prev_data_table->get_column(cname).get();
+            auto current_column = _process_state.m_current_data_table->get_column(cname).get();
+            auto transitions_column = _process_state.m_transitions_data_table->get_column(cname).get();
+            auto diff_column = _process_state.m_diff_data_table->get_column(cname).get();
 
-            t_dtype col_dtype = fcolumn->get_dtype();
+            t_dtype col_dtype = flattened_column->get_dtype();
 
             switch (col_dtype) {
                 case DTYPE_INT64: {
-                    _process_column<std::int64_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::int64_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_INT32: {
-                    _process_column<std::int32_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::int32_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_INT16: {
-                    _process_column<std::int16_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::int16_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_INT8: {
-                    _process_column<std::int8_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::int8_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_UINT64: {
-                    _process_column<std::uint64_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::uint64_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_UINT32: {
-                    _process_column<std::uint32_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::uint32_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_UINT16: {
-                    _process_column<std::uint16_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::uint16_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_UINT8: {
-                    _process_column<std::uint8_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::uint8_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_FLOAT64: {
-                    _process_column<double>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<double>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_FLOAT32: {
-                    _process_column<float>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<float>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_BOOL: {
-                    _process_column<std::uint8_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::uint8_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_TIME: {
-                    _process_column<std::int64_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::int64_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_DATE: {
-                    _process_column<std::uint32_t>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::uint32_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 case DTYPE_STR: {
-                    _process_column<std::string>(fcolumn, scolumn, dcolumn, pcolumn, ccolumn, tcolumn, _process_state);
+                    _process_column<std::string>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
                 } break;
                 default: { PSP_COMPLAIN_AND_ABORT("Unsupported column dtype"); }
             }
@@ -443,8 +480,24 @@ t_gnode::_process_table() {
 
     m_oports[PSP_PORT_FLATTENED]->set_table(flattened_masked);
 
+    // Read the diff data table - if all columns have no new values, then
+    // don't notify userspace.
+    bool should_notify_userspace = false;
+
+    for (t_uindex colidx = 0; colidx < ncols; ++colidx) {
+        const std::string& cname = column_names[colidx];
+        auto diff_column = _process_state.m_diff_data_table->get_column(cname).get();
+        bool column_should_notify = diff_column->get_nth<bool>(0);
+
+        if (column_should_notify && !should_notify_userspace) {
+            // Once `should_notify_userspace` is true, it cannot be set back
+            // to false.
+            should_notify_userspace = column_should_notify;
+        }
+    }
+
     result.m_flattened_data_table = flattened_masked;
-    result.m_should_notify_userspace = _process_state.m_has_new_values;
+    result.m_should_notify_userspace = should_notify_userspace;
 
     std::cout << "should notify: " << std::boolalpha << result.m_should_notify_userspace << std::endl;
 
@@ -454,16 +507,19 @@ t_gnode::_process_table() {
 template <>
 void
 t_gnode::_process_column<std::string>(
-    const t_column* fcolumn,
-    const t_column* scolumn,
-    t_column* dcolumn,
-    t_column* pcolumn,
-    t_column* ccolumn,
-    t_column* tcolumn,
-    t_process_state& process_state) {
-    pcolumn->borrow_vocabulary(*scolumn);
+    const t_column* flattened_column,
+    const t_column* gstate_column,
+    t_column* delta_column,
+    t_column* prev_column,
+    t_column* current_column,
+    t_column* transitions_column,
+    t_column* diff_column,
+    const t_process_state& process_state) {
+    prev_column->borrow_vocabulary(*gstate_column);
 
-    for (t_uindex idx = 0, loop_end = fcolumn->size(); idx < loop_end; ++idx) {
+    bool should_notify_userspace = false;
+
+    for (t_uindex idx = 0, loop_end = flattened_column->size(); idx < loop_end; ++idx) {
         std::uint8_t op_ = process_state.m_op_base[idx];
         t_op op = static_cast<t_op>(op_);
         t_uindex added_count = process_state.m_added_offset[idx];
@@ -479,17 +535,17 @@ t_gnode::_process_column<std::string>(
                 const char* prev_value = 0;
                 bool prev_valid = false;
 
-                auto current_value = fcolumn->get_nth<const char>(idx);
-                std::string curs(current_value);
+                auto current_value = flattened_column->get_nth<const char>(idx);
+                std::string current_value_string(current_value);
 
-                bool current_value_is_valid = fcolumn->is_valid(idx);
+                bool current_value_is_valid = flattened_column->is_valid(idx);
 
                 if (row_already_exists) {
                     // If the cell already exists, i.e. an indexed update,
                     // Look up the value in the cell and the cell's
                     // validity.
-                    prev_value = scolumn->get_nth<const char>(rlookup.m_idx);
-                    prev_valid = scolumn->is_valid(rlookup.m_idx);
+                    prev_value = gstate_column->get_nth<const char>(rlookup.m_idx);
+                    prev_valid = gstate_column->is_valid(rlookup.m_idx);
                 }
 
                 bool exists = current_value_is_valid;
@@ -503,63 +559,69 @@ t_gnode::_process_column<std::string>(
                 bool prev_cur_eq
                     = prev_value && current_value && strcmp(prev_value, current_value) == 0;
 
-                // strcmp returns 0 (no difference) when both values are
-                // empty strings, so we need to manually set eq to true.
-                if (strlen(prev_value) == 0 && strlen(current_value) == 0) {
-                    prev_cur_eq = true;
+                if (prev_existed && exists) {
+                    // strcmp returns 0 (no difference) when both values are
+                    // empty strings, so we need to manually set eq to true.
+                    // Use current value as `std::string`, as it might be null and
+                    // calling `strlen` will segfault. 
+                    if (strlen(prev_value) == 0 && current_value_string.size() == 0) {
+                        prev_cur_eq = true;
+                    }
                 }
 
                 // If at any point, the previous and current values are not
                 // equal, set `m_has_new_values` to true to make sure that
                 // `on_update` callbacks are triggered. Once `m_has_new_values`
                 // is true, it cannot be set to false.
-                if (!prev_cur_eq && !process_state.m_has_new_values) {
-                    std::cout << "`" << prev_value << "`, `" << current_value << std::boolalpha << "`, " << strcmp(prev_value, current_value) << ", " << prev_cur_eq << std::endl;
-                    process_state.m_has_new_values = true;
+                if (!prev_cur_eq && !should_notify_userspace) {
+                    //std::cout << "`" << prev_value << "`, `" << current_value_string << std::boolalpha << "`, " << strcmp(prev_value, current_value) << ", " << prev_cur_eq << std::endl;
+                    should_notify_userspace = true;
                 }
 
                 auto trans = calc_transition(prev_existed, row_already_exists, exists, prev_valid,
                     current_value_is_valid, prev_cur_eq, prev_pkey_eq);
 
                 if (prev_valid) {
-                    pcolumn->set_nth<t_uindex>(
-                        added_count, *(scolumn->get_nth<t_uindex>(rlookup.m_idx)));
+                    prev_column->set_nth<t_uindex>(
+                        added_count, *(gstate_column->get_nth<t_uindex>(rlookup.m_idx)));
                 }
 
-                pcolumn->set_valid(added_count, prev_valid);
+                prev_column->set_valid(added_count, prev_valid);
 
                 if (current_value_is_valid) {
-                    ccolumn->set_nth<const char*>(added_count, current_value);
+                    current_column->set_nth<const char*>(added_count, current_value);
                 }
 
                 if (!current_value_is_valid && prev_valid) {
-                    ccolumn->set_nth<const char*>(added_count, prev_value);
+                    current_column->set_nth<const char*>(added_count, prev_value);
                 }
 
-                ccolumn->set_valid(added_count, current_value_is_valid ? current_value_is_valid : prev_valid);
+                current_column->set_valid(added_count, current_value_is_valid ? current_value_is_valid : prev_valid);
 
-                tcolumn->set_nth<std::uint8_t>(idx, trans);
+                transitions_column->set_nth<std::uint8_t>(idx, trans);
             } break;
             case OP_DELETE: {
                 if (row_already_exists) {
-                    auto prev_value = scolumn->get_nth<const char>(rlookup.m_idx);
+                    auto prev_value = gstate_column->get_nth<const char>(rlookup.m_idx);
 
-                    bool prev_valid = scolumn->is_valid(rlookup.m_idx);
+                    bool prev_valid = gstate_column->is_valid(rlookup.m_idx);
 
-                    pcolumn->set_nth<const char*>(added_count, prev_value);
+                    prev_column->set_nth<const char*>(added_count, prev_value);
 
-                    pcolumn->set_valid(added_count, prev_valid);
+                    prev_column->set_valid(added_count, prev_valid);
 
-                    ccolumn->set_nth<const char*>(added_count, prev_value);
+                    current_column->set_nth<const char*>(added_count, prev_value);
 
-                    ccolumn->set_valid(added_count, prev_valid);
+                    current_column->set_valid(added_count, prev_valid);
 
-                    tcolumn->set_nth<std::uint8_t>(added_count, VALUE_TRANSITION_NEQ_TDF);
+                    transitions_column->set_nth<std::uint8_t>(added_count, VALUE_TRANSITION_NEQ_TDF);
                 }
             } break;
             default: { PSP_COMPLAIN_AND_ABORT("Unknown OP"); }
         }
     }
+
+    diff_column->set_nth<bool>(0, should_notify_userspace);
 }
 
 bool

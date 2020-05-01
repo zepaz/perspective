@@ -356,12 +356,13 @@ enum t_gnode_type {
 };
 
 enum t_gnode_port {
-    PSP_PORT_FLATTENED,   // same schema as iport (pkey,op)
+    PSP_PORT_FLATTENED,   // same schema as iport, but has psp_pkey and psp_op
     PSP_PORT_DELTA,       // same schema as state
     PSP_PORT_PREV,        // same schema as state
     PSP_PORT_CURRENT,     // same schema as state
-    PSP_PORT_TRANSITIONS, // same schema as state
-    PSP_PORT_EXISTED      // same schema as state
+    PSP_PORT_TRANSITIONS, // same schema as state but all types are uint8
+    PSP_PORT_EXISTED,     // one column: `psp_existed`
+    PSP_PORT_DIFF         // same schema as state but all types are bool 
 };
 
 enum t_ctx_feature {

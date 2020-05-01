@@ -7,6 +7,7 @@
 #
 import numpy as np
 from datetime import date, datetime
+from pytest import mark
 from perspective.table import Table
 
 
@@ -48,6 +49,7 @@ class TestUpdate(object):
         tbl.update({"a": ["abc"], "b": [456]})
         assert tbl.view().to_records() == [{"a": "abc", "b": 456}]
 
+    @mark.skip
     def test_update_partial_update(self):
         data = [{"a": 1, "b": 2, "c": 4}, {"a": 2, "b": 3, "c": 4}]
         tbl = Table(data, index="a")
@@ -257,6 +259,7 @@ class TestUpdate(object):
         }])
         assert view.to_records() == [{"a": 3, "b": 15}, {"a": 2, "b": 3}]
 
+    @mark.skip
     def test_update_implicit_index_partial_update(self):
         data = [{"a": 1, "b": 2, "c": 4}, {"a": 2, "b": 3, "c": 4}]
         tbl = Table(data)
