@@ -48,6 +48,17 @@ class TestUpdate(object):
         tbl.update({"a": ["abc"], "b": [456]})
         assert tbl.view().to_records() == [{"a": "abc", "b": 456}]
 
+    def test_update_partial_update(self):
+        data = [{"a": 1, "b": 2, "c": 4}, {"a": 2, "b": 3, "c": 4}]
+        tbl = Table(data, index="a")
+        view = tbl.view()
+        tbl.update({
+            "a": [1],
+            "b": [3]
+        })
+        # should not overwrite "c"
+        assert view.to_records() == [{"a": 1, "b": 3, "c": 4}, {"a": 2, "b": 3, "c": 4}]
+
     # bool
 
     def test_update_bool_from_schema(self):
@@ -245,6 +256,17 @@ class TestUpdate(object):
             "b": 15
         }])
         assert view.to_records() == [{"a": 3, "b": 15}, {"a": 2, "b": 3}]
+
+    def test_update_implicit_index_partial_update(self):
+        data = [{"a": 1, "b": 2, "c": 4}, {"a": 2, "b": 3, "c": 4}]
+        tbl = Table(data)
+        view = tbl.view()
+        tbl.update({
+            "__INDEX__": [[0]],
+            "b": [3]
+        })
+        # should not overwrite "a" or "c"
+        assert view.to_records() == [{"a": 1, "b": 3, "c": 4}, {"a": 2, "b": 3, "c": 4}]
 
     def test_update_implicit_index_dict_should_unset(self):
         data = [{"a": 1, "b": 2}, {"a": 2, "b": 3}]

@@ -14,10 +14,10 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 
-    <script src="https://unpkg.com/@finos/perspective-viewer"></script>
-    <script src="https://unpkg.com/@finos/perspective-viewer-datagrid"></script>
-    <script src="https://unpkg.com/@finos/perspective-viewer-d3fc"></script>
-    <script src="https://unpkg.com/@finos/perspective"></script>>
+    <script src="http://localhost:8080/perspective-viewer.js"></script>
+    <script src="http://localhost:8080/perspective-viewer-hypergrid.js"></script>
+    <script src="http://localhost:8080/perspective-viewer-d3fc.js"></script>
+    <script src="http://localhost:8080/perspective.js"></script>
 
     <link rel='stylesheet' href="https://unpkg.com/@finos/perspective-viewer/dist/umd/material.dark.css">
 
@@ -29,57 +29,42 @@
 
 <body>
 
-    <perspective-viewer id="viewer"></perspective-viewer>
+    <perspective-viewer id="viewer" editable></perspective-viewer>
 
     <script>
 
         window.addEventListener('WebComponentsReady', async function() {
             const viewer = document.getElementById('viewer');
 
-            // Create a client that expects a Perspective server to accept connections at the specified URL.
+            const worker = perspective.shared_worker();
             const websocket = perspective.websocket("ws://localhost:8888/websocket");
+            const websocket2 = perspective.websocket("ws://localhost:8888/second_websocket");
+            const remote_table = websocket.open_table('data_source_one');
+            await viewer.load(remote_table);
+            
+            const remote_view = websocket2.open_view('view_one');
+            const start = performance.now();
+            const arrow = await remote_view.to_arrow();
+            const table = worker.table(arrow, {index: "a"});
+            console.log(performance.now() - start);
 
-            /* `table` is a proxy for the `Table` we created on the server.
-            
-            All operations that are possible through the Javascript API are possible on the Python API as well,
-            thus calling `view()`, `schema()`, `update()` etc on `const table` will pass those operations to the
-            Python `Table`, execute the commands, and return the result back to Javascript.
-            */
-            const table = websocket.open_table('data_source_one');
-            
+            remote_view.on_update(table.update, {mode: "row"});
+
+            const view = table.view();
+            view.on_update((rows) => {
+                const _t = worker.table(rows);
+                const _v = _t.view();
+                _v.to_json().then(json => {
+                    remote_table.update(json);
+                    _v.delete();
+                    _t.delete();
+                });
+            }, {
+                mode: "row"
+            });
+        
             // Load this in the `<perspective-viewer>`.
-            viewer.load(table);
-            viewer.toggleConfig();
-
-            console.log("before update", await table.size());
-
-            // Attempt to update the table with new data - it should be
-            // blocked because the Manager is locked
-            table.update({
-                "name": "test name",
-                "client": "test client",
-                "open": 100,
-                "high": 120,
-                "low": 90,
-                "close": 110,
-                "lastUpdate": new Date()
-            })
-
-            console.log("after update", await table.size());
-
-            // `clear` should be blocked
-            await table.clear();
-
-            // so should `replace`
-            await table.replace({
-                "name": "test name",
-                "client": "test client",
-                "open": 100,
-                "high": 120,
-                "low": 90,
-                "close": 110,
-                "lastUpdate": new Date()
-            })
+            viewer._table = table;
         });
 
     </script>

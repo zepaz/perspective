@@ -51,6 +51,22 @@ class t_ctx_grouped_pkey;
 #define PSP_GNODE_VERIFY_TABLE(X)
 #endif
 
+/**
+ * @brief The struct returned from `_process_table`, which contains a
+ * pointer to the flattened and processed `t_data_table`, and a boolean showing
+ * whether the user's `on_update` callbacks should be called, i.e. whether the 
+ * update contained new data or not.
+ * 
+ * Given that `_process_table` may be called multiple times, as is `_process`,
+ * `t_update_task` will accumulate the values of `m_should_notify_userspace`
+ * over multiple calls and only consider an update a no-op if all values of
+ * `m_should_notify_userspace` are false.
+ */
+struct PERSPECTIVE_EXPORT t_process_table_result {
+    std::shared_ptr<t_data_table> m_flattened_data_table;
+    bool m_should_notify_userspace;
+};
+
 class PERSPECTIVE_EXPORT t_gnode {
 public:
     /**
@@ -80,8 +96,17 @@ public:
     // send data to input port with at index idx
     // schema should match port schema
     void _send(t_uindex idx, const t_data_table& fragments);
-    void _send_and_process(const t_data_table& fragments);
-    void _process();
+    
+    /**
+     * @brief Process all the updates queued up in this gnode instance. Returns
+     * a boolean that is false if NONE of the updates contain new values that
+     * are not already in the Table, and true otherwise. If returning false,
+     * the user's `on_update` callbacks will not be notified of the update.
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool _process();
 
     void _register_context(const std::string& name, t_ctx_type type, std::int64_t ptr);
     void _unregister_context(const std::string& name);
@@ -213,14 +238,14 @@ protected:
      */
     template <typename T>
     void _process_column(const t_column* fcolumn, const t_column* scolumn, t_column* dcolumn,
-        t_column* pcolumn, t_column* ccolumn, t_column* tcolumn, const t_process_state& process_state);
+        t_column* pcolumn, t_column* ccolumn, t_column* tcolumn, t_process_state& process_state);
 
     /**
      * @brief Calculate the transition state for a single cell, which depends
      * on whether the cell is/was valid, existed, or is new.
      * 
      * @param prev_existed 
-     * @param row_pre_existed 
+     * @param row_already_exists 
      * @param exists 
      * @param prev_valid 
      * @param cur_valid 
@@ -228,7 +253,7 @@ protected:
      * @param prev_pkey_eq 
      * @return t_value_transition 
      */
-    t_value_transition calc_transition(bool prev_existed, bool row_pre_existed, bool exists,
+    t_value_transition calc_transition(bool prev_existed, bool row_already_exists, bool exists,
         bool prev_valid, bool cur_valid, bool prev_cur_eq, bool prev_pkey_eq);
 
     /**
@@ -305,9 +330,11 @@ private:
      * @brief Process the input data table by flattening it, calculating
      * transitional values, and returning a new masked version.
      * 
-     * @return std::shared_ptr<t_data_table> 
+     * @return t_process_table_result a struct containing a pointer to the
+     * flattened and masked data table, and a boolean on whether the
+     * user's `on_update` callbacks should be called.
      */
-    std::shared_ptr<t_data_table> _process_table();
+    t_process_table_result _process_table();
 
     t_gnode_processing_mode m_mode;
     t_gnode_type m_gnode_type;
@@ -437,7 +464,7 @@ t_gnode::_process_column<std::string>(
     t_column* pcolumn,
     t_column* ccolumn,
     t_column* tcolumn,
-    const t_process_state& process_state);
+    t_process_state& process_state);
 
 template <typename DATA_T>
 void
@@ -448,54 +475,68 @@ t_gnode::_process_column(
     t_column* pcolumn,
     t_column* ccolumn,
     t_column* tcolumn,
-    const t_process_state& process_state) {
+    t_process_state& process_state) {
     for (t_uindex idx = 0, loop_end = fcolumn->size(); idx < loop_end; ++idx) {
         std::uint8_t op_ = process_state.m_op_base[idx];
         t_op op = static_cast<t_op>(op_);
         t_uindex added_count = process_state.m_added_offset[idx];
 
         const t_rlookup& rlookup = process_state.m_lookup[idx];
-        bool row_pre_existed = rlookup.m_exists;
+        bool row_already_exists = rlookup.m_exists;
         auto prev_pkey_eq = process_state.m_prev_pkey_eq_vec[idx];
 
         switch (op) {
             case OP_INSERT: {
-                row_pre_existed = row_pre_existed && !prev_pkey_eq;
+                row_already_exists = row_already_exists && !prev_pkey_eq;
 
                 DATA_T prev_value;
                 memset(&prev_value, 0, sizeof(DATA_T));
                 bool prev_valid = false;
 
-                DATA_T cur_value = *(fcolumn->get_nth<DATA_T>(idx));
+                DATA_T current_value = *(fcolumn->get_nth<DATA_T>(idx));
                 bool cur_valid = fcolumn->is_valid(idx);
 
-                if (row_pre_existed) {
+                if (row_already_exists) {
                     prev_value = *(scolumn->get_nth<DATA_T>(rlookup.m_idx));
                     prev_valid = scolumn->is_valid(rlookup.m_idx);
                 }
 
                 bool exists = cur_valid;
-                bool prev_existed = row_pre_existed && prev_valid;
-                bool prev_cur_eq = prev_value == cur_value;
+                bool prev_existed = row_already_exists && prev_valid;
 
-                auto trans = calc_transition(prev_existed, row_pre_existed, exists, prev_valid,
+                // Whether the previous and the current value are equal. If
+                // the values are equal, the cell is not updated. If all values
+                // in an update (across all columns and rows) are equal to
+                // their previous values, an update is considered a no-op
+                // and `on_update` callbacks will not fire.
+                bool prev_cur_eq = prev_value == current_value;
+
+                // If at any point, the previous and current values are not
+                // equal, set `m_has_new_values` to true to make sure that
+                // `on_update` callbacks are triggered.
+                if (!prev_cur_eq && !process_state.m_has_new_values) {
+                    std::cout << "`" << prev_value << "`, `" << current_value << "`, " << std::boolalpha  << prev_cur_eq << std::endl;
+                    process_state.m_has_new_values = true;
+                }
+
+                auto trans = calc_transition(prev_existed, row_already_exists, exists, prev_valid,
                     cur_valid, prev_cur_eq, prev_pkey_eq);
 
                 dcolumn->set_nth<DATA_T>(
-                    added_count, cur_valid ? cur_value - prev_value : DATA_T(0));
+                    added_count, cur_valid ? current_value - prev_value : DATA_T(0));
                 dcolumn->set_valid(added_count, true);
 
                 pcolumn->set_nth<DATA_T>(added_count, prev_value);
                 pcolumn->set_valid(added_count, prev_valid);
 
-                ccolumn->set_nth<DATA_T>(added_count, cur_valid ? cur_value : prev_value);
+                ccolumn->set_nth<DATA_T>(added_count, cur_valid ? current_value : prev_value);
 
                 ccolumn->set_valid(added_count, cur_valid ? cur_valid : prev_valid);
 
                 tcolumn->set_nth<std::uint8_t>(idx, trans);
             } break;
             case OP_DELETE: {
-                if (row_pre_existed) {
+                if (row_already_exists) {
                     DATA_T prev_value = *(scolumn->get_nth<DATA_T>(rlookup.m_idx));
                     bool prev_valid = scolumn->is_valid(rlookup.m_idx);
 

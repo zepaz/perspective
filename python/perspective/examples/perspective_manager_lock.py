@@ -1,12 +1,10 @@
 import os
 import os.path
-import random
 import sys
 import logging
 import tornado.websocket
 import tornado.web
 import tornado.ioloop
-from datetime import datetime
 
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), '..'))
 from perspective import Table, PerspectiveManager, PerspectiveTornadoHandler
@@ -23,50 +21,36 @@ class MainHandler(tornado.web.RequestHandler):
         self.render("perspective_manager_lock.html")
 
 
-def data_source(n=5):
-    rows = []
-    modifier = random.random() * random.randint(1, 50)
-    for i in range(n):
-        rows.append({
-            "name": SECURITIES[random.randint(0, len(SECURITIES) - 1)],
-            "client": CLIENTS[random.randint(0, len(CLIENTS) - 1)],
-            "open": (random.random() * 75 + random.randint(0, 9)) * modifier,
-            "high": (random.random() * 105 + random.randint(1, 3)) * modifier,
-            "low": (random.random() * 85 + random.randint(1, 3)) * modifier,
-            "close": (random.random() * 90 + random.randint(1, 3)) * modifier,
-            "lastUpdate": datetime.now()
-        })
-    return rows
-
-
-'''Set up our data for this example.'''
-SECURITIES = ["AAPL.N", "AMZN.N", "QQQ.N", "NVDA.N", "TSLA.N", "FB.N", "MSFT.N", "TLT.N", "XIV.N", "YY.N", "CSCO.N", "GOOGL.N", "PCLN.N"]
-CLIENTS = ["Homer", "Marge", "Bart", "Lisa", "Maggie", "Moe", "Lenny", "Carl", "Krusty"]
+here = os.path.abspath(os.path.dirname(__file__))
 
 
 def make_app():
     # Create an instance of `PerspectiveManager` and a table.
-    MANAGER = PerspectiveManager(lock=True)
-    TABLE = Table({
-        "name": str,
-        "client": str,
-        "open": float,
-        "high": float,
-        "low": float,
-        "close": float,
-        "lastUpdate": datetime,
-    })
+    MANAGER = PerspectiveManager()
 
-    TABLE.update(data_source(100))
+    with open(os.path.join(here, "50_x_1000000.arrow"), "rb") as arrow:
+        TABLE = Table(arrow.read(), index="a")
 
     # Track the table with the name "data_source_one", which will be used in
     # the front-end to access the Table.
     MANAGER.host_table("data_source_one", TABLE)
+    MANAGER.host_view("view_one", TABLE.view())
+
+    # update with new data every 50ms
+    # def updater():
+    #     TABLE.update({
+    #         "a": ["c"],
+    #         "b": [random.randint(1, 1000)]
+    #     })
+
+    # callback = tornado.ioloop.PeriodicCallback(callback=updater, callback_time=2000)
+    # callback.start()
 
     return tornado.web.Application([
         (r"/", MainHandler),
         # create a websocket endpoint that the client Javascript can access
-        (r"/websocket", PerspectiveTornadoHandler, {"manager": MANAGER, "check_origin": True})
+        (r"/websocket", PerspectiveTornadoHandler, {"manager": MANAGER, "check_origin": True}),
+        (r"/second_websocket", PerspectiveTornadoHandler, {"manager": MANAGER, "check_origin": True})
     ])
 
 

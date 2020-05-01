@@ -56,6 +56,12 @@ struct t_process_state {
     std::vector<t_uindex> m_added_offset;
     std::vector<bool> m_prev_pkey_eq_vec;
 
+    // Whether this call to `_process` contains new values or if the update
+    // contains the same values as already present in the Table. If the update
+    // has no values (i.e. if this value is false), the update is considered a
+    // no-op and no `on_update` callbacks will be fired.
+    bool m_has_new_values = false;
+
     std::uint8_t* m_op_base;
 };
 

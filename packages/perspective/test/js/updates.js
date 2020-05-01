@@ -426,6 +426,156 @@ module.exports = perspective => {
             table.update(data);
         });
 
+        it("Duplicate updates will not call `on_update()`", async function() {
+            const table = perspective.table(data, {index: "y"});
+            const view = table.view();
+            let sentinel = 0;
+
+            view.on_update(function() {
+                sentinel++;
+                throw new Error("This callback should not have been called!");
+            });
+
+            table.update(data);
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(0);
+
+            table.update(data);
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(0);
+
+            table.update(data);
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(0);
+
+            expect(await view.to_json()).toEqual(data);
+
+            view.delete();
+            table.delete();
+        });
+
+        it("Duplicate string updates will not call `on_update()`", async function() {
+            const table = perspective.table(data, {index: "x"});
+            const view = table.view();
+            let sentinel = 0;
+
+            view.on_update(function() {
+                sentinel++;
+                throw new Error("This callback should not have been called!");
+            });
+
+            table.update(data);
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(0);
+
+            table.update(data);
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(0);
+
+            table.update(data);
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(0);
+
+            expect(await view.to_json()).toEqual(data);
+            view.delete();
+            table.delete();
+        });
+
+        it("Duplicate date updates will not call `on_update()`", async function() {
+            const now = new Date();
+            const later = new Date();
+            const table = perspective.table(
+                {
+                    a: [1, 2, 3, 4],
+                    b: [now, now, now, later]
+                },
+                {index: "a"}
+            );
+
+            const view = table.view();
+            let sentinel = 0;
+
+            view.on_update(function() {
+                console.error("Called");
+                sentinel++;
+                throw new Error("This callback should not have been called!");
+            });
+
+            table.update({
+                a: [1],
+                b: [now]
+            });
+
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(0);
+
+            table.update({
+                a: [2],
+                b: [now]
+            });
+
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(0);
+
+            table.update({
+                a: [3],
+                b: [now]
+            });
+
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(0);
+
+            expect(await view.to_columns()).toEqual({
+                a: [1, 2, 3, 4],
+                b: [now.getTime(), now.getTime(), now.getTime(), later.getTime()]
+            });
+            view.delete();
+            table.delete();
+        });
+
+        it("Duplicate updates with a non-duplicate in the middle will call `on_update()`", async function() {
+            const table = perspective.table(data, {index: "y"});
+            const view = table.view();
+            let sentinel = 0;
+
+            view.on_update(function() {
+                sentinel++;
+                console.error(sentinel);
+                throw new Error("This callback should not have been called!");
+            });
+
+            table.update(data);
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(0);
+
+            table.update({
+                x: [10],
+                y: ["b"],
+                z: [true]
+            });
+
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(1);
+
+            table.update({
+                x: [1, 10, 3, 4],
+                y: ["a", "b", "c", "d"],
+                z: [true, true, true, false]
+            });
+
+            expect(await table.size()).toEqual(4);
+            expect(sentinel).toEqual(1);
+
+            expect(await view.to_columns()).toEqual({
+                x: [1, 10, 3, 4],
+                y: ["a", "b", "c", "d"],
+                z: [true, true, true, false]
+            });
+
+            view.delete();
+            table.delete();
+        });
+
         it("`on_update` before and after `update()`", function(done) {
             var table = perspective.table(meta);
             var view = table.view();

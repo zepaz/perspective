@@ -114,16 +114,10 @@ t_gnode::_send(t_uindex portid, const t_data_table& fragments) {
     iport->send(fragments);
 }
 
-void
-t_gnode::_send_and_process(const t_data_table& fragments) {
-    _send(0, fragments);
-    _process();
-}
-
 t_value_transition
 t_gnode::calc_transition(
     bool prev_existed,
-    bool row_pre_existed,
+    bool row_already_exists,
     bool exists,
     bool prev_valid,
     bool cur_valid,
@@ -131,14 +125,14 @@ t_gnode::calc_transition(
     bool prev_pkey_eq) {
     t_value_transition trans = VALUE_TRANSITION_EQ_FF;
 
-    if (!row_pre_existed && !cur_valid && !t_env::backout_invalid_neq_ft()) {
+    if (!row_already_exists && !cur_valid && !t_env::backout_invalid_neq_ft()) {
         trans = VALUE_TRANSITION_NEQ_FT;
-    } else if (row_pre_existed && !prev_valid && !cur_valid
+    } else if (row_already_exists && !prev_valid && !cur_valid
         && !t_env::backout_eq_invalid_invalid()) {
         trans = VALUE_TRANSITION_EQ_TT;
     } else if (!prev_existed && !exists) {
         trans = VALUE_TRANSITION_EQ_FF;
-    } else if (row_pre_existed && exists && !prev_valid && cur_valid
+    } else if (row_already_exists && exists && !prev_valid && cur_valid
         && !t_env::backout_nveq_ft()) {
         trans = VALUE_TRANSITION_NVEQ_FT;
     } else if (prev_existed && exists && prev_cur_eq) {
@@ -186,22 +180,22 @@ t_gnode::_process_mask_existed_rows(t_process_state& process_state) {
         std::uint8_t op_ = process_state.m_op_base[idx];
         t_op op = static_cast<t_op>(op_);
 
-        bool row_pre_existed = process_state.m_lookup[idx].m_exists;
+        bool row_already_exists = process_state.m_lookup[idx].m_exists;
         process_state.m_prev_pkey_eq_vec[idx] = pkey == prev_pkey;
 
         process_state.m_added_offset[idx] = added_count;
 
         switch (op) {
             case OP_INSERT: {
-                row_pre_existed = row_pre_existed && !process_state.m_prev_pkey_eq_vec[idx];
+                row_already_exists = row_already_exists && !process_state.m_prev_pkey_eq_vec[idx];
                 mask.set(idx, true);
-                existed_column->set_nth(added_count, row_pre_existed);
+                existed_column->set_nth(added_count, row_already_exists);
                 ++added_count;
             } break;
             case OP_DELETE: {
-                if (row_pre_existed) {
+                if (row_already_exists) {
                     mask.set(idx, true);
-                    existed_column->set_nth(added_count, row_pre_existed);
+                    existed_column->set_nth(added_count, row_already_exists);
                     ++added_count;
                 } else {
                     mask.set(idx, false);
@@ -217,14 +211,20 @@ t_gnode::_process_mask_existed_rows(t_process_state& process_state) {
     return mask;
 }
 
-std::shared_ptr<t_data_table>
+t_process_table_result
 t_gnode::_process_table() {
     m_was_updated = false;
+
+    // Create result struct - table is null and should always notify
+    // userspace by default.
+    t_process_table_result result;
+    result.m_flattened_data_table = nullptr;
+    result.m_should_notify_userspace = false;
 
     std::shared_ptr<t_port>& iport = m_iports[0];
 
     if (iport->get_table()->size() == 0) {
-        return nullptr;
+        return result;
     }
 
     m_was_updated = true;
@@ -256,7 +256,10 @@ t_gnode::_process_table() {
         auto state_table = get_table();
         PSP_GNODE_VERIFY_TABLE(state_table);
     #endif
-        return nullptr;
+
+        // Always notify on initial load
+        result.m_should_notify_userspace = true;
+        return result;
     }
 
     for (t_uindex idx = 0, loop_end = m_iports.size(); idx < loop_end; ++idx) {
@@ -437,8 +440,15 @@ t_gnode::_process_table() {
         PSP_GNODE_VERIFY_TABLE(updated_table);
     }
     #endif
+
     m_oports[PSP_PORT_FLATTENED]->set_table(flattened_masked);
-    return flattened_masked;
+
+    result.m_flattened_data_table = flattened_masked;
+    result.m_should_notify_userspace = _process_state.m_has_new_values;
+
+    std::cout << "should notify: " << std::boolalpha << result.m_should_notify_userspace << std::endl;
+
+    return result;
 }
 
 template <>
@@ -450,7 +460,7 @@ t_gnode::_process_column<std::string>(
     t_column* pcolumn,
     t_column* ccolumn,
     t_column* tcolumn,
-    const t_process_state& process_state) {
+    t_process_state& process_state) {
     pcolumn->borrow_vocabulary(*scolumn);
 
     for (t_uindex idx = 0, loop_end = fcolumn->size(); idx < loop_end; ++idx) {
@@ -459,33 +469,57 @@ t_gnode::_process_column<std::string>(
         t_uindex added_count = process_state.m_added_offset[idx];
 
         const t_rlookup& rlookup = process_state.m_lookup[idx];
-        bool row_pre_existed = rlookup.m_exists;
+        bool row_already_exists = rlookup.m_exists;
         auto prev_pkey_eq = process_state.m_prev_pkey_eq_vec[idx];
 
         switch (op) {
             case OP_INSERT: {
-                row_pre_existed = row_pre_existed && !prev_pkey_eq;
+                row_already_exists = row_already_exists && !prev_pkey_eq;
 
                 const char* prev_value = 0;
                 bool prev_valid = false;
 
-                auto cur_value = fcolumn->get_nth<const char>(idx);
-                std::string curs(cur_value);
+                auto current_value = fcolumn->get_nth<const char>(idx);
+                std::string curs(current_value);
 
-                bool cur_valid = fcolumn->is_valid(idx);
+                bool current_value_is_valid = fcolumn->is_valid(idx);
 
-                if (row_pre_existed) {
+                if (row_already_exists) {
+                    // If the cell already exists, i.e. an indexed update,
+                    // Look up the value in the cell and the cell's
+                    // validity.
                     prev_value = scolumn->get_nth<const char>(rlookup.m_idx);
                     prev_valid = scolumn->is_valid(rlookup.m_idx);
                 }
 
-                bool exists = cur_valid;
-                bool prev_existed = row_pre_existed && prev_valid;
-                bool prev_cur_eq
-                    = prev_value && cur_value && strcmp(prev_value, cur_value) == 0;
+                bool exists = current_value_is_valid;
+                bool prev_existed = row_already_exists && prev_valid;
 
-                auto trans = calc_transition(prev_existed, row_pre_existed, exists, prev_valid,
-                    cur_valid, prev_cur_eq, prev_pkey_eq);
+                // Whether the previous and the current value are equal. If
+                // the values are equal, the cell is not updated. If all values
+                // in an update (across all columns and rows) are equal to
+                // their previous values, an update is considered a no-op
+                // and `on_update` callbacks will not fire.
+                bool prev_cur_eq
+                    = prev_value && current_value && strcmp(prev_value, current_value) == 0;
+
+                // strcmp returns 0 (no difference) when both values are
+                // empty strings, so we need to manually set eq to true.
+                if (strlen(prev_value) == 0 && strlen(current_value) == 0) {
+                    prev_cur_eq = true;
+                }
+
+                // If at any point, the previous and current values are not
+                // equal, set `m_has_new_values` to true to make sure that
+                // `on_update` callbacks are triggered. Once `m_has_new_values`
+                // is true, it cannot be set to false.
+                if (!prev_cur_eq && !process_state.m_has_new_values) {
+                    std::cout << "`" << prev_value << "`, `" << current_value << std::boolalpha << "`, " << strcmp(prev_value, current_value) << ", " << prev_cur_eq << std::endl;
+                    process_state.m_has_new_values = true;
+                }
+
+                auto trans = calc_transition(prev_existed, row_already_exists, exists, prev_valid,
+                    current_value_is_valid, prev_cur_eq, prev_pkey_eq);
 
                 if (prev_valid) {
                     pcolumn->set_nth<t_uindex>(
@@ -494,20 +528,20 @@ t_gnode::_process_column<std::string>(
 
                 pcolumn->set_valid(added_count, prev_valid);
 
-                if (cur_valid) {
-                    ccolumn->set_nth<const char*>(added_count, cur_value);
+                if (current_value_is_valid) {
+                    ccolumn->set_nth<const char*>(added_count, current_value);
                 }
 
-                if (!cur_valid && prev_valid) {
+                if (!current_value_is_valid && prev_valid) {
                     ccolumn->set_nth<const char*>(added_count, prev_value);
                 }
 
-                ccolumn->set_valid(added_count, cur_valid ? cur_valid : prev_valid);
+                ccolumn->set_valid(added_count, current_value_is_valid ? current_value_is_valid : prev_valid);
 
                 tcolumn->set_nth<std::uint8_t>(idx, trans);
             } break;
             case OP_DELETE: {
-                if (row_pre_existed) {
+                if (row_already_exists) {
                     auto prev_value = scolumn->get_nth<const char>(rlookup.m_idx);
 
                     bool prev_valid = scolumn->is_valid(rlookup.m_idx);
@@ -528,7 +562,7 @@ t_gnode::_process_column<std::string>(
     }
 }
 
-void
+bool
 t_gnode::_process() {
     PSP_TRACE_SENTINEL();
     PSP_VERBOSE_ASSERT(m_init, "touching uninited object");
@@ -536,12 +570,14 @@ t_gnode::_process() {
         m_mode == NODE_PROCESSING_SIMPLE_DATAFLOW, "Only simple dataflows supported currently");
     psp_log_time(repr() + " _process.enter");
 
-    std::shared_ptr<t_data_table> flattened_masked = _process_table();
+    t_process_table_result process_result = _process_table();
+    std::shared_ptr<t_data_table> flattened_masked = process_result.m_flattened_data_table;
     if (flattened_masked) {
         notify_contexts(*flattened_masked);
     }
 
     psp_log_time(repr() + " _process.noinit_path.exit");
+    return process_result.m_should_notify_userspace;
 }
 
 t_uindex
