@@ -257,13 +257,13 @@ protected:
      * @param row_already_exists 
      * @param exists 
      * @param prev_valid 
-     * @param cur_valid 
+     * @param current_value_is_valid 
      * @param prev_cur_eq 
      * @param prev_pkey_eq 
      * @return t_value_transition 
      */
     t_value_transition calc_transition(bool prev_existed, bool row_already_exists, bool exists,
-        bool prev_valid, bool cur_valid, bool prev_cur_eq, bool prev_pkey_eq);
+        bool prev_valid, bool current_value_is_valid, bool prev_cur_eq, bool prev_pkey_eq);
 
     /**
      * @brief For all valid computed columns registered with the gnode,
@@ -507,14 +507,14 @@ t_gnode::_process_column(
                 bool prev_valid = false;
 
                 DATA_T current_value = *(flattened_column->get_nth<DATA_T>(idx));
-                bool cur_valid = flattened_column->is_valid(idx);
+                bool current_value_is_valid = flattened_column->is_valid(idx);
 
                 if (row_already_exists) {
                     prev_value = *(gstate_column->get_nth<DATA_T>(rlookup.m_idx));
                     prev_valid = gstate_column->is_valid(rlookup.m_idx);
                 }
 
-                bool exists = cur_valid;
+                bool exists = current_value_is_valid;
                 bool prev_existed = row_already_exists && prev_valid;
 
                 // Whether the previous and the current value are equal. If
@@ -522,28 +522,34 @@ t_gnode::_process_column(
                 // in an update (across all columns and rows) are equal to
                 // their previous values, an update is considered a no-op
                 // and `on_update` callbacks will not fire.
-                bool prev_cur_eq = prev_value == current_value;
+                bool value_changed = prev_value != current_value;
+
+                bool both_valid = prev_valid && current_value_is_valid;
+                bool validity_changed = prev_valid != current_value_is_valid;
+                bool should_notify = (value_changed && both_valid) || !row_already_exists || validity_changed;
 
                 // If at any point, the previous and current values are not
                 // equal, set `m_has_new_values` to true to make sure that
                 // `on_update` callbacks are triggered.
-                if (!prev_cur_eq && !should_notify_userspace) {
+                if (should_notify && !should_notify_userspace) {
+                    std::cout << std::boolalpha << "value_changed: " << value_changed << ", both_valid:" << both_valid << ", row_already_exists:" << row_already_exists << ", validity_changed:" << validity_changed;
+                    std::cout << ", `" << prev_value << "` , `" << current_value << "`" << std::endl;
                     should_notify_userspace = true;
                 }
 
                 auto trans = calc_transition(prev_existed, row_already_exists, exists, prev_valid,
-                    cur_valid, prev_cur_eq, prev_pkey_eq);
+                    current_value_is_valid, !value_changed, prev_pkey_eq);
 
                 delta_column->set_nth<DATA_T>(
-                    added_count, cur_valid ? current_value - prev_value : DATA_T(0));
+                    added_count, current_value_is_valid ? current_value - prev_value : DATA_T(0));
                 delta_column->set_valid(added_count, true);
 
                 prev_column->set_nth<DATA_T>(added_count, prev_value);
                 prev_column->set_valid(added_count, prev_valid);
 
-                current_column->set_nth<DATA_T>(added_count, cur_valid ? current_value : prev_value);
+                current_column->set_nth<DATA_T>(added_count, current_value_is_valid ? current_value : prev_value);
 
-                current_column->set_valid(added_count, cur_valid ? cur_valid : prev_valid);
+                current_column->set_valid(added_count, current_value_is_valid ? current_value_is_valid : prev_valid);
 
                 transitions_column->set_nth<std::uint8_t>(idx, trans);
             } break;

@@ -144,19 +144,19 @@ t_gnode::calc_transition(
     bool row_already_exists,
     bool exists,
     bool prev_valid,
-    bool cur_valid,
+    bool current_value_is_valid,
     bool prev_cur_eq,
     bool prev_pkey_eq) {
     t_value_transition trans = VALUE_TRANSITION_EQ_FF;
 
-    if (!row_already_exists && !cur_valid && !t_env::backout_invalid_neq_ft()) {
+    if (!row_already_exists && !current_value_is_valid && !t_env::backout_invalid_neq_ft()) {
         trans = VALUE_TRANSITION_NEQ_FT;
-    } else if (row_already_exists && !prev_valid && !cur_valid
+    } else if (row_already_exists && !prev_valid && !current_value_is_valid
         && !t_env::backout_eq_invalid_invalid()) {
         trans = VALUE_TRANSITION_EQ_TT;
     } else if (!prev_existed && !exists) {
         trans = VALUE_TRANSITION_EQ_FF;
-    } else if (row_already_exists && exists && !prev_valid && cur_valid
+    } else if (row_already_exists && exists && !prev_valid && current_value_is_valid
         && !t_env::backout_nveq_ft()) {
         trans = VALUE_TRANSITION_NVEQ_FT;
     } else if (prev_existed && exists && prev_cur_eq) {
@@ -384,6 +384,8 @@ t_gnode::_process_table() {
 
             t_dtype col_dtype = flattened_column->get_dtype();
 
+            std::cout << "Processing " << cname << std::endl;
+
             switch (col_dtype) {
                 case DTYPE_INT64: {
                     _process_column<std::int64_t>(flattened_column, gstate_column, delta_column, prev_column, current_column, transitions_column, diff_column, _process_state);
@@ -483,7 +485,6 @@ t_gnode::_process_table() {
     // Read the diff data table - if all columns have no new values, then
     // don't notify userspace.
     bool should_notify_userspace = false;
-    _process_state.m_diff_data_table->pprint();
 
     for (t_uindex colidx = 0; colidx < ncols; ++colidx) {
         const std::string& cname = column_names[colidx];
@@ -556,8 +557,22 @@ t_gnode::_process_column<std::string>(
                 // in an update (across all columns and rows) are equal to
                 // their previous values, an update is considered a no-op
                 // and `on_update` callbacks will not fire.
-                bool prev_cur_eq
-                    = prev_value && current_value && strcmp(prev_value, current_value) == 0;
+                bool value_changed
+                    = prev_value && current_value && strcmp(prev_value, current_value) != 0;
+
+                // the case where we DON'T notify - whether the values are
+                // 100% equal, OR when prev value is invalid, but the prev row exists, AND the new value is invalid
+
+                // row doesn't exist, so the old value is invalid, and the new value is invalid, but you need to notify because it's an append
+                // a: 1, b: null, c: 1 - prev row does not exist, old value is invalid, new value is invalid. - but you still need to notify
+
+                // a: 1, b: null, c: 1
+
+                // a: 1, b: null, c: 1 - prev row exists, old value is invalid, new value is invalid, everything else equals, so no notify
+
+                // a: 1, b: 123, c: 1 - prev row exists, old value is invalid, new value is valid, new value != old value, NOTIFY
+
+                // a: 2, b: null, c: 1 - prev row does not exist, no old value, NOTIFY
 
                 if (prev_existed && exists) {
                     // strcmp returns 0 (no difference) when both values are
@@ -565,20 +580,26 @@ t_gnode::_process_column<std::string>(
                     // Use current value as `std::string`, as it might be null and
                     // calling `strlen` will segfault. 
                     if (strlen(prev_value) == 0 && current_value_string.size() == 0) {
-                        prev_cur_eq = true;
+                        value_changed = false;
                     }
                 }
+
+                bool both_valid = prev_valid && current_value_is_valid;
+                bool validity_changed = prev_valid != current_value_is_valid;
+                bool should_notify = (value_changed && both_valid) || !row_already_exists || validity_changed;
 
                 // If at any point, the previous and current values are not
                 // equal, set `m_has_new_values` to true to make sure that
                 // `on_update` callbacks are triggered. Once `m_has_new_values`
                 // is true, it cannot be set to false.
-                if (!prev_cur_eq && !should_notify_userspace) {
+                if (should_notify && !should_notify_userspace) {
+                    std::cout << std::boolalpha << "value_changed: " << value_changed << ", both_valid:" << both_valid << ", row_already_exists:" << row_already_exists << ", validity_changed:" << validity_changed;
+                    std::cout << ", `" << prev_value << "` , `" << current_value << "`" << std::endl;
                     should_notify_userspace = true;
                 }
 
                 auto trans = calc_transition(prev_existed, row_already_exists, exists, prev_valid,
-                    current_value_is_valid, prev_cur_eq, prev_pkey_eq);
+                    current_value_is_valid, !value_changed, prev_pkey_eq);
 
                 if (prev_valid) {
                     prev_column->set_nth<t_uindex>(
