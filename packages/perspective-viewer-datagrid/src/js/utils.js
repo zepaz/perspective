@@ -29,8 +29,7 @@ export async function getCellConfig({view, config}, row_idx, col_idx) {
             return pivot_value ? [pivot, "==", pivot_value] : undefined;
         })
         .filter(x => x);
-    const column_index = row_pivots.length > 0 ? col_idx + 1 : col_idx;
-    const column_paths = Object.keys(r[0])[column_index];
+    const column_paths = Object.keys(r[0])[col_idx];
     const result = {row: r[0]};
     let column_filters = [];
     if (column_paths) {
@@ -118,3 +117,12 @@ export const html = (strings, ...args) =>
         .flat()
         .filter(a => !!a)
         .join("");
+
+/**
+ * Formatter for boolean columns for values to show in cells
+ */
+export class BooleanFormatter {
+    format(value) {
+        return value?.toString();
+    }
+}

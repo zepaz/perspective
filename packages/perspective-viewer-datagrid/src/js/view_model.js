@@ -9,7 +9,7 @@
 
 import {get_type_config} from "@finos/perspective/dist/esm/config";
 import {METADATA_MAP} from "./constants";
-import {memoize} from "./utils";
+import {memoize, BooleanFormatter} from "./utils";
 import {tree_header} from "./tree_row_header";
 
 /******************************************************************************
@@ -53,7 +53,8 @@ export class ViewModel {
             float: Intl.NumberFormat,
             integer: Intl.NumberFormat,
             datetime: Intl.DateTimeFormat,
-            date: Intl.DateTimeFormat
+            date: Intl.DateTimeFormat,
+            boolean: BooleanFormatter
         }[real_type];
         if (format_function) {
             const func = new format_function("en-us", config.format);
