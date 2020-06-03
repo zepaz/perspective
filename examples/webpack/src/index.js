@@ -19,19 +19,32 @@ import "./index.css";
 
 const worker = perspective.shared_worker();
 
-// superstore.arrow located in examples/simple/ and it's configured by
-// 'devServer' in 'webpack.config.js'
-const req = fetch("./superstore.arrow");
+const schema = {
+    colA: "integer",
+    colB: "datetime"
+};
+
+const config = {
+    plugin: "datagrid",
+    columns: ["colA", "colB", "week_bucket(colB)"],
+    "computed-columns": ['week_bucket("colB")']
+};
 
 window.addEventListener("load", async () => {
     const viewer = document.createElement("perspective-viewer");
     document.body.append(viewer);
 
-    const resp = await req;
-    const buffer = await resp.arrayBuffer();
-    const table = worker.table(buffer);
-
+    const table = worker.table(schema);
     viewer.load(table);
+    viewer.restore(config);
+
+    let counter = 0;
+
+    const update = () => {
+        console.log("updating");
+        table.update([{colA: ++counter, colB: new Date()}]);
+    };
+    setInterval(update, 1000);
 
     window.viewer = viewer;
 });
