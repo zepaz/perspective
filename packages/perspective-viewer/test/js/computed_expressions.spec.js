@@ -7,15 +7,6 @@
  *
  */
 
-/******************************************************************************
- *
- * Copyright (c) 2017, the Perspective Authors.
- *
- * This file is part of the Perspective library, distributed under the terms of
- * the Apache License 2.0.  The full license can be found in the LICENSE file.
- *
- */
-
 const utils = require("@finos/perspective-test");
 const path = require("path");
 
@@ -688,21 +679,25 @@ utils.with_server({}, () => {
                 await page.evaluate(element => element.setAttribute("columns", JSON.stringify(["Computed", "Computed2"])), viewer);
             });
 
-            test.skip("Computed expressions are restored without changes", async page => {
-                await page.shadow_click("perspective-viewer", "#config_button");
-                await page.waitForSelector("perspective-viewer:not([updating])");
-                const viewer = await page.$("perspective-viewer");
-                await page.evaluate(async element => {
-                    const config = {
-                        columns: ["Order Date", "Ship Date"],
-                        "computed-columns": ['day_of_week("Order Date") as "Computed"', 'month_of_year("Ship Date") as "Computed2"']
-                    };
-                    await element.restore(config);
-                }, viewer);
-                await page.waitForSelector("perspective-viewer:not([updating])");
-            });
+            test.capture(
+                "Computed expressions are restored without changes",
+                async page => {
+                    await page.shadow_click("perspective-viewer", "#config_button");
+                    await page.waitForSelector("perspective-viewer:not([updating])");
+                    const viewer = await page.$("perspective-viewer");
+                    await page.evaluate(async element => {
+                        const config = {
+                            columns: ["Order Date", "Ship Date"],
+                            "computed-columns": ['day_of_week("Order Date") as "Computed"', 'month_of_year("Ship Date") as "Computed2"']
+                        };
+                        element.restore(config);
+                    }, viewer);
+                    await page.waitForSelector("perspective-viewer:not([updating])");
+                },
+                {wait_for_update: false}
+            );
 
-            test.skip("On restore, computed expressions in the active columns list are restored correctly.", async page => {
+            test.capture("On restore, computed expressions in the active columns list are restored correctly.", async page => {
                 await page.shadow_click("perspective-viewer", "#config_button");
                 await page.waitForSelector("perspective-viewer:not([updating])");
                 const viewer = await page.$("perspective-viewer");
@@ -711,12 +706,12 @@ utils.with_server({}, () => {
                         columns: ["Computed", "Computed2"],
                         "computed-columns": ['day_of_week("Order Date") as "Computed"', 'month_of_year("Ship Date") as "Computed2"']
                     };
-                    await element.restore(config);
+                    element.restore(config);
                 }, viewer);
                 await page.waitForSelector("perspective-viewer:not([updating])");
             });
 
-            test.skip("On restore, computed expressions in pivots are restored correctly.", async page => {
+            test.capture("On restore, computed expressions in pivots are restored correctly.", async page => {
                 await page.shadow_click("perspective-viewer", "#config_button");
                 await page.waitForSelector("perspective-viewer:not([updating])");
                 const viewer = await page.$("perspective-viewer");
@@ -727,12 +722,12 @@ utils.with_server({}, () => {
                         columns: ["Order Date", "Ship Date"],
                         "computed-columns": ['day_of_week("Order Date") as "Computed"', 'month_of_year("Ship Date") as "Computed2"']
                     };
-                    await element.restore(config);
+                    element.restore(config);
                 }, viewer);
                 await page.waitForSelector("perspective-viewer:not([updating])");
             });
 
-            test.skip("On restore, computed expressions in filter are restored correctly.", async page => {
+            test.capture("On restore, computed expressions in filter are restored correctly.", async page => {
                 await page.shadow_click("perspective-viewer", "#config_button");
                 await page.waitForSelector("perspective-viewer:not([updating])");
                 const viewer = await page.$("perspective-viewer");
@@ -742,12 +737,12 @@ utils.with_server({}, () => {
                         columns: ["Order Date", "Ship Date"],
                         "computed-columns": ['day_of_week("Order Date") as "Computed"', 'month_of_year("Ship Date") as "Computed2"']
                     };
-                    await element.restore(config);
+                    element.restore(config);
                 }, viewer);
                 await page.waitForSelector("perspective-viewer:not([updating])");
             });
 
-            test.skip("On restore, computed expressions in sort are restored correctly.", async page => {
+            test.capture("On restore, computed expressions in sort are restored correctly.", async page => {
                 await page.shadow_click("perspective-viewer", "#config_button");
                 await page.waitForSelector("perspective-viewer:not([updating])");
                 const viewer = await page.$("perspective-viewer");
@@ -757,12 +752,12 @@ utils.with_server({}, () => {
                         columns: ["Order Date", "Ship Date"],
                         "computed-columns": ['day_of_week("Order Date") as "Computed"', 'month_of_year("Ship Date") as "Computed2"']
                     };
-                    await element.restore(config);
+                    element.restore(config);
                 }, viewer);
                 await page.waitForSelector("perspective-viewer:not([updating])");
             });
 
-            test.skip("On restore, computed expressions in classic syntax are parsed correctly.", async page => {
+            test.capture("On restore, computed expressions in classic syntax are parsed correctly.", async page => {
                 await page.shadow_click("perspective-viewer", "#config_button");
                 await page.waitForSelector("perspective-viewer:not([updating])");
                 const viewer = await page.$("perspective-viewer");
@@ -774,7 +769,7 @@ utils.with_server({}, () => {
                             inputs: ["Sales", "Profit"]
                         },
                         {
-                            column: "Computed3",
+                            column: "Computed2",
                             computed_function_name: "pow2",
                             inputs: ["Row ID"]
                         }
@@ -783,12 +778,12 @@ utils.with_server({}, () => {
                         columns: ["Computed", "Computed2"],
                         "computed-columns": computed
                     };
-                    await element.restore(config);
+                    element.restore(config);
                 }, viewer);
                 await page.waitForSelector("perspective-viewer:not([updating])");
             });
 
-            test.skip("On restore, user defined aggregates are maintained on computed expression columns", async page => {
+            test.capture("On restore, user defined aggregates are maintained on computed expression columns", async page => {
                 await page.shadow_click("perspective-viewer", "#config_button");
                 const viewer = await page.$("perspective-viewer");
                 await page.evaluate(async element => {
@@ -798,7 +793,7 @@ utils.with_server({}, () => {
                         columns: ["Computed"],
                         "row-pivots": ["Category"]
                     };
-                    await element.restore(config);
+                    element.restore(config);
                 }, viewer);
                 await page.$("perspective-viewer:not([updating])");
             });

@@ -12,7 +12,7 @@
 // to import Perspective in order to `seed` the parser with actual, valid
 // computations.
 import perspective from "@finos/perspective";
-import {COMPUTED_EXPRESSION_PARSER} from "../../../src/js/computed_expressions/computed_expression_parser";
+import {COMPUTED_EXPRESSION_PARSER} from "../../../../src/js/computed_expressions/computed_expression_parser";
 
 let TABLE;
 
