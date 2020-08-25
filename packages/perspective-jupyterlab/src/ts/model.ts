@@ -14,6 +14,7 @@ import {PERSPECTIVE_VERSION} from "./version";
  * TODO: document
  */
 export class PerspectiveModel extends DOMWidgetModel {
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
     defaults() {
         return {
             ...super.defaults(),
