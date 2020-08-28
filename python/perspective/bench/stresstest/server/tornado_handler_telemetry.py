@@ -16,6 +16,10 @@ class PerspectiveTornadoHandlerWithTelemetry(PerspectiveTornadoHandler):
     """An implementation of PerspectiveTornadoHandler that accesses telemetry
     data from its PerspectiveManagerWithTelemetry instance."""
 
+    def __init__(self, *args, **kwargs):
+        self.set_nodelay(True)
+        super(PerspectiveTornadoHandler, self).__init__(*args, **kwargs)
+
     def on_message(self, message):
         """Logs when the message is received by the server before passing it on
         to the tornado handler to process."""
@@ -43,7 +47,6 @@ class PerspectiveTornadoHandlerWithTelemetry(PerspectiveTornadoHandler):
                 if telemetry.get("method") != "on_update":
                     self._manager._pending_telemetry.pop(msg["id"])
 
-            # TODO: rename to server_send_time
             msg["send_time"] = time.time() * 100000
             super(PerspectiveTornadoHandlerWithTelemetry, self).post(json.dumps(msg, cls=DateTimeEncoder), binary)
         else:
