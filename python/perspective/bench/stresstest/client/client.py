@@ -326,7 +326,7 @@ class PerspectiveWebSocketClient(object):
                     "receive_timestamp": datetime.now(),
                     "client_id": self.client_id,
                     "cmd": "view_method",
-                    "method": response.get("method", "on_update_callback"),
+                    "method": response.get("method", "ARROW"),
                     "message_id": response.get("id", None),
                     "binary": response.get("binary"),
                     "byte_length": response.get("byte_length"),
@@ -367,20 +367,24 @@ class PerspectiveWebSocketClient(object):
                     }
                 )
 
-                # For an on_update callback/binary, return the time it takes
-                # between this client receiving the `is_transferable`
-                # pre-message and getting the binary.
-                if not meta.get("microseconds_on_wire") and meta.get(
-                    "server_start_process_time"
-                ):
-                    dt = meta["receive_timestamp"]
-                    seconds_timestamp = (
-                        time.mktime(dt.timetuple()) + dt.microsecond / 1000000.0
-                    )
-                    ms_timestamp = int(seconds_timestamp * 1000)
-                    meta["microseconds_on_wire"] = (
-                        ms_timestamp - meta.get("server_start_process_time")
-                    ) * 1000
+                if not meta.get("microseconds_on_wire"):
+                    print(meta, telemetry_source)
+                    # Either `response` is a binary message, or the server
+                    # does not provide telemetry, or both.
+                    if meta.get("server_start_process_time"):
+                        # For an on_update callback/binary, return the time it
+                        # takes between this client receiving the
+                        # `is_transferable` pre-message and getting the binary.
+                        dt = meta["receive_timestamp"]
+                        seconds_timestamp = time.mktime(dt.timetuple()) + dt.microsecond / 1000000.0
+                        ms_timestamp = int(seconds_timestamp * 1000)
+                        meta["microseconds_on_wire"] = (ms_timestamp - meta.get("server_start_process_time")) * 1000
+                    else:
+                        # Return the amount of time between when the last msg,
+                        # presumably the arrow `is_transferable` message, was
+                        # received by the client, and the timestamp when the
+                        # arrow was received.
+                        meta["microseconds_on_wire"] = (meta["receive_timestamp"] - telemetry_source["send_timestamp"]).microseconds
 
                 self.results_table.update([meta])
 

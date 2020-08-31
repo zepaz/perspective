@@ -6,7 +6,11 @@
 # the Apache License 2.0.  The full license can be found in the LICENSE file.
 #
 
+import logging
 import json
+import time
+import tornado.gen
+import tornado.escape
 import tornado.websocket
 from tornado.ioloop import IOLoop
 from ..core.exception import PerspectiveError
@@ -56,6 +60,12 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
         self._manager = kwargs.pop("manager", None)
         self._session = self._manager.new_session()
         self._check_origin = kwargs.pop("check_origin", False)
+
+        # Send messages as chunks when they are over 40MB
+        self.message_chunk_threshold = 20 * 1000 * 1000  # bytes
+
+        # Send binary arrows to the clients using chunks of 10MB
+        self.message_chunk_size = 10 * 1000 * 1000
 
         # Trigger special flow when receiving an ArrayBuffer/binary
         self._is_transferable = False
@@ -123,6 +133,57 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
 
         self._session.process(message, self.post)
 
+    def write_message(self, message, binary=False):
+        """Writes messages to the client, breaking up large binary arrows into
+        chunks."""
+        if self.ws_connection is None:
+            raise tornado.websocket.WebSocketClosedError()
+        if isinstance(message, dict):
+            message = tornado.escape.json_encode(message)
+
+        if binary:
+            opcode = 0x2
+        else:
+            opcode = 0x1
+
+        message = tornado.escape.utf8(message)
+
+        assert isinstance(message, bytes)
+
+        flags = 0
+
+        if self.ws_connection._compressor:
+            message = self.ws_connection._compressor.compress(message)
+            flags |= self.ws_connection.RSV1
+
+        message_length = len(message)
+
+        # used for Tornado testing - does not interface with real code
+        self.ws_connection._message_bytes_out += message_length
+
+        if binary and (message_length > self.message_chunk_threshold):
+            logging.critical("Chunking len %s", message_length)
+            start = 0
+            start_time = time.time()
+            _opcode = opcode
+
+            # write each frame with finbit set to clear
+            while start < message_length:
+                end = start + self.message_chunk_size
+
+                if end >= message_length:
+                    end = message_length
+
+                self.ws_connection._write_frame(False, _opcode, message[start:end], flags=flags)
+
+                start = end
+                _opcode = 0
+
+            logging.critical("Sending close frame, took %s seconds", time.time() - start_time)
+            return self.ws_connection._write_frame(True, 0, b"", flags=flags)
+        else:
+            return self.ws_connection._write_frame(True, opcode, message, flags=flags)
+
     def post(self, message, binary=False):
         """When `post` is called by `PerspectiveManager`, serialize the data to
         JSON and send it to the client.
@@ -139,3 +200,13 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
         closes.
         """
         self._session.close()
+
+    def on_ping(self):
+        logging.critical("Ping received")
+
+    def on_pong(self):
+        logging.critical("Pong received")
+
+    def ping(self, data):
+        logging.critical("Sending ping")
+        super(PerspectiveTornadoHandler, self).ping(data)
