@@ -17,30 +17,78 @@ export class WebSocketClient extends Client {
             setTimeout(heartbeat, HEARTBEAT_TIMEOUT);
         };
         setTimeout(heartbeat, 15000);
+
+        this._chunked_arrows = [];
+        this._total_chunk_length = 0;
+        this._pending_arrow_total_length = 0;
+
+        /**
+         * When the websocket receives a message, parse it either as an
+         * `ArrayBuffer` containing a full or partial Apache Arrow-encoded
+         * binary, or a JSON message for the Perspective JS client.
+         */
         this._ws.onmessage = msg => {
             if (msg.data === "heartbeat") {
                 return;
             }
-            if (this._pending_arrow) {
-                let result = {
+
+            if (this._pending_arrow && msg.data instanceof ArrayBuffer) {
+                let arrow = msg.data;
+
+                if (!this._total_time) {
+                    this._total_time = performance.now();
+                }
+
+                if (this._pending_arrow_chunked) {
+                    this._chunked_arrows.push(arrow);
+                    this._total_chunk_length += arrow.byteLength;
+
+                    if (this._total_chunk_length === this._pending_arrow_total_length) {
+                        console.log("Concat arrow");
+                        const full_arrow = new Uint8Array(this._total_chunk_length);
+                        let incr = 0;
+                        for (const chunk of this._chunked_arrows) {
+                            full_arrow.set(new Uint8Array(chunk), incr);
+                            console.log(chunk.byteLength);
+                            incr += chunk.byteLength;
+                        }
+                        arrow = full_arrow.buffer;
+                    } else {
+                        return;
+                    }
+                }
+
+                console.log(performance.now() - this._total_time);
+                console.log("Total", arrow.byteLength);
+
+                const result = {
                     data: {
                         id: this._pending_arrow,
-                        data: msg.data
+                        data: arrow
                     }
                 };
 
                 // make sure on_update callbacks are called with a `port_id`
-                // AND the transferred arrow.
+                // AND the transferred arrow, joined into one object.
                 if (this._pending_port_id !== undefined) {
                     const new_data_with_port_id = {
                         port_id: this._pending_port_id,
-                        delta: msg.data
+                        delta: arrow
                     };
+                    // result.data.data will be passed into the `on_update`
+                    // callback provided by the user.
                     result.data.data = new_data_with_port_id;
                 }
+
+                console.log(result);
                 this._handle(result);
+
+                delete this._pending_arrow_total_length;
+                delete this._total_chunk_length;
+                delete this._pending_arrow_chunked;
                 delete this._pending_port_id;
                 delete this._pending_arrow;
+                this._chunked_arrows = [];
             } else {
                 msg = JSON.parse(msg.data);
 
@@ -50,6 +98,8 @@ export class WebSocketClient extends Client {
                 // the ArrayBuffer containing arrow data.
                 if (msg.is_transferable) {
                     this._pending_arrow = msg.id;
+                    this._pending_arrow_chunked = msg.chunked;
+                    this._pending_arrow_total_length = msg.arrow_length;
 
                     // Check whether the message also contains a `port_id`,
                     // indicating that we are in an `on_update` callback and

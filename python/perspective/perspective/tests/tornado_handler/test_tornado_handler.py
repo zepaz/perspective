@@ -243,7 +243,9 @@ class TestPerspectiveTornadoHandler(object):
             "cmd": "view_method",
             "method": "to_arrow",
             "args": [],
-            "is_transferable": True
+            "is_transferable": True,
+            "arrow_length": 2048,
+            "chunked": False
         }
 
         binary = yield client.read_message()

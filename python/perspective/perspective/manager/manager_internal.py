@@ -10,6 +10,7 @@ from six import string_types
 import datetime
 import logging
 import json
+import time
 from functools import partial
 from ..core.exception import PerspectiveError
 from ..table import Table, PerspectiveCppError
@@ -44,6 +45,12 @@ class _PerspectiveManagerInternal(object):
         self._callback_cache = _PerspectiveCallBackCache()
         self._queue_process_callback = None
         self._lock = lock
+
+        # Send binary messages in distinct chunks if > 150MB
+        self._message_chunk_threshold = 150 * 1000 * 1000  # bytes
+
+        # Send binary messages in chunks of 20MB
+        self._message_chunk_size = 20 * 1000 * 1000  # bytes
 
     def _process(self, msg, post_callback, client_id=None):
         """Given a message from the client, process it through the Perspective
@@ -272,8 +279,34 @@ class _PerspectiveManagerInternal(object):
                 byte messages without serializing to JSON.
         """
         msg["is_transferable"] = True
+
+        arrow_length = len(binary)
+        chunked = arrow_length > self._message_chunk_threshold
+
+        msg["arrow_length"] = arrow_length
+        msg["chunked"] = chunked
+
         post_callback(json.dumps(msg, cls=DateTimeEncoder))
-        post_callback(binary, binary=True)
+
+        if chunked:
+            start_time = time.time()
+            start = 0
+            iters = 0
+
+            # write each frame with finbit set to clear
+            while start < arrow_length:
+                end = start + self._message_chunk_size
+
+                if end >= arrow_length:
+                    end = arrow_length
+
+                post_callback(binary[start:end], binary=True)
+                iters += 1
+                start = end
+
+            print("Sent binary in {} chunks, took {} seconds".format(iters, time.time() - start_time))
+        else:
+            post_callback(binary, binary=True)
 
     def callback(self, *args, **kwargs):
         """Return a message to the client using the `post_callback` method."""

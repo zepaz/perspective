@@ -368,7 +368,6 @@ class PerspectiveWebSocketClient(object):
                 )
 
                 if not meta.get("microseconds_on_wire"):
-                    print(meta, telemetry_source)
                     # Either `response` is a binary message, or the server
                     # does not provide telemetry, or both.
                     if meta.get("server_start_process_time"):

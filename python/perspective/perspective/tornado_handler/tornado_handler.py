@@ -61,7 +61,7 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
         self._session = self._manager.new_session()
         self._check_origin = kwargs.pop("check_origin", False)
 
-        # Send messages as chunks when they are over 40MB
+        # Send binary Arrows as chunks after 20MB
         self.message_chunk_threshold = 20 * 1000 * 1000  # bytes
 
         # Send binary arrows to the clients using chunks of 10MB
@@ -100,6 +100,7 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
         objects over the wire from JS to Python, and vice-versa.
         """
         if message == "heartbeat":
+            self.write_message("heartbeat")
             return
 
         # The message is an ArrayBuffer, and it needs to be combined with the
@@ -133,7 +134,7 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
 
         self._session.process(message, self.post)
 
-    def write_message(self, message, binary=False):
+    def _write_message(self, message, binary=False):
         """Writes messages to the client, breaking up large binary arrows into
         chunks."""
         if self.ws_connection is None:
@@ -188,7 +189,6 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
         """When `post` is called by `PerspectiveManager`, serialize the data to
         JSON and send it to the client.
 
-        Args:
             message (:obj:`str`): a JSON-serialized string containing a message to the
                 front-end `perspective-viewer`.
         """
@@ -201,10 +201,10 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
         """
         self._session.close()
 
-    def on_ping(self):
+    def on_ping(self, data):
         logging.critical("Ping received")
 
-    def on_pong(self):
+    def on_pong(self, data):
         logging.critical("Pong received")
 
     def ping(self, data):
