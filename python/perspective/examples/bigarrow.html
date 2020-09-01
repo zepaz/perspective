@@ -14,10 +14,10 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
 
-    <script src="https://unpkg.com/@finos/perspective-viewer"></script>
-    <script src="https://unpkg.com/@finos/perspective-viewer-datagrid"></script>
-    <script src="https://unpkg.com/@finos/perspective-viewer-d3fc"></script>
-    <script src="https://unpkg.com/@finos/perspective"></script>
+    <script src="http://localhost:8080/perspective-viewer.js"></script>
+    <script src="http://localhost:8080/perspective-viewer-hypergrid.js"></script>
+    <script src="http://localhost:8080/perspective-viewer-d3fc.js"></script>
+    <script src="http://localhost:8080/perspective.js"></script>
 
     <link rel='stylesheet' href="https://unpkg.com/@finos/perspective-viewer/dist/umd/material.css">
 
@@ -44,7 +44,7 @@
             // the server with a reciprocal call to `host_view()`.
             // No data is transferred, `view` is a virtual handle for data on
             // the server.
-            const view = websocket.open_view('data_source_view');
+            const view = websocket.open_view('view');
 
             // Create a `table` from this, owned by the local WebWorker.
             // Data is transferred from `view` to the local WebWorker, both

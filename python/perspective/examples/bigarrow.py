@@ -12,6 +12,9 @@ sys.path.insert(1, os.path.join(os.path.dirname(__file__), '..'))
 from perspective import Table, PerspectiveManager, PerspectiveTornadoHandler
 
 
+logging.basicConfig(format='%(asctime)s %(message)s')
+
+
 class MainHandler(tornado.web.RequestHandler):
 
     def set_default_headers(self):
@@ -32,19 +35,14 @@ def make_app():
     TABLE = None
     VIEW = None
 
-    TABLE = Table(pd.read_csv(os.path.join(here, "superstore.csv")))
-    VIEW = TABLE.view()
-    arrow = VIEW.to_arrow()
-
-    start = time.time()
-    for i in range(500):
-        TABLE.update(arrow)
-    print(time.time() - start)
+    with open(os.path.join(here, "superstore_big.arrow"), "rb") as arrow:
+        TABLE = Table(arrow.read())
+        VIEW = TABLE.view()
 
     # Track the table with the name "data_source_one", which will be used in
     # the front-end to access the Table.
-    MANAGER.host_table("data_source_one", TABLE)
-    MANAGER.host_view("data_source_view", VIEW)
+    MANAGER.host_table("table", TABLE)
+    MANAGER.host_view("view", VIEW)
 
     return tornado.web.Application([
         (r"/", MainHandler),
