@@ -5,14 +5,10 @@ import logging
 import tornado.websocket
 import tornado.web
 import tornado.ioloop
-import time
 import pandas as pd
 
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), '..'))
 from perspective import Table, PerspectiveManager, PerspectiveTornadoHandler
-
-
-logging.basicConfig(format='%(asctime)s %(message)s')
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -23,7 +19,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
     def get(self):
-        self.render("bigarrow.html")
+        self.render("client_server_edits.html")
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -33,16 +29,13 @@ def make_app():
     # Create an instance of `PerspectiveManager` and a table.
     MANAGER = PerspectiveManager()
     TABLE = None
-    VIEW = None
 
-    with open(os.path.join(here, "superstore_big.arrow"), "rb") as arrow:
-        TABLE = Table(arrow.read())
-        VIEW = TABLE.view()
+    TABLE = Table(pd.read_csv(os.path.join(here, "superstore.csv")), index="Row ID")
 
     # Track the table with the name "data_source_one", which will be used in
     # the front-end to access the Table.
-    MANAGER.host_table("table", TABLE)
-    MANAGER.host_view("view", VIEW)
+    MANAGER.host_table("data_source_one", TABLE)
+    MANAGER.host_view("view_one", TABLE.view())
 
     return tornado.web.Application([
         (r"/", MainHandler),

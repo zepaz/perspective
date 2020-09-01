@@ -65,7 +65,9 @@ class _PerspectiveManagerInternal(object):
                 specifies whether `data` is a binary string.
         """
         if isinstance(msg, string_types):
-            if msg == "heartbeat":  # TODO fix this
+            if msg == "heartbeat":
+                # Ignore heartbeats that reach the manager - they should be
+                # handled in the transport layer.
                 return
             msg = json.loads(msg)
 

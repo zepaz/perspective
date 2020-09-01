@@ -20,6 +20,7 @@ class PerspectiveTornadoHandlerWithTelemetry(PerspectiveTornadoHandler):
         """Logs when the message is received by the server before passing it on
         to the tornado handler to process."""
         if message == "heartbeat":
+            self.write_message("heartbeat")
             return
 
         msg = json.loads(message)
