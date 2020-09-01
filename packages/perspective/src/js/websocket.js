@@ -16,7 +16,7 @@ export class WebSocketClient extends Client {
             this._ws.send("heartbeat");
             setTimeout(heartbeat, HEARTBEAT_TIMEOUT);
         };
-        setTimeout(heartbeat, 15000);
+        setTimeout(heartbeat, HEARTBEAT_TIMEOUT);
 
         this._chunked_arrows = [];
         this._total_chunk_length = 0;
@@ -29,6 +29,7 @@ export class WebSocketClient extends Client {
          */
         this._ws.onmessage = msg => {
             if (msg.data === "heartbeat") {
+                // Do not respond to server heartbeats.
                 return;
             }
 
@@ -189,6 +190,7 @@ export class WebSocketManager extends Server {
             ws.isAlive = true;
 
             if (msg === "heartbeat") {
+                // Respond to client heartbeat
                 ws.send("heartbeat");
                 return;
             }
