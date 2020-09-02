@@ -97,6 +97,7 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
         # previous message to reconsitute metadata before going into
         # PerspectiveManager
         if self._is_transferable:
+            # TODO: implement batching
             full_message = self._is_transferable_pre_message
             full_message.pop("is_transferable")
 
