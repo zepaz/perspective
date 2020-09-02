@@ -18,9 +18,9 @@ export class WebSocketClient extends Client {
         };
         setTimeout(heartbeat, HEARTBEAT_TIMEOUT);
 
-        this._chunked_arrows = [];
+        this._full_arrow;
         this._total_chunk_length = 0;
-        this._pending_arrow_total_length = 0;
+        this._pending_arrow_length = 0;
 
         /**
          * When the websocket receives a message, parse it either as an
@@ -41,19 +41,13 @@ export class WebSocketClient extends Client {
                 }
 
                 if (this._pending_arrow_chunked) {
-                    this._chunked_arrows.push(arrow);
-                    this._total_chunk_length += arrow.byteLength;
+                    const chunk_length = arrow.byteLength;
+                    this._full_arrow.set(new Uint8Array(arrow), this._total_chunk_length);
+                    this._total_chunk_length += chunk_length;
 
-                    if (this._total_chunk_length === this._pending_arrow_total_length) {
+                    if (this._total_chunk_length === this._pending_arrow_length) {
                         console.log("Concat arrow");
-                        const full_arrow = new Uint8Array(this._total_chunk_length);
-                        let incr = 0;
-                        for (const chunk of this._chunked_arrows) {
-                            full_arrow.set(new Uint8Array(chunk), incr);
-                            console.log(chunk.byteLength);
-                            incr += chunk.byteLength;
-                        }
-                        arrow = full_arrow.buffer;
+                        arrow = this._full_arrow.buffer;
                     } else {
                         return;
                     }
@@ -84,12 +78,13 @@ export class WebSocketClient extends Client {
                 console.log(result);
                 this._handle(result);
 
-                delete this._pending_arrow_total_length;
+                delete this._pending_arrow_length;
                 delete this._total_chunk_length;
                 delete this._pending_arrow_chunked;
                 delete this._pending_port_id;
                 delete this._pending_arrow;
-                this._chunked_arrows = [];
+                this._total_chunk_length = 0;
+                this._full_arrow = null;
             } else {
                 msg = JSON.parse(msg.data);
 
@@ -100,7 +95,7 @@ export class WebSocketClient extends Client {
                 if (msg.is_transferable) {
                     this._pending_arrow = msg.id;
                     this._pending_arrow_chunked = msg.chunked;
-                    this._pending_arrow_total_length = msg.arrow_length;
+                    this._pending_arrow_length = msg.arrow_length;
 
                     // Check whether the message also contains a `port_id`,
                     // indicating that we are in an `on_update` callback and
@@ -109,6 +104,8 @@ export class WebSocketClient extends Client {
                     if (msg.data && msg.data.port_id !== undefined) {
                         this._pending_port_id = msg.data.port_id;
                     }
+
+                    this._full_arrow = new Uint8Array(this._pending_arrow_length);
                 } else {
                     this._handle({data: msg});
                 }
