@@ -240,19 +240,24 @@ export class PerspectiveView extends DOMWidgetView {
             this.pWidget.load(data, options);
         } else {
             let view_or_table;
+            let options = {};
 
             // TODO: finalize the API for this in Python
             if (msg.data["view_name"]) {
                 // Get a remote view handle from the Jupyter kernel, and
                 // create a client-side table using the view handle.
                 view_or_table = this.perspective_client.open_view(msg.data["view_name"]);
+
+                // The kernel will pass through whether the server table has an
+                // index or options set.
+                options = msg.data["options"] || {};
             } else {
                 // Get a remote table handle, and load the remote table in
                 // the client.
                 view_or_table = this.perspective_client.open_table(msg.data["table_name"]);
             }
 
-            this.pWidget.load(view_or_table);
+            this.pWidget.load(view_or_table, options);
 
             // Only call `init` after the viewer has a table.
             this.perspective_client.send({

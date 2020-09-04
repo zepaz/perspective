@@ -26,13 +26,13 @@ class TestPlugin:
     def test_plugin_widget_load(self):
         data = {"a": [1, 2, 3], "b": ["a", "b", "c"]}
         widget = PerspectiveWidget(data, plugin=Plugin.XBAR)
-        assert widget.plugin == "x_bar"
+        assert widget.plugin == "d3_x_bar"
 
     def test_plugin_widget_setattr(self):
         data = {"a": [1, 2, 3], "b": ["a", "b", "c"]}
         widget = PerspectiveWidget(data)
         widget.plugin = Plugin.XBAR
-        assert widget.plugin == "x_bar"
+        assert widget.plugin == "d3_x_bar"
 
     def test_plugin_widget_load_invalid(self):
         data = {"a": [1, 2, 3], "b": ["a", "b", "c"]}
@@ -65,7 +65,7 @@ class TestPlugin:
     def test_plugin_viewer_setattr(self):
         viewer = PerspectiveViewer()
         viewer.plugin = Plugin.XBAR
-        assert viewer.plugin == "x_bar"
+        assert viewer.plugin == "d3_x_bar"
 
     def test_plugin_viewer_init_all(self):
         for plugin in Plugin:

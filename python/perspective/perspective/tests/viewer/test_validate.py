@@ -15,10 +15,10 @@ import perspective.viewer.validate as validate
 class TestValidate:
 
     def test_validate_plugin_valid_instance(self):
-        assert validate.validate_plugin(Plugin.XBAR) == "x_bar"
+        assert validate.validate_plugin(Plugin.XBAR) == "d3_x_bar"
 
     def test_validate_plugin_valid_string(self):
-        assert validate.validate_plugin("x_bar") == "x_bar"
+        assert validate.validate_plugin("d3_x_bar") == "d3_x_bar"
 
     def test_validate_plugin_invalid_string(self):
         with raises(PerspectiveError):

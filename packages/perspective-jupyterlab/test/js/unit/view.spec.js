@@ -119,6 +119,60 @@ describe("PerspectiveView", function() {
             });
         });
 
+        it("Should handle a well-formed view message with index from the kernel", async function() {
+            const view_name = uuid();
+            view = await manager.create_view(model)();
+            view._handle_message({
+                id: -2,
+                type: "table",
+                data: {
+                    view_name: view_name,
+                    options: {
+                        index: "a"
+                    }
+                }
+            });
+
+            const mock_client = PerspectiveJupyterClient.mock.instances[0];
+
+            // `open_view` should be called correctly
+            const open_view_arg = mock_client.open_view.mock.calls[0][0];
+            expect(open_view_arg).toEqual(view_name);
+
+            const send_arg = mock_client.send.mock.calls[0][0];
+            expect(send_arg).toEqual({
+                id: -1,
+                cmd: "init"
+            });
+        });
+
+        it("Should handle a well-formed view message with limit from the kernel", async function() {
+            const view_name = uuid();
+            view = await manager.create_view(model)();
+            view._handle_message({
+                id: -2,
+                type: "table",
+                data: {
+                    view_name: view_name,
+                    options: {
+                        limit: 1000
+                    }
+                }
+            });
+
+            const mock_client = PerspectiveJupyterClient.mock.instances[0];
+
+            // `open_view` should be called correctly
+            const open_view_arg = mock_client.open_view.mock.calls[0][0];
+            expect(open_view_arg).toEqual(view_name);
+
+            const send_arg = mock_client.send.mock.calls[0][0];
+            expect(send_arg).toEqual({
+                id: -1,
+                cmd: "init"
+            });
+        });
+
         it("Should handle a message containing an Arrow from the kernel", async function() {
             const arrow = new ArrayBuffer(24);
             const to_arrow_pre_msg = {
