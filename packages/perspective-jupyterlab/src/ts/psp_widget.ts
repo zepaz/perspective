@@ -11,7 +11,7 @@
 
 import "@finos/perspective-viewer";
 
-import {Table, TableData, TableOptions} from "@finos/perspective";
+import {Table, TableData, TableOptions, View} from "@finos/perspective";
 import {Message} from "@lumino/messaging";
 import {Widget} from "@lumino/widgets";
 import {MIME_TYPE, PSP_CLASS, PSP_CONTAINER_CLASS, PSP_CONTAINER_CLASS_DARK} from "./utils";
@@ -70,9 +70,11 @@ export class PerspectiveWidget extends Widget {
         const plugin_config: PerspectiveViewerOptions = options.plugin_config || {};
         const dark: boolean = options.dark || false;
         const editable: boolean = options.editable || false;
+        const server: boolean = options.server || false;
         const client: boolean = options.client || false;
         const selectable: boolean = options.selectable || false;
 
+        this.server = server;
         this.client = client;
         this.dark = dark;
         this.editable = editable;
@@ -140,7 +142,7 @@ export class PerspectiveWidget extends Widget {
      *
      * @param table a `perspective.table` object.
      */
-    load(table: TableData | Table, options?: TableOptions): void {
+    load(table: TableData | Table | View, options?: TableOptions): void {
         this.viewer.load(table, options);
     }
 
@@ -183,6 +185,14 @@ export class PerspectiveWidget extends Widget {
      */
     delete(delete_table = true): void {
         this.viewer.delete(delete_table || this.client);
+    }
+
+    /**
+     * Returns a promise that resolves to the element's edit port ID, used
+     * internally when edits are made using datagrid in client/server mode.
+     */
+    async getEditPort(): Promise<number> {
+        return await this.viewer.getEditPort();
     }
 
     get table(): Table {

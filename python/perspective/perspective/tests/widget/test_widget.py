@@ -30,7 +30,11 @@ class TestWidget:
             "id": -2,
             "type": "table",
             "data": {
-                "view_name": widget._perspective_view_name
+                "table_name": widget.table_name,
+                "view_name": widget._perspective_view_name,
+                "options": {
+                    "index": ""
+                }
             }
         }
 
@@ -84,7 +88,11 @@ class TestWidget:
             "id": -2,
             "type": "table",
             "data": {
-                "view_name": widget._perspective_view_name
+                "table_name": widget.table_name,
+                "view_name": widget._perspective_view_name,
+                "options": {
+                    "index": ""
+                }
             }
         }
 
@@ -97,7 +105,11 @@ class TestWidget:
             "id": -2,
             "type": "table",
             "data": {
-                "view_name": widget._perspective_view_name
+                "table_name": widget.table_name,
+                "view_name": widget._perspective_view_name,
+                "options": {
+                    "index": ""
+                }
             }
         }
 
@@ -111,7 +123,11 @@ class TestWidget:
             "id": -2,
             "type": "table",
             "data": {
-                "view_name": widget._perspective_view_name
+                "table_name": widget.table_name,
+                "view_name": widget._perspective_view_name,
+                "options": {
+                    "index": ""
+                }
             }
         }
 

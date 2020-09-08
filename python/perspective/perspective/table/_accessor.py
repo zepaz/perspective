@@ -76,7 +76,7 @@ def _type_to_format(data_or_schema):
     else:
         if not (isinstance(data_or_schema, pandas.DataFrame) or isinstance(data_or_schema, pandas.Series)):
             # if pandas not installed or is not a dataframe or series
-            raise NotImplementedError("Data must be dataframe, dict, list, numpy.recarray, or a numpy structured array.")
+            raise NotImplementedError("Invalid data format `{}` - Data must be dataframe, dict, list, numpy.recarray, or a numpy structured array.".format(type(data_or_schema)))
         else:
             # flatten column/index multiindex
             df, _ = deconstruct_pandas(data_or_schema)

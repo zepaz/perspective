@@ -7,6 +7,7 @@
 #
 
 import six
+import logging
 import numpy
 import pandas
 import json
@@ -294,6 +295,11 @@ class PerspectiveWidget(Widget, PerspectiveViewer):
             # Viewer will ignore **options if `data` is a Table or View.
             super(PerspectiveWidget, self).load(data, **options)
 
+            # Do not enable editing if the table is unindexed.
+            if self.editable and self.table._index == "":
+                logging.critical("Cannot edit on an unindexed `perspective.Table`!")
+                self.editable = False
+
         # Notify front-end of load immediately.
         message = self._make_load_message()
         self.send(message.to_dict())
@@ -401,6 +407,20 @@ class PerspectiveWidget(Widget, PerspectiveViewer):
                 de-serialized by ipywidgets.
             buffers : optional arraybuffers from the front-end, if any.
         '''
+        if self._is_transferable:
+            msg = self._is_transferable_pre_message
+
+            # arrow is a `MemoryView` - convert to bytes
+            arrow = buffers[0].tobytes()
+            msg["args"].insert(0, arrow)
+
+            # Send the message to the manager to process
+            post_callback = partial(self.post, msg_id=msg["id"])
+            self.manager._process(msg, post_callback)
+            self._is_transferable_pre_message = None
+            self._is_transferable = False
+            return
+
         if content["type"] == "cmd":
             parsed = json.loads(content["data"])
 
@@ -418,6 +438,13 @@ class PerspectiveWidget(Widget, PerspectiveViewer):
                     for data in self._predisplay_update_cache:
                         self.update(data)
             else:
+                # If the message has `is_transferable` set, wait for the arrow
+                # and join it with the JSON message.
+                if parsed.get("is_transferable"):
+                    self._is_transferable = True
+                    self._is_transferable_pre_message = parsed
+                    return
+
                 # For all calls to Perspective, process it in the manager.
                 post_callback = partial(self.post, msg_id=parsed["id"])
                 self.manager._process(parsed, post_callback)
@@ -457,6 +484,7 @@ class PerspectiveWidget(Widget, PerspectiveViewer):
             # and updates and edits will be synchronized across the client
             # and the server.
             msg_data = {
+                "table_name": self.table_name,
                 "view_name": self._perspective_view_name,
                 "options": {}
             }

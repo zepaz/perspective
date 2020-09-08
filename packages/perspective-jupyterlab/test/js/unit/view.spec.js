@@ -71,9 +71,10 @@ describe("PerspectiveView", function() {
          * Assert that the message for loading a remote table or view work
          * properly.
          */
-        it("Should handle a well-formed table message from the kernel", async function() {
+        it("Should handle a well-formed table message from the kernel in server mode", async function() {
             const table_name = uuid();
             view = await manager.create_view(model)();
+            view.pWidget.server = true;
             view._handle_message({
                 id: -2,
                 type: "table",
@@ -95,13 +96,15 @@ describe("PerspectiveView", function() {
             });
         });
 
-        it("Should handle a well-formed view message from the kernel", async function() {
+        it("Should handle a well-formed table/view message from the kernel", async function() {
+            const table_name = uuid();
             const view_name = uuid();
             view = await manager.create_view(model)();
             view._handle_message({
                 id: -2,
                 type: "table",
                 data: {
+                    table_name: table_name,
                     view_name: view_name
                 }
             });
@@ -119,13 +122,15 @@ describe("PerspectiveView", function() {
             });
         });
 
-        it("Should handle a well-formed view message with index from the kernel", async function() {
+        it("Should handle a well-formed table/view message with index from the kernel", async function() {
+            const table_name = uuid();
             const view_name = uuid();
             view = await manager.create_view(model)();
             view._handle_message({
                 id: -2,
                 type: "table",
                 data: {
+                    table_name: table_name,
                     view_name: view_name,
                     options: {
                         index: "a"
@@ -147,12 +152,14 @@ describe("PerspectiveView", function() {
         });
 
         it("Should handle a well-formed view message with limit from the kernel", async function() {
+            const table_name = uuid();
             const view_name = uuid();
             view = await manager.create_view(model)();
             view._handle_message({
                 id: -2,
                 type: "table",
                 data: {
+                    table_name: table_name,
                     view_name: view_name,
                     options: {
                         limit: 1000
