@@ -63,6 +63,9 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
         self._is_transferable = False
         self._is_transferable_pre_message = None
 
+        self._message_chunk_threshold = self._manager._message_chunk_threshold
+        self._message_chunk_size = self._manager._message_chunk_size
+
         if self._manager is None:
             raise PerspectiveError(
                 "A `PerspectiveManager` instance must be provided to the tornado handler!"
@@ -127,7 +130,7 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
 
         self._session.process(message, self.post)
 
-    def post(self, message, binary=False):
+    def post(self, message, binary=False, chunked=False):
         """When `post` is called by `PerspectiveManager`, serialize the data to
         JSON and send it to the client.
 
@@ -135,10 +138,35 @@ class PerspectiveTornadoHandler(tornado.websocket.WebSocketHandler):
                 front-end `perspective-viewer`.
         """
         loop = IOLoop.current()
-        loop.add_callback(self.write_message, message, binary)
+
+        if binary and chunked:
+            loop.add_callback(
+                self._write_message_chunked,
+                message,
+                0,
+                self._message_chunk_size,
+                len(message),
+            )
+        else:
+            loop.add_callback(self.write_message, message, binary)
 
     def on_close(self):
         """Remove the views associated with the client when the websocket
         closes.
         """
         self._session.close()
+
+    @tornado.gen.coroutine
+    def _write_message_chunked(self, message, start, end, message_length):
+        if start < message_length:
+            end = start + self._message_chunk_size
+
+            if end >= message_length:
+                end = message_length
+
+            self.write_message(message[start:end], binary=True)
+            start = end
+            yield tornado.gen.sleep(0.05)
+            yield self._write_message_chunked(
+                message, start, end, message_length
+            )

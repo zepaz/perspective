@@ -10,7 +10,6 @@ from six import string_types
 import datetime
 import logging
 import json
-import time
 from functools import partial
 from ..core.exception import PerspectiveError
 from ..table import Table, PerspectiveCppError
@@ -45,6 +44,7 @@ class _PerspectiveManagerInternal(object):
         self._callback_cache = _PerspectiveCallBackCache()
         self._queue_process_callback = None
         self._lock = lock
+        self._cached = None
 
         # Send binary messages in distinct chunks if > 150MB
         self._message_chunk_threshold = 150 * 1000 * 1000  # bytes
@@ -166,8 +166,10 @@ class _PerspectiveManagerInternal(object):
                             "table.delete() cannot be called on a remote table, as the remote has full ownership."
                         )
 
+                if msg["method"] == "to_arrow" and self._cached is not None:
+                    result = self._cached
                 # Dispatch the method using the expected argument form
-                if msg["method"].startswith("to_"):
+                elif msg["method"].startswith("to_"):
                     # to_format takes dictionary of options
                     result = getattr(table_or_view, msg["method"])(**arguments)
                 elif msg["method"] in ("update", "remove"):
@@ -280,35 +282,20 @@ class _PerspectiveManagerInternal(object):
                 client, with a `binary` (bool) kwarg that allows it to pass
                 byte messages without serializing to JSON.
         """
+        if self._cached is None:
+            self._cached = binary
+
         msg["is_transferable"] = True
 
         arrow_length = len(binary)
         chunked = arrow_length > self._message_chunk_threshold
 
+        # encode into the message so perspective.js expects chunks
         msg["arrow_length"] = arrow_length
         msg["chunked"] = chunked
 
         post_callback(json.dumps(msg, cls=DateTimeEncoder))
-
-        if chunked:
-            start_time = time.time()
-            start = 0
-            iters = 0
-
-            # write each frame with finbit set to clear
-            while start < arrow_length:
-                end = start + self._message_chunk_size
-
-                if end >= arrow_length:
-                    end = arrow_length
-
-                post_callback(binary[start:end], binary=True)
-                iters += 1
-                start = end
-
-            print("Sent binary in {} chunks, took {} seconds".format(iters, time.time() - start_time))
-        else:
-            post_callback(binary, binary=True)
+        post_callback(binary, binary=True, chunked=True)
 
     def callback(self, *args, **kwargs):
         """Return a message to the client using the `post_callback` method."""

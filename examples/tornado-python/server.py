@@ -9,15 +9,16 @@ from perspective import Table, PerspectiveManager, PerspectiveTornadoHandler
 
 
 here = os.path.abspath(os.path.dirname(__file__))
-file_path = os.path.join(
-    here, "..", "..", "node_modules", "superstore-arrow", "superstore.arrow")
+# file_path = os.path.join(
+#     here, "..", "..", "node_modules", "superstore-arrow", "superstore.arrow")
+file_path = os.path.join(here, "superstore_big.arrow")
 
 
 def make_app():
     with open(file_path, mode='rb') as file:
         # Create an instance of `PerspectiveManager` and a table.
         MANAGER = PerspectiveManager()
-        TABLE = Table(file.read(), index="Row ID")
+        TABLE = Table(file.read())
 
         # Track the table with the name "data_source_one", which will be used
         # in the front-end to access the Table.
@@ -37,7 +38,7 @@ def make_app():
                 "path": "./",
                 "default_filename": "index.html"
             })
-        ], websocket_ping_interval=15)
+        ])
 
 
 if __name__ == "__main__":
