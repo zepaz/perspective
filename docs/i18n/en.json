@@ -26,6 +26,9 @@
       "md/js": {
         "title": "Javascript User Guide"
       },
+      "md/overview": {
+        "title": "Overview"
+      },
       "md/python": {
         "title": "Python User Guide"
       },
@@ -55,8 +58,8 @@
     },
     "categories": {
       "Getting Started": "Getting Started",
-      "Javascript API": "Javascript API",
-      "Python API": "Python API"
+      "Javascript": "Javascript",
+      "Python": "Python"
     }
   },
   "pages-strings": {
