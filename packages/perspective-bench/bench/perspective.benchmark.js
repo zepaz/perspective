@@ -87,411 +87,411 @@ describe("Table", async () => {
     }
 });
 
-describe("Update", async () => {
-    // Generate update data from Perspective
-    const static_table = worker.table(data.arrow.slice());
-    const static_view = static_table.view();
+// describe("Update", async () => {
+//     // Generate update data from Perspective
+//     const static_table = worker.table(data.arrow.slice());
+//     const static_view = static_table.view();
 
-    let table, view;
+//     let table, view;
 
-    afterEach(async () => {
-        if (view) {
-            await view.delete();
-        }
-        await table.delete();
-    });
+//     afterEach(async () => {
+//         if (view) {
+//             await view.delete();
+//         }
+//         await table.delete();
+//     });
 
-    for (const name of Object.keys(data)) {
-        describe("mixed", async () => {
-            // Benchmark how long it takes the table to update without any
-            // linked contexts to notify.
-            describe("table_only", async () => {
-                table = worker.table(data.arrow.slice());
+//     for (const name of Object.keys(data)) {
+//         describe("mixed", async () => {
+//             // Benchmark how long it takes the table to update without any
+//             // linked contexts to notify.
+//             describe("table_only", async () => {
+//                 table = worker.table(data.arrow.slice());
 
-                let test_data = await static_view[`to_${name}`]({end_row: 500});
-                benchmark(name, async () => {
-                    for (let i = 0; i < 5; i++) {
-                        table.update(test_data.slice ? test_data.slice() : test_data);
-                        await table.size();
-                    }
-                });
-            });
+//                 let test_data = await static_view[`to_${name}`]({end_row: 500});
+//                 benchmark(name, async () => {
+//                     for (let i = 0; i < 5; i++) {
+//                         table.update(test_data.slice ? test_data.slice() : test_data);
+//                         await table.size();
+//                     }
+//                 });
+//             });
 
-            describe("ctx0", async () => {
-                table = worker.table(data.arrow.slice());
-                view = table.view();
+//             describe("ctx0", async () => {
+//                 table = worker.table(data.arrow.slice());
+//                 view = table.view();
 
-                let test_data = await static_view[`to_${name}`]({end_row: 500});
-                benchmark(name, async () => {
-                    for (let i = 0; i < 5; i++) {
-                        table.update(test_data.slice ? test_data.slice() : test_data);
-                        await table.size();
-                    }
-                });
-            });
+//                 let test_data = await static_view[`to_${name}`]({end_row: 500});
+//                 benchmark(name, async () => {
+//                     for (let i = 0; i < 5; i++) {
+//                         table.update(test_data.slice ? test_data.slice() : test_data);
+//                         await table.size();
+//                     }
+//                 });
+//             });
 
-            describe("ctx1", async () => {
-                table = worker.table(data.arrow.slice());
-                view = table.view({
-                    row_pivots: ["State"]
-                });
+//             describe("ctx1", async () => {
+//                 table = worker.table(data.arrow.slice());
+//                 view = table.view({
+//                     row_pivots: ["State"]
+//                 });
 
-                let test_data = await static_view[`to_${name}`]({end_row: 500});
-                benchmark(name, async () => {
-                    for (let i = 0; i < 5; i++) {
-                        table.update(test_data.slice ? test_data.slice() : test_data);
-                        await table.size();
-                    }
-                });
-            });
+//                 let test_data = await static_view[`to_${name}`]({end_row: 500});
+//                 benchmark(name, async () => {
+//                     for (let i = 0; i < 5; i++) {
+//                         table.update(test_data.slice ? test_data.slice() : test_data);
+//                         await table.size();
+//                     }
+//                 });
+//             });
 
-            describe("ctx1 deep", async () => {
-                table = worker.table(data.arrow.slice());
-                view = table.view({
-                    row_pivots: ["State", "City"]
-                });
-                let test_data = await static_view[`to_${name}`]({end_row: 500});
-                benchmark(name, async () => {
-                    for (let i = 0; i < 5; i++) {
-                        table.update(test_data.slice ? test_data.slice() : test_data);
-                        await table.size();
-                    }
-                });
-            });
+//             describe("ctx1 deep", async () => {
+//                 table = worker.table(data.arrow.slice());
+//                 view = table.view({
+//                     row_pivots: ["State", "City"]
+//                 });
+//                 let test_data = await static_view[`to_${name}`]({end_row: 500});
+//                 benchmark(name, async () => {
+//                     for (let i = 0; i < 5; i++) {
+//                         table.update(test_data.slice ? test_data.slice() : test_data);
+//                         await table.size();
+//                     }
+//                 });
+//             });
 
-            describe("ctx2", async () => {
-                table = worker.table(data.arrow.slice());
-                view = table.view({
-                    row_pivots: ["State"],
-                    column_pivots: ["Sub-Category"]
-                });
-                let test_data = await static_view[`to_${name}`]({end_row: 500});
-                benchmark(name, async () => {
-                    for (let i = 0; i < 5; i++) {
-                        table.update(test_data.slice ? test_data.slice() : test_data);
-                        await table.size();
-                    }
-                });
-            });
+//             describe("ctx2", async () => {
+//                 table = worker.table(data.arrow.slice());
+//                 view = table.view({
+//                     row_pivots: ["State"],
+//                     column_pivots: ["Sub-Category"]
+//                 });
+//                 let test_data = await static_view[`to_${name}`]({end_row: 500});
+//                 benchmark(name, async () => {
+//                     for (let i = 0; i < 5; i++) {
+//                         table.update(test_data.slice ? test_data.slice() : test_data);
+//                         await table.size();
+//                     }
+//                 });
+//             });
 
-            describe("ctx2 deep", async () => {
-                table = worker.table(data.arrow.slice());
-                view = table.view({
-                    row_pivots: ["State", "City"],
-                    column_pivots: ["Sub-Category"]
-                });
-                let test_data = await static_view[`to_${name}`]({end_row: 500});
-                benchmark(name, async () => {
-                    for (let i = 0; i < 5; i++) {
-                        table.update(test_data.slice ? test_data.slice() : test_data);
-                        await table.size();
-                    }
-                });
-            });
+//             describe("ctx2 deep", async () => {
+//                 table = worker.table(data.arrow.slice());
+//                 view = table.view({
+//                     row_pivots: ["State", "City"],
+//                     column_pivots: ["Sub-Category"]
+//                 });
+//                 let test_data = await static_view[`to_${name}`]({end_row: 500});
+//                 benchmark(name, async () => {
+//                     for (let i = 0; i < 5; i++) {
+//                         table.update(test_data.slice ? test_data.slice() : test_data);
+//                         await table.size();
+//                     }
+//                 });
+//             });
 
-            describe("ctx1.5", async () => {
-                table = worker.table(data.arrow.slice());
-                view = table.view({
-                    column_pivots: ["Sub-Category"]
-                });
-                let test_data = await static_view[`to_${name}`]({end_row: 500});
-                benchmark(name, async () => {
-                    for (let i = 0; i < 5; i++) {
-                        table.update(test_data.slice ? test_data.slice() : test_data);
-                        await table.size();
-                    }
-                });
-            });
-        });
-    }
-});
+//             describe("ctx1.5", async () => {
+//                 table = worker.table(data.arrow.slice());
+//                 view = table.view({
+//                     column_pivots: ["Sub-Category"]
+//                 });
+//                 let test_data = await static_view[`to_${name}`]({end_row: 500});
+//                 benchmark(name, async () => {
+//                     for (let i = 0; i < 5; i++) {
+//                         table.update(test_data.slice ? test_data.slice() : test_data);
+//                         await table.size();
+//                     }
+//                 });
+//             });
+//         });
+//     }
+// });
 
-describe("Deltas", async () => {
-    // Generate update data from Perspective
-    const static_table = worker.table(data.arrow.slice());
-    const static_view = static_table.view();
+// describe("Deltas", async () => {
+//     // Generate update data from Perspective
+//     const static_table = worker.table(data.arrow.slice());
+//     const static_view = static_table.view();
 
-    let table, view;
+//     let table, view;
 
-    afterEach(async () => {
-        await view.delete();
-        await table.delete();
-    });
+//     afterEach(async () => {
+//         await view.delete();
+//         await table.delete();
+//     });
 
-    describe("mixed", async () => {
-        describe("ctx0", async () => {
-            table = worker.table(data.arrow.slice());
-            view = table.view();
-            view.on_update(() => {}, {mode: "cell"});
-            const test_data = await static_view.to_arrow({end_row: 500});
-            benchmark("cell delta", async () => {
-                for (let i = 0; i < 3; i++) {
-                    table.update(test_data.slice());
-                    await table.size();
-                }
-            });
-        });
+//     describe("mixed", async () => {
+//         describe("ctx0", async () => {
+//             table = worker.table(data.arrow.slice());
+//             view = table.view();
+//             view.on_update(() => {}, {mode: "cell"});
+//             const test_data = await static_view.to_arrow({end_row: 500});
+//             benchmark("cell delta", async () => {
+//                 for (let i = 0; i < 3; i++) {
+//                     table.update(test_data.slice());
+//                     await table.size();
+//                 }
+//             });
+//         });
 
-        describe("ctx0", async () => {
-            table = worker.table(data.arrow.slice());
-            view = table.view();
-            view.on_update(() => {}, {mode: "row"});
-            const test_data = await static_view.to_arrow({end_row: 500});
-            benchmark("row delta", async () => {
-                for (let i = 0; i < 3; i++) {
-                    table.update(test_data.slice ? test_data.slice() : test_data);
-                    await table.size();
-                }
-            });
-        });
+//         describe("ctx0", async () => {
+//             table = worker.table(data.arrow.slice());
+//             view = table.view();
+//             view.on_update(() => {}, {mode: "row"});
+//             const test_data = await static_view.to_arrow({end_row: 500});
+//             benchmark("row delta", async () => {
+//                 for (let i = 0; i < 3; i++) {
+//                     table.update(test_data.slice ? test_data.slice() : test_data);
+//                     await table.size();
+//                 }
+//             });
+//         });
 
-        describe("ctx1", async () => {
-            table = worker.table(data.arrow.slice());
-            view = table.view({
-                row_pivots: ["State"]
-            });
-            view.on_update(() => {}, {mode: "row"});
-            const test_data = await static_view.to_arrow({end_row: 500});
-            benchmark("row delta", async () => {
-                for (let i = 0; i < 3; i++) {
-                    table.update(test_data.slice());
-                    await table.size();
-                }
-            });
-        });
+//         describe("ctx1", async () => {
+//             table = worker.table(data.arrow.slice());
+//             view = table.view({
+//                 row_pivots: ["State"]
+//             });
+//             view.on_update(() => {}, {mode: "row"});
+//             const test_data = await static_view.to_arrow({end_row: 500});
+//             benchmark("row delta", async () => {
+//                 for (let i = 0; i < 3; i++) {
+//                     table.update(test_data.slice());
+//                     await table.size();
+//                 }
+//             });
+//         });
 
-        describe("ctx1 deep", async () => {
-            table = worker.table(data.arrow.slice());
-            view = table.view({
-                row_pivots: ["State", "City"]
-            });
-            view.on_update(() => {}, {mode: "row"});
-            const test_data = await static_view.to_arrow({end_row: 500});
-            benchmark("row delta", async () => {
-                for (let i = 0; i < 3; i++) {
-                    table.update(test_data.slice());
-                    await table.size();
-                }
-            });
-        });
+//         describe("ctx1 deep", async () => {
+//             table = worker.table(data.arrow.slice());
+//             view = table.view({
+//                 row_pivots: ["State", "City"]
+//             });
+//             view.on_update(() => {}, {mode: "row"});
+//             const test_data = await static_view.to_arrow({end_row: 500});
+//             benchmark("row delta", async () => {
+//                 for (let i = 0; i < 3; i++) {
+//                     table.update(test_data.slice());
+//                     await table.size();
+//                 }
+//             });
+//         });
 
-        describe("ctx2", async () => {
-            table = worker.table(data.arrow.slice());
-            view = table.view({
-                row_pivots: ["State"],
-                column_pivots: ["Sub-Category"]
-            });
-            view.on_update(() => {}, {mode: "row"});
-            const test_data = await static_view.to_arrow({end_row: 500});
-            benchmark("row delta", async () => {
-                for (let i = 0; i < 3; i++) {
-                    table.update(test_data.slice());
-                    await table.size();
-                }
-            });
-        });
+//         describe("ctx2", async () => {
+//             table = worker.table(data.arrow.slice());
+//             view = table.view({
+//                 row_pivots: ["State"],
+//                 column_pivots: ["Sub-Category"]
+//             });
+//             view.on_update(() => {}, {mode: "row"});
+//             const test_data = await static_view.to_arrow({end_row: 500});
+//             benchmark("row delta", async () => {
+//                 for (let i = 0; i < 3; i++) {
+//                     table.update(test_data.slice());
+//                     await table.size();
+//                 }
+//             });
+//         });
 
-        describe("ctx2 deep", async () => {
-            table = worker.table(data.arrow.slice());
-            view = table.view({
-                row_pivots: ["State", "City"],
-                column_pivots: ["Sub-Category"]
-            });
-            view.on_update(() => {}, {mode: "row"});
-            const test_data = await static_view.to_arrow({end_row: 500});
-            benchmark("row delta", async () => {
-                for (let i = 0; i < 3; i++) {
-                    table.update(test_data.slice());
-                    await table.size();
-                }
-            });
-        });
+//         describe("ctx2 deep", async () => {
+//             table = worker.table(data.arrow.slice());
+//             view = table.view({
+//                 row_pivots: ["State", "City"],
+//                 column_pivots: ["Sub-Category"]
+//             });
+//             view.on_update(() => {}, {mode: "row"});
+//             const test_data = await static_view.to_arrow({end_row: 500});
+//             benchmark("row delta", async () => {
+//                 for (let i = 0; i < 3; i++) {
+//                     table.update(test_data.slice());
+//                     await table.size();
+//                 }
+//             });
+//         });
 
-        describe("ctx1.5", async () => {
-            table = worker.table(data.arrow.slice());
-            view = table.view({
-                column_pivots: ["Sub-Category"]
-            });
-            view.on_update(() => {}, {mode: "row"});
-            const test_data = await static_view.to_arrow({end_row: 500});
-            benchmark("row delta", async () => {
-                for (let i = 0; i < 3; i++) {
-                    table.update(test_data.slice());
-                    await table.size();
-                }
-            });
-        });
-    });
-});
+//         describe("ctx1.5", async () => {
+//             table = worker.table(data.arrow.slice());
+//             view = table.view({
+//                 column_pivots: ["Sub-Category"]
+//             });
+//             view.on_update(() => {}, {mode: "row"});
+//             const test_data = await static_view.to_arrow({end_row: 500});
+//             benchmark("row delta", async () => {
+//                 for (let i = 0; i < 3; i++) {
+//                     table.update(test_data.slice());
+//                     await table.size();
+//                 }
+//             });
+//         });
+//     });
+// });
 
-describe("View", async () => {
-    let table;
+// describe("View", async () => {
+//     let table;
 
-    beforeAll(async () => {
-        table = worker.table(data.arrow.slice());
-    });
+//     beforeAll(async () => {
+//         table = worker.table(data.arrow.slice());
+//     });
 
-    afterAll(async () => {
-        await table.delete();
-    });
+//     afterAll(async () => {
+//         await table.delete();
+//     });
 
-    for (const aggregate of AGG_OPTIONS) {
-        for (const row_pivot of ROW_PIVOT_OPTIONS) {
-            for (const column_pivot of COLUMN_PIVOT_OPTIONS) {
-                const config = {aggregate, row_pivot, column_pivot};
+//     for (const aggregate of AGG_OPTIONS) {
+//         for (const row_pivot of ROW_PIVOT_OPTIONS) {
+//             for (const column_pivot of COLUMN_PIVOT_OPTIONS) {
+//                 const config = {aggregate, row_pivot, column_pivot};
 
-                const [cat, type] = to_name(config);
+//                 const [cat, type] = to_name(config);
 
-                describe(type, async () => {
-                    describe(cat, async () => {
-                        let view;
+//                 describe(type, async () => {
+//                     describe(cat, async () => {
+//                         let view;
 
-                        afterEach(async () => {
-                            await view.delete();
-                        });
+//                         afterEach(async () => {
+//                             await view.delete();
+//                         });
 
-                        benchmark(`view`, async () => {
-                            view = table.view(config);
-                            await view.schema();
-                        });
-                    });
+//                         benchmark(`view`, async () => {
+//                             view = table.view(config);
+//                             await view.schema();
+//                         });
+//                     });
 
-                    describe(cat, async () => {
-                        let view;
+//                     describe(cat, async () => {
+//                         let view;
 
-                        beforeAll(async () => {
-                            view = table.view(config);
-                            await view.schema();
-                        });
+//                         beforeAll(async () => {
+//                             view = table.view(config);
+//                             await view.schema();
+//                         });
 
-                        afterAll(async () => {
-                            await view.delete();
-                        });
+//                         afterAll(async () => {
+//                             await view.delete();
+//                         });
 
-                        for (const format of ["json", "columns", "arrow"]) {
-                            benchmark(format, async () => {
-                                await view[`to_${format}`]();
-                            });
-                        }
-                    });
-                });
-            }
-        }
-    }
-});
+//                         for (const format of ["json", "columns", "arrow"]) {
+//                             benchmark(format, async () => {
+//                                 await view[`to_${format}`]();
+//                             });
+//                         }
+//                     });
+//                 });
+//             }
+//         }
+//     }
+// });
 
-describe("Computed Column", async () => {
-    for (const name of Object.keys(COMPUTED_FUNCS)) {
-        describe("mixed", async () => {
-            // Use a single source table for computed
-            let table;
+// describe("Computed Column", async () => {
+//     for (const name of Object.keys(COMPUTED_FUNCS)) {
+//         describe("mixed", async () => {
+//             // Use a single source table for computed
+//             let table;
 
-            afterEach(async () => {
-                await table.delete();
-            });
+//             afterEach(async () => {
+//                 await table.delete();
+//             });
 
-            describe("view", () => {
-                let view;
+//             describe("view", () => {
+//                 let view;
 
-                afterEach(async () => {
-                    if (view) {
-                        await view.delete();
-                    }
-                });
+//                 afterEach(async () => {
+//                     if (view) {
+//                         await view.delete();
+//                     }
+//                 });
 
-                table = worker.table(data.arrow.slice());
-                let add_computed_method;
-                if (table.add_computed) {
-                    add_computed_method = table.add_computed;
-                }
+//                 table = worker.table(data.arrow.slice());
+//                 let add_computed_method;
+//                 if (table.add_computed) {
+//                     add_computed_method = table.add_computed;
+//                 }
 
-                COMPUTED_CONFIG.computed_function_name = name;
+//                 COMPUTED_CONFIG.computed_function_name = name;
 
-                switch (name) {
-                    case "pow2":
-                    case "sqrt":
-                        {
-                            COMPUTED_CONFIG.inputs = ["Sales"];
-                        }
-                        break;
-                    case "uppercase":
-                        {
-                            COMPUTED_CONFIG.inputs = ["Customer Name"];
-                        }
-                        break;
-                    case "concat_comma":
-                        {
-                            COMPUTED_CONFIG.inputs = ["State", "City"];
-                        }
-                        break;
-                    case "week_bucket":
-                        {
-                            COMPUTED_CONFIG.inputs = ["Order Date"];
-                        }
-                        break;
-                    default: {
-                        COMPUTED_CONFIG.inputs = ["Sales", "Profit"];
-                    }
-                }
+//                 switch (name) {
+//                     case "pow2":
+//                     case "sqrt":
+//                         {
+//                             COMPUTED_CONFIG.inputs = ["Sales"];
+//                         }
+//                         break;
+//                     case "uppercase":
+//                         {
+//                             COMPUTED_CONFIG.inputs = ["Customer Name"];
+//                         }
+//                         break;
+//                     case "concat_comma":
+//                         {
+//                             COMPUTED_CONFIG.inputs = ["State", "City"];
+//                         }
+//                         break;
+//                     case "week_bucket":
+//                         {
+//                             COMPUTED_CONFIG.inputs = ["Order Date"];
+//                         }
+//                         break;
+//                     default: {
+//                         COMPUTED_CONFIG.inputs = ["Sales", "Profit"];
+//                     }
+//                 }
 
-                benchmark(`computed: \`${name}\``, async () => {
-                    if (add_computed_method) {
-                        COMPUTED_CONFIG.func = COMPUTED_FUNCS[name];
-                        COMPUTED_CONFIG.type = "float";
+//                 benchmark(`computed: \`${name}\``, async () => {
+//                     if (add_computed_method) {
+//                         COMPUTED_CONFIG.func = COMPUTED_FUNCS[name];
+//                         COMPUTED_CONFIG.type = "float";
 
-                        table = table.add_computed([COMPUTED_CONFIG]);
-                    } else {
-                        view = table.view({
-                            computed_columns: [COMPUTED_CONFIG]
-                        });
-                    }
+//                         table = table.add_computed([COMPUTED_CONFIG]);
+//                     } else {
+//                         view = table.view({
+//                             computed_columns: [COMPUTED_CONFIG]
+//                         });
+//                     }
 
-                    // must process update
-                    await table.size();
-                });
+//                     // must process update
+//                     await table.size();
+//                 });
 
-                if (!add_computed_method) {
-                    benchmark(`row pivot computed: \`${name}\``, async () => {
-                        view = table.view({
-                            row_pivots: ["computed"],
-                            computed_columns: [COMPUTED_CONFIG]
-                        });
+//                 if (!add_computed_method) {
+//                     benchmark(`row pivot computed: \`${name}\``, async () => {
+//                         view = table.view({
+//                             row_pivots: ["computed"],
+//                             computed_columns: [COMPUTED_CONFIG]
+//                         });
 
-                        await table.size();
-                    });
+//                         await table.size();
+//                     });
 
-                    benchmark(`column pivot computed: \`${name}\``, async () => {
-                        view = table.view({
-                            column_pivots: ["computed"],
-                            computed_columns: [COMPUTED_CONFIG]
-                        });
+//                     benchmark(`column pivot computed: \`${name}\``, async () => {
+//                         view = table.view({
+//                             column_pivots: ["computed"],
+//                             computed_columns: [COMPUTED_CONFIG]
+//                         });
 
-                        await table.size();
-                    });
+//                         await table.size();
+//                     });
 
-                    benchmark(`row and column pivot computed: \`${name}\``, async () => {
-                        view = table.view({
-                            row_pivots: ["computed"],
-                            column_pivots: ["computed"],
-                            computed_columns: [COMPUTED_CONFIG]
-                        });
+//                     benchmark(`row and column pivot computed: \`${name}\``, async () => {
+//                         view = table.view({
+//                             row_pivots: ["computed"],
+//                             column_pivots: ["computed"],
+//                             computed_columns: [COMPUTED_CONFIG]
+//                         });
 
-                        await table.size();
-                    });
+//                         await table.size();
+//                     });
 
-                    benchmark(`sort computed: \`${name}\``, async () => {
-                        view = table.view({
-                            sort: [["computed", "desc"]],
-                            computed_columns: [COMPUTED_CONFIG]
-                        });
+//                     benchmark(`sort computed: \`${name}\``, async () => {
+//                         view = table.view({
+//                             sort: [["computed", "desc"]],
+//                             computed_columns: [COMPUTED_CONFIG]
+//                         });
 
-                        await table.size();
-                    });
-                }
-            });
-        });
-    }
-});
+//                         await table.size();
+//                     });
+//                 }
+//             });
+//         });
+//     }
+// });
 
 /******************************************************************************
  *
