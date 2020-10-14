@@ -78,7 +78,7 @@ function compileCPP(packageName) {
 }
 
 function lerna() {
-    execute`lerna run build --loglevel silent --scope="@finos/${process.env.PACKAGE}`;
+    execute`lerna run build --loglevel silent --scope="@finos/${process.env.PACKAGE}"`;
 }
 
 try {
@@ -86,10 +86,10 @@ try {
         try {
             execSync(`yarn emsdk-run command -v emcc`, {stdio: "ignore"});
         } catch (e) {
-            console.log("-- Emscripten not detected, installing 1.39.13 ...");
+            console.log("-- Emscripten not detected, installing 2.0.6 ...");
             execute(`yarn emsdk-checkout`);
-            execute(`yarn emsdk install 1.39.13`);
-            execute(`yarn emsdk activate 1.39.13`);
+            execute(`yarn emsdk install 2.0.6`);
+            execute(`yarn emsdk activate 2.0.6`);
         }
         compileCPP("perspective");
         RUNTIMES.map(compileRuntime);
