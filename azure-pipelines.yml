@@ -14,6 +14,7 @@ pr:
 
 variables:
   YARN_CACHE_FOLDER: $(Pipeline.Workspace)/.yarn
+  CCACHE_DIR: $(Pipeline.Workspace)/ccache
 
 jobs:
 - job: 'WebAssembly'
@@ -21,6 +22,17 @@ jobs:
     vmImage: 'ubuntu-16.04'
 
   steps:
+    - bash: |
+        sudo apt-get install ccache -y    
+        echo "##vso[task.prependpath]/usr/lib/ccache"
+      displayName: Install ccache and update PATH to use linked versions of gcc, cc, etc
+
+    - task: Cache@2
+      inputs:
+        key: 'ccache | "$(Agent.OS)"'
+        path: $(CCACHE_DIR)
+      displayName: ccache
+
     - task: NodeTool@0
       inputs:
         versionSpec: '12.x'
@@ -42,13 +54,22 @@ jobs:
 
     - task: Cache@2
       inputs:
-        key: 'tools | "$(Agent.OS)" | scripts/install_tools.js'
+        key: 'flatbuffers | "$(Agent.OS)" | scripts/install_tools.js'
         restoreKeys: |
           tools | "$(Agent.OS)"
           tools
-        path: /usr/local
+        path: /usr/local/flatbuffers
+      displayName: Cache flatbuffers
+
+    - task: Cache@2
+      inputs:
+        key: 'boost | "$(Agent.OS)" | scripts/install_tools.js'
+        restoreKeys: |
+          tools | "$(Agent.OS)"
+          tools
+        path: /usr/local/include/boost
         cacheHitVar: CACHE_RESTORED
-      displayName: Cache Tools
+      displayName: Cache boost
 
     - bash: sudo node scripts/install_tools.js
       displayName: "Install Tools"
@@ -114,6 +135,17 @@ jobs:
           artifact_name: 'cp38-cp38-manylinux2014_x86_64'
 
   steps:
+    - bash: |
+        sudo apt-get install ccache -y    
+        echo "##vso[task.prependpath]/usr/lib/ccache"
+      displayName: Install ccache and update PATH to use linked versions of gcc, cc, etc
+
+    - task: Cache@2
+      inputs:
+        key: 'ccache_py | "$(Agent.OS)" | "$(python.version)"'
+        path: $(CCACHE_DIR)
+      displayName: ccache_py
+
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '$(python.version)'
