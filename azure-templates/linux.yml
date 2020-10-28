@@ -1,0 +1,59 @@
+# Manylinux build sequence
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+      versionSpec: '$(python.version)'
+      architecture: 'x64'
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: '12.x'
+
+- bash: npm install -g yarn
+  displayName: "Install Yarn"
+
+- bash: yarn
+  displayName: 'Install Deps'
+
+- bash: python -m pip install --upgrade pip
+  displayName: 'Update pip to latest version'
+
+- bash: python -m pip install "black==20.8b1" flake8-black
+  condition: and(succeeded(), ne(variables['python.version'], '2.7'))
+  displayName: 'Install Python deps'
+
+- bash: yarn build_python  --ci $(python_flag) $(manylinux_flag)
+  displayName: 'build'
+  env:
+    PSP_DOCKER: 1
+
+- task: PublishTestResults@2
+  condition: succeededOrFailed()
+  inputs:
+    testResultsFiles: 'python/perspective/python_junit.xml'
+    testRunTitle: 'Publish test results for Python $(python.version) $(manylinux_flag)'
+
+- task: PublishCodeCoverageResults@1
+  inputs: 
+    codeCoverageTool: Cobertura
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/*coverage.xml'
+
+# Build a python wheel for Manylinux
+- bash: yarn _wheel_python --ci $(python_flag) $(manylinux_flag)
+  condition: and(succeeded(), ne(variables['manylinux_flag'], ''))
+  displayName: 'Build Manylinux Wheel'
+  env:
+    PSP_DOCKER: 1
+
+# Test the wheel
+- bash: cd $(System.DefaultWorkingDirectory)/python/perspective/scripts && ./test_wheels.sh $(python_flag) $(manylinux_flag)
+  condition: and(succeeded(), ne(variables['manylinux_flag'], ''))
+  displayName: 'Test Manylinux Wheel'
+
+# Save the artifact to Azure storage
+- task: PublishPipelineArtifact@1
+  condition: and(succeeded(), ne(variables['manylinux_flag'], ''))
+  inputs:
+    targetPath: '$(System.DefaultWorkingDirectory)/python/perspective/wheelhouse/'
+    artifactName: '$(artifact_name)'

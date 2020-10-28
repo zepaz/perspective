@@ -1,0 +1,62 @@
+# MacOS build sequence
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(python.version)'
+    architecture: 'x64'
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: '12.x'
+
+- script: |
+    brew install boost
+  displayName: "System deps"
+
+- script: |
+    which python
+    python --version
+    which python$(python.version)
+  displayName: "Which python"
+
+- script: python -m pip install --upgrade pip
+  displayName: 'Update pip to latest version'
+
+- script: |
+    python -m pip install delocate wheel numpy "pyarrow>=0.16.0,<1"
+  displayName: "Python deps"
+
+- script: npm install -g yarn
+  displayName: "Install Yarn"
+
+- script: yarn --network-timeout 600000
+  displayName: 'Install Deps'
+
+- script: yarn build_python --ci $(python_flag)
+  displayName: 'build'
+
+- task: PublishTestResults@2
+  condition: succeededOrFailed()
+  inputs:
+    testResultsFiles: 'python/perspective/python_junit.xml'
+    testRunTitle: 'Publish test results for Python $(python.version)'
+
+- task: PublishCodeCoverageResults@1
+  inputs: 
+    codeCoverageTool: Cobertura
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/*coverage.xml'
+
+# Build a python wheel
+- bash: yarn _wheel_python --ci $(python_flag) --macos
+  displayName: 'Build wheel'
+
+# Test the wheel
+- bash: cd $(System.DefaultWorkingDirectory)/python/perspective/scripts && ./test_wheels.sh $(python_flag) --macos
+  displayName: 'Test Mac Wheel'
+
+# Save the artifact to Azure storage
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(System.DefaultWorkingDirectory)/python/perspective/dist/'
+    artifactName: '$(artifact_name)'

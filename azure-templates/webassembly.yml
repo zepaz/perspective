@@ -1,0 +1,30 @@
+# Webassembly build sequence
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '12.x'
+
+- bash: npm install -g yarn
+  displayName: "Install Yarn"
+
+- bash: yarn
+  displayName: "Install Deps"
+  env:
+    PSP_DOCKER: 1
+
+- bash: yarn build_js --ci
+  displayName: "Build"
+  env:
+    PSP_DOCKER: 1
+
+- bash: yarn test_js --quiet --ci
+  displayName: "Test"
+  env:
+    PSP_DOCKER: 1
+
+- task: PublishTestResults@2
+  condition: succeededOrFailed()
+  inputs:
+    testRunner: JUnit
+    testResultsFiles: 'junit.xml'
