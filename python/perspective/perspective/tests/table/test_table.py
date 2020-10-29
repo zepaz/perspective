@@ -24,9 +24,7 @@ class TestTable(object):
         assert tbl.size() == 0
 
     def test_table_not_iterable(self):
-        data = {
-            "a": 1
-        }
+        data = {"a": 1}
         with raises(NotImplementedError):
             Table(data)
 
@@ -40,16 +38,10 @@ class TestTable(object):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
         tbl = Table(data)
         assert tbl.size() == 2
-        assert tbl.schema() == {
-            "a": int,
-            "b": int
-        }
+        assert tbl.schema() == {"a": int, "b": int}
 
     def test_table_int_column_names(self):
-        data = {
-            "a": [1, 2, 3],
-            0: [4, 5, 6]
-        }
+        data = {"a": [1, 2, 3], 0: [4, 5, 6]}
         with raises(PerspectiveError):
             Table(data)
 
@@ -60,20 +52,14 @@ class TestTable(object):
             data = {"a": [i for i in range(100)] + [maxint, maxint, maxint]}
             tbl = Table(data)
             # two promotions later
-            assert tbl.schema() == {
-                "a": float
-            }
+            assert tbl.schema() == {"a": float}
 
     def test_table_long(self):
         if six.PY2:
             # don't overflow in this test
             data = [long(100), long(200), long(300)]  # noqa: F821
-            tbl = Table({
-                "a": data
-            })
-            assert tbl.schema() == {
-                "a": int
-            }
+            tbl = Table({"a": data})
+            assert tbl.schema() == {"a": int}
             assert tbl.view().to_dict()["a"] == [int(d) for d in data]
 
     def test_table_long_overflow(self):
@@ -81,101 +67,67 @@ class TestTable(object):
             maxint = sys.maxint
             # don't overflow in this test
             data = [maxint, maxint + 1, maxint + 2]
-            tbl = Table({
-                "a": data
-            })
-            assert tbl.schema() == {
-                "a": float
-            }
+            tbl = Table({"a": data})
+            assert tbl.schema() == {"a": float}
             assert tbl.view().to_dict()["a"] == [float(d) for d in data]
 
     def test_table_int_to_long(self):
         if six.PY2:
             # don't overflow in this test
             data = [int(100), int(200), int(300)]
-            tbl = Table({
-                "a": long  # noqa: F821
-            })
-            assert tbl.schema() == {
-                "a": int
-            }
-            tbl.update({
-                "a": data
-            })
+            tbl = Table({"a": long})  # noqa: F821
+            assert tbl.schema() == {"a": int}
+            tbl.update({"a": data})
             assert tbl.view().to_dict()["a"] == data
 
     def test_table_float_to_long(self):
         if six.PY2:
             # don't overflow in this test
             data = [1.5, 2.5, 3.5]  # noqa: F821
-            tbl = Table({
-                "a": long  # noqa: F821
-            })
-            assert tbl.schema() == {
-                "a": int
-            }
-            tbl.update({
-                "a": data
-            })
+            tbl = Table({"a": long})  # noqa: F821
+            assert tbl.schema() == {"a": int}
+            tbl.update({"a": data})
             assert tbl.view().to_dict()["a"] == [1, 2, 3]
 
     def test_table_nones(self):
         none_data = [{"a": 1, "b": None}, {"a": None, "b": 2}]
         tbl = Table(none_data)
         assert tbl.size() == 2
-        assert tbl.schema() == {
-            "a": int,
-            "b": int
-        }
+        assert tbl.schema() == {"a": int, "b": int}
 
     def test_table_bool(self):
         bool_data = [{"a": True, "b": False}, {"a": True, "b": True}]
         tbl = Table(bool_data)
         assert tbl.size() == 2
-        assert tbl.schema() == {
-            "a": bool,
-            "b": bool
-        }
+        assert tbl.schema() == {"a": bool, "b": bool}
 
     def test_table_bool_str(self):
         bool_data = [{"a": "True", "b": "False"}, {"a": "True", "b": "True"}]
         tbl = Table(bool_data)
         assert tbl.size() == 2
-        assert tbl.schema() == {
-            "a": bool,
-            "b": bool
-        }
-        assert tbl.view().to_dict() == {
-            "a": [True, True],
-            "b": [False, True]
-        }
+        assert tbl.schema() == {"a": bool, "b": bool}
+        assert tbl.view().to_dict() == {"a": [True, True], "b": [False, True]}
 
     def test_table_float(self):
         float_data = [{"a": 1.5, "b": 2.5}, {"a": 3.2, "b": 3.1}]
         tbl = Table(float_data)
         assert tbl.size() == 2
-        assert tbl.schema() == {
-            "a": float,
-            "b": float
-        }
+        assert tbl.schema() == {"a": float, "b": float}
 
     def test_table_str(self):
         str_data = [{"a": "b", "b": "b"}, {"a": "3", "b": "3"}]
         tbl = Table(str_data)
         assert tbl.size() == 2
-        assert tbl.schema() == {
-            "a": str,
-            "b": str
-        }
+        assert tbl.schema() == {"a": str, "b": str}
 
     def test_table_str_with_escape(self):
-        str_data = [{"a": "abc\"def\"", "b": "abc\"def\""}, {"a": 'abc\'def\'', "b": 'abc\'def\''}]
+        str_data = [
+            {"a": 'abc"def"', "b": 'abc"def"'},
+            {"a": "abc'def'", "b": "abc'def'"},
+        ]
         tbl = Table(str_data)
         assert tbl.size() == 2
-        assert tbl.schema() == {
-            "a": str,
-            "b": str
-        }
+        assert tbl.schema() == {"a": str, "b": str}
         assert tbl.view().to_records() == str_data
 
     def test_table_str_unicode(self):
@@ -185,59 +137,39 @@ class TestTable(object):
             str_data = [{"a": "ȀȁȀȃȀȁȀȃȀȁȀȃȀȁȀȃ", "b": "ЖДфйЖДфйЖДфйЖДфй"}]
         tbl = Table(str_data)
         assert tbl.size() == 1
-        assert tbl.schema() == {
-            "a": str,
-            "b": str
-        }
+        assert tbl.schema() == {"a": str, "b": str}
         assert tbl.view().to_records() == str_data
 
     def test_table_date(self):
         str_data = [{"a": date.today(), "b": date.today()}]
         tbl = Table(str_data)
         assert tbl.size() == 1
-        assert tbl.schema() == {
-            "a": date,
-            "b": date
-        }
+        assert tbl.schema() == {"a": date, "b": date}
 
     def test_table_datetime(self):
         str_data = [{"a": datetime.now(), "b": datetime.now()}]
         tbl = Table(str_data)
         assert tbl.size() == 1
-        assert tbl.schema() == {
-            "a": datetime,
-            "b": datetime
-        }
+        assert tbl.schema() == {"a": datetime, "b": datetime}
 
     def test_table_columnar(self):
         data = {"a": [1, 2, 3], "b": [4, 5, 6]}
         tbl = Table(data)
         assert tbl.columns() == ["a", "b"]
         assert tbl.size() == 3
-        assert tbl.schema() == {
-            "a": int,
-            "b": int
-        }
+        assert tbl.schema() == {"a": int, "b": int}
 
     def test_table_columnar_mixed_length(self):
         data = [{"a": 1.5, "b": 2.5}, {"a": 3.2}]
         tbl = Table(data)
         assert tbl.size() == 2
-        assert tbl.schema() == {
-            "a": float,
-            "b": float
-        }
+        assert tbl.schema() == {"a": float, "b": float}
         assert tbl.view().to_records() == [{"a": 1.5, "b": 2.5}, {"a": 3.2, "b": None}]
 
     # schema
 
     def test_table_schema(self):
-        data = {"a": int,
-                "b": float,
-                "c": str,
-                "d": bool,
-                "e": date,
-                "f": datetime}
+        data = {"a": int, "b": float, "c": str, "d": bool, "e": date, "f": datetime}
 
         tbl = Table(data)
 
@@ -247,16 +179,18 @@ class TestTable(object):
             "c": str,
             "d": bool,
             "e": date,
-            "f": datetime
+            "f": datetime,
         }
 
     def test_table_readable_string_schema(self):
-        data = {"a": "integer",
-                "b": "float",
-                "c": "string",
-                "d": "boolean",
-                "e": "date",
-                "f": "datetime"}
+        data = {
+            "a": "integer",
+            "b": "float",
+            "c": "string",
+            "d": "boolean",
+            "e": "date",
+            "f": "datetime",
+        }
 
         tbl = Table(data)
 
@@ -266,16 +200,18 @@ class TestTable(object):
             "c": str,
             "d": bool,
             "e": date,
-            "f": datetime
+            "f": datetime,
         }
 
     def test_table_output_readable_schema(self):
-        data = {"a": "int32",
-                "b": "float64",
-                "c": "str",
-                "d": "bool",
-                "e": "date",
-                "f": "datetime"}
+        data = {
+            "a": "int32",
+            "b": "float64",
+            "c": "str",
+            "d": "bool",
+            "e": "date",
+            "f": "datetime",
+        }
 
         tbl = Table(data)
 
@@ -285,16 +221,11 @@ class TestTable(object):
             "c": str,
             "d": bool,
             "e": date,
-            "f": datetime
+            "f": datetime,
         }
 
     def test_table_mixed_schema(self):
-        data = {"a": int,
-                "b": float,
-                "c": str,
-                "d": bool,
-                "e": date,
-                "f": datetime}
+        data = {"a": int, "b": float, "c": str, "d": bool, "e": date, "f": datetime}
 
         tbl = Table(data)
 
@@ -304,16 +235,11 @@ class TestTable(object):
             "c": str,
             "d": bool,
             "e": date,
-            "f": datetime
+            "f": datetime,
         }
 
     def test_table_output_string_schema(self):
-        data = {"a": int,
-                "b": float,
-                "c": str,
-                "d": bool,
-                "e": date,
-                "f": datetime}
+        data = {"a": int, "b": float, "c": str, "d": bool, "e": date, "f": datetime}
 
         tbl = Table(data)
 
@@ -323,7 +249,7 @@ class TestTable(object):
             "c": "string",
             "d": "boolean",
             "e": "date",
-            "f": "datetime"
+            "f": "datetime",
         }
 
     def test_table_symmetric_schema(self):
@@ -333,7 +259,7 @@ class TestTable(object):
             "c": ["a", "b", "c"],
             "d": [True, False, True],
             "e": [date.today(), date.today(), date.today()],
-            "f": [datetime.now(), datetime.now(), datetime.now()]
+            "f": [datetime.now(), datetime.now(), datetime.now()],
         }
 
         tbl = Table(data)
@@ -345,7 +271,7 @@ class TestTable(object):
             "c": str,
             "d": bool,
             "e": date,
-            "f": datetime
+            "f": datetime,
         }
 
         tbl2 = Table(schema)
@@ -359,7 +285,7 @@ class TestTable(object):
             "c": ["a", "b", "c"],
             "d": [True, False, True],
             "e": [date.today(), date.today(), date.today()],
-            "f": [datetime.now(), datetime.now(), datetime.now()]
+            "f": [datetime.now(), datetime.now(), datetime.now()],
         }
 
         tbl = Table(data)
@@ -371,7 +297,7 @@ class TestTable(object):
             "c": "string",
             "d": "boolean",
             "e": "date",
-            "f": "datetime"
+            "f": "datetime",
         }
 
         tbl2 = Table(schema)
@@ -380,27 +306,15 @@ class TestTable(object):
 
     def test_table_long_schema(self):
         if six.PY2:
-            schema = {
-                "a": long,  # noqa: F821
-                "b": int
-            }
+            schema = {"a": long, "b": int}  # noqa: F821
             tbl = Table(schema)
-            assert tbl.schema() == {
-                "a": int,
-                "b": int
-            }
+            assert tbl.schema() == {"a": int, "b": int}
 
     def test_table_unicode_schema(self):
         if six.PY2:
-            schema = {
-                "a": unicode,  # noqa: F821
-                "b": int
-            }
+            schema = {"a": unicode, "b": int}  # noqa: F821
             tbl = Table(schema)
-            assert tbl.schema() == {
-                "a": str,
-                "b": int
-            }
+            assert tbl.schema() == {"a": str, "b": int}
 
     # is_valid_filter
 
@@ -430,44 +344,32 @@ class TestTable(object):
 
     def test_table_is_valid_filter_date(self):
         filter = ["a", t_filter_op.FILTER_OP_GT, date.today()]
-        tbl = Table({
-            "a": date
-        })
+        tbl = Table({"a": date})
         assert tbl.is_valid_filter(filter) is True
 
     def test_table_not_is_valid_filter_date(self):
         filter = ["a", t_filter_op.FILTER_OP_GT, None]
-        tbl = Table({
-            "a": date
-        })
+        tbl = Table({"a": date})
         assert tbl.is_valid_filter(filter) is False
 
     def test_table_is_valid_filter_datetime(self):
         filter = ["a", t_filter_op.FILTER_OP_GT, datetime.now()]
-        tbl = Table({
-            "a": datetime
-        })
+        tbl = Table({"a": datetime})
         assert tbl.is_valid_filter(filter) is True
 
     def test_table_not_is_valid_filter_datetime(self):
         filter = ["a", t_filter_op.FILTER_OP_GT, None]
-        tbl = Table({
-            "a": datetime
-        })
+        tbl = Table({"a": datetime})
         assert tbl.is_valid_filter(filter) is False
 
     def test_table_is_valid_filter_datetime_str(self):
         filter = ["a", t_filter_op.FILTER_OP_GT, "7/11/2019 5:30PM"]
-        tbl = Table({
-            "a": datetime
-        })
+        tbl = Table({"a": datetime})
         assert tbl.is_valid_filter(filter) is True
 
     def test_table_not_is_valid_filter_datetime_str(self):
         filter = ["a", t_filter_op.FILTER_OP_GT, None]
-        tbl = Table({
-            "a": datetime
-        })
+        tbl = Table({"a": datetime})
         assert tbl.is_valid_filter(filter) is False
 
     def test_table_is_valid_filter_ignores_not_in_schema(self):
@@ -482,94 +384,87 @@ class TestTable(object):
         data = [{"a": 1, "b": 2}, {"a": 1, "b": 4}]
         tbl = Table(data, index="a")
         assert tbl.size() == 1
-        assert tbl.view().to_records() == [
-            {"a": 1, "b": 4}
-        ]
+        assert tbl.view().to_records() == [{"a": 1, "b": 4}]
 
     def test_table_index_from_schema(self):
         data = [{"a": 1, "b": 2}, {"a": 1, "b": 4}]
-        tbl = Table({
-            "a": int,
-            "b": int
-        }, index="a")
+        tbl = Table({"a": int, "b": int}, index="a")
         assert tbl.size() == 0
         tbl.update(data)
-        assert tbl.view().to_records() == [
-            {"a": 1, "b": 4}
-        ]
+        assert tbl.view().to_records() == [{"a": 1, "b": 4}]
 
     # index with None in column
 
     def test_table_index_int_with_none(self):
-        tbl = Table({
-            "a": [0, 1, 2, None, None],
-            "b": [4, 3, 2, 1, 0]
-        }, index="a")
+        tbl = Table({"a": [0, 1, 2, None, None], "b": [4, 3, 2, 1, 0]}, index="a")
         assert tbl.view().to_dict() == {
             "a": [None, 0, 1, 2],  # second `None` replaces first
-            "b": [0, 4, 3, 2]
+            "b": [0, 4, 3, 2],
         }
 
     def test_table_index_float_with_none(self):
-        tbl = Table({
-            "a": [0.0, 1.5, 2.5, None, None],
-            "b": [4, 3, 2, 1, 0]
-        }, index="a")
+        tbl = Table({"a": [0.0, 1.5, 2.5, None, None], "b": [4, 3, 2, 1, 0]}, index="a")
         assert tbl.view().to_dict() == {
             "a": [None, 0, 1.5, 2.5],  # second `None` replaces first
-            "b": [0, 4, 3, 2]
+            "b": [0, 4, 3, 2],
         }
 
     def test_table_index_bool_with_none(self):
         # bools cannot be used as primary key columns
         with raises(PerspectiveCppError):
-            Table({
-                "a": [True, False, None, True],
-                "b": [4, 3, 2, 1]
-            }, index="a")
+            Table({"a": [True, False, None, True], "b": [4, 3, 2, 1]}, index="a")
 
     def test_table_index_date_with_none(self):
-        tbl = Table({
-            "a": [date(2019, 7, 11), None, date(2019, 3, 12), date(2011, 3, 10)],
-            "b": [4, 3, 2, 1]
-        }, index="a")
+        tbl = Table(
+            {
+                "a": [date(2019, 7, 11), None, date(2019, 3, 12), date(2011, 3, 10)],
+                "b": [4, 3, 2, 1],
+            },
+            index="a",
+        )
         assert tbl.view().to_dict() == {
-            "a": [None, datetime(2011, 3, 10), datetime(2019, 3, 12), datetime(2019, 7, 11)],
-            "b": [3, 1, 2, 4]
+            "a": [
+                None,
+                datetime(2011, 3, 10),
+                datetime(2019, 3, 12),
+                datetime(2019, 7, 11),
+            ],
+            "b": [3, 1, 2, 4],
         }
 
     def test_table_index_datetime_with_none(self):
-        tbl = Table({
-            "a": [datetime(2019, 7, 11, 15, 30), None, datetime(2019, 7, 11, 12, 10), datetime(2019, 7, 11, 5, 0)],
-            "b": [4, 3, 2, 1]
-        }, index="a")
+        tbl = Table(
+            {
+                "a": [
+                    datetime(2019, 7, 11, 15, 30),
+                    None,
+                    datetime(2019, 7, 11, 12, 10),
+                    datetime(2019, 7, 11, 5, 0),
+                ],
+                "b": [4, 3, 2, 1],
+            },
+            index="a",
+        )
         assert tbl.view().to_dict() == {
-            "a": [None, datetime(2019, 7, 11, 5, 0), datetime(2019, 7, 11, 12, 10), datetime(2019, 7, 11, 15, 30)],
-            "b": [3, 1, 2, 4]
+            "a": [
+                None,
+                datetime(2019, 7, 11, 5, 0),
+                datetime(2019, 7, 11, 12, 10),
+                datetime(2019, 7, 11, 15, 30),
+            ],
+            "b": [3, 1, 2, 4],
         }
 
     def test_table_index_str_with_none(self):
-        tbl = Table({
-            "a": ["", "a", None, "b"],
-            "b": [4, 3, 2, 1]
-        }, index="a")
-        assert tbl.view().to_dict() == {
-            "a": [None, "", "a", "b"],
-            "b": [2, 4, 3, 1]
-        }
+        tbl = Table({"a": ["", "a", None, "b"], "b": [4, 3, 2, 1]}, index="a")
+        assert tbl.view().to_dict() == {"a": [None, "", "a", "b"], "b": [2, 4, 3, 1]}
 
     def test_table_get_index(self):
-        tbl = Table({
-            "a": ["", "a", None, "b"],
-            "b": [4, 3, 2, 1]
-        }, index="a")
+        tbl = Table({"a": ["", "a", None, "b"], "b": [4, 3, 2, 1]}, index="a")
         assert tbl.get_index() == "a"
 
     def test_table_get_index_none(self):
-        tbl = Table({
-            "a": ["", "a", None, "b"],
-            "b": [4, 3, 2, 1]
-        })
+        tbl = Table({"a": ["", "a", None, "b"], "b": [4, 3, 2, 1]})
         assert tbl.get_index() is None
 
     # limit
@@ -578,9 +473,7 @@ class TestTable(object):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
         tbl = Table(data, limit=1)
         assert tbl.size() == 1
-        assert tbl.view().to_records() == [
-            {"a": 3, "b": 4}
-        ]
+        assert tbl.view().to_records() == [{"a": 3, "b": 4}]
 
     def test_table_get_limit(self):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]

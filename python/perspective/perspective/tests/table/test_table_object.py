@@ -11,8 +11,10 @@ from random import randint
 from perspective.table import Table
 from datetime import date, datetime
 
+
 class CustomObjectBlank(object):
     pass
+
 
 class CustomObjectStore(object):
     def __init__(self, value):
@@ -25,7 +27,8 @@ class CustomObjectStore(object):
         return int(self._value)
 
     def __repr__(self):
-        return 'test'
+        return "test"
+
 
 class CustomObjectRepr(object):
     def __init__(self, value):
@@ -34,13 +37,16 @@ class CustomObjectRepr(object):
     def __repr__(self):
         return str(self._value)
 
+
 class CustomObjectIntPromoteToString(CustomObjectRepr):
     def _psp_dtype_(self):
         return int
 
+
 class CustomObjectFloatPromoteToString(CustomObjectRepr):
     def _psp_dtype_(self):
         return float
+
 
 class CustomObjectIntBoth(CustomObjectRepr):
     def _psp_dtype_(self):
@@ -49,12 +55,14 @@ class CustomObjectIntBoth(CustomObjectRepr):
     def _psp_repr_(self):
         return int(self._value) + 1
 
+
 class CustomObjectFloatBoth(CustomObjectRepr):
     def _psp_dtype_(self):
         return float
 
     def _psp_repr_(self):
         return float(self._value) + 1.0
+
 
 class CustomObjectIntConvert(CustomObjectRepr):
     def _psp_dtype_(self):
@@ -64,7 +72,8 @@ class CustomObjectIntConvert(CustomObjectRepr):
         return int(self._value)
 
     def __repr__(self):
-        return 'test'
+        return "test"
+
 
 class CustomObjectFloatConvert(CustomObjectRepr):
     def _psp_dtype_(self):
@@ -74,7 +83,7 @@ class CustomObjectFloatConvert(CustomObjectRepr):
         return float(self._value)
 
     def __repr__(self):
-        return 'test'
+        return "test"
 
 
 class CustomObjectIntConvertFromFloat(CustomObjectRepr):
@@ -85,7 +94,8 @@ class CustomObjectIntConvertFromFloat(CustomObjectRepr):
         return float(self._value)
 
     def __repr__(self):
-        return 'test'
+        return "test"
+
 
 class CustomObjectFloatConvertFromInt(CustomObjectRepr):
     def _psp_dtype_(self):
@@ -95,7 +105,8 @@ class CustomObjectFloatConvertFromInt(CustomObjectRepr):
         return int(self._value)
 
     def __repr__(self):
-        return 'test'
+        return "test"
+
 
 class TestTableObjectsExtract(object):
     def test_table_custom_object(self):
@@ -104,7 +115,10 @@ class TestTableObjectsExtract(object):
         assert tbl.schema() == {"a": str}
 
         assert tbl.size() == 1
-        assert '<perspective.tests.table.test_table_object.CustomObjectBlank object at 0x' in tbl.view().to_dict()["a"][0]
+        assert (
+            "<perspective.tests.table.test_table_object.CustomObjectBlank object at 0x"
+            in tbl.view().to_dict()["a"][0]
+        )
 
     def test_table_custom_object_repr(self):
         data = {"a": [CustomObjectRepr(1), CustomObjectRepr(2)]}
@@ -126,21 +140,28 @@ class TestTableObjectsExtract(object):
         assert tbl.view().to_dict() == {"a": [2, 3, 4, 5]}
 
     def test_custom_object_int_promote_to_string(self):
-        data = {"a": [CustomObjectIntPromoteToString(1), CustomObjectIntPromoteToString(2)]}
+        data = {
+            "a": [CustomObjectIntPromoteToString(1), CustomObjectIntPromoteToString(2)]
+        }
         tbl = Table(data)
         assert tbl.schema() == {"a": str}
 
         assert tbl.size() == 2
         assert tbl.view().to_dict() == {"a": ["1", "2"]}
-   
+
     def test_custom_object_float_promote_to_string(self):
-        data = {"a": [CustomObjectFloatPromoteToString(1), CustomObjectFloatPromoteToString(2)]}
+        data = {
+            "a": [
+                CustomObjectFloatPromoteToString(1),
+                CustomObjectFloatPromoteToString(2),
+            ]
+        }
         tbl = Table(data)
         assert tbl.schema() == {"a": str}
 
         assert tbl.size() == 2
         assert tbl.view().to_dict() == {"a": ["1", "2"]}
-   
+
     def test_custom_object_int_both(self):
         data = {"a": [CustomObjectIntBoth(1), CustomObjectIntBoth(2)]}
         tbl = Table(data)
@@ -176,7 +197,12 @@ class TestTableObjectsExtract(object):
         assert tbl.view().to_dict() == {"a": [1.0, 2.0]}
 
     def test_custom_object_int_convert_from_float(self):
-        data = {"a": [CustomObjectIntConvertFromFloat(1), CustomObjectIntConvertFromFloat(2)]}
+        data = {
+            "a": [
+                CustomObjectIntConvertFromFloat(1),
+                CustomObjectIntConvertFromFloat(2),
+            ]
+        }
         tbl = Table(data)
         assert tbl.schema() == {"a": int}
 
@@ -184,12 +210,18 @@ class TestTableObjectsExtract(object):
         assert tbl.view().to_dict() == {"a": [1, 2]}
 
     def test_custom_object_float_convert_from_int(self):
-        data = {"a": [CustomObjectFloatConvertFromInt(1), CustomObjectFloatConvertFromInt(2)]}
+        data = {
+            "a": [
+                CustomObjectFloatConvertFromInt(1),
+                CustomObjectFloatConvertFromInt(2),
+            ]
+        }
         tbl = Table(data)
         assert tbl.schema() == {"a": float}
         assert tbl.size() == 2
         assert tbl.view().to_dict() == {"a": [1.0, 2.0]}
-    
+
+
 class TestTableObjectsStore(object):
     def test_object_passthrough(self):
         t = CustomObjectStore(1)
@@ -201,7 +233,6 @@ class TestTableObjectsStore(object):
         assert tbl.schema() == {"a": object}
         assert tbl.size() == 3
         assert tbl.view().to_dict() == {"a": [t, t2, t3]}
-    
 
     def test_object_referencecount(self):
         t = CustomObjectStore(1)
@@ -231,9 +262,9 @@ class TestTableObjectsStore(object):
         for c in range(count):
             tbl.update([data])
             # c+1 new copies, +1 for original
-            assert tbl.size() == (c+1) + 1
+            assert tbl.size() == (c + 1) + 1
             # c+1 copies in the table now, +1 for original and +3 for others (`t`, `data`, arg to getrefcount)
-            assert sys.getrefcount(t) == (c+1) + 4
+            assert sys.getrefcount(t) == (c + 1) + 4
 
     def test_object_referencecount_clear(self):
         t = CustomObjectStore(1)
@@ -250,7 +281,6 @@ class TestTableObjectsStore(object):
         assert tbl.size() == 0
         # 1 for `t`, one for `data`, one for argument to sys.getrefcount
         assert sys.getrefcount(t) == 3
-
 
     def test_object_referencecount_update_clear(self):
         t = CustomObjectStore(1)
@@ -304,6 +334,7 @@ class TestTableObjectsStore(object):
 
     def test_object_referencecount_update_complicatedsequence(self):
         from .object_sequence import run
+
         run()
 
     def test_object_referencecount_delete(self):
@@ -342,4 +373,5 @@ class TestTableObjectsStore(object):
 
     def test_object_referencecount_delete(self):
         from .object_sequence import run2
+
         run2()

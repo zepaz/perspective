@@ -24,6 +24,7 @@ class TestDelete(object):
 
         def callback():
             s.set(True)
+
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
         tbl = Table(data)
         tbl.on_delete(callback)

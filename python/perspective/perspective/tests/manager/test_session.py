@@ -14,9 +14,8 @@ data = {"a": [1, 2, 3], "b": ["a", "b", "c"]}
 
 
 class TestPerspectiveSession(object):
-
     def post(self, msg):
-        '''boilerplate callback to simulate a client's `post()` method.'''
+        """boilerplate callback to simulate a client's `post()` method."""
         msg = json.loads(msg)
         print("self.post: ", msg)
         assert msg["id"] is not None
@@ -51,7 +50,12 @@ class TestPerspectiveSession(object):
         assert len(manager._views.keys()) == 1
         assert manager.get_view("view1")._client_id == client_id
 
-        to_dict_message = {"id": 2, "name": "view1", "cmd": "view_method", "method": "to_dict"}
+        to_dict_message = {
+            "id": 2,
+            "name": "view1",
+            "cmd": "view_method",
+            "method": "to_dict",
+        }
 
         session.process(to_dict_message, handle_to_dict)
         assert s.get() is True
@@ -66,7 +70,7 @@ class TestPerspectiveSession(object):
 
             assert message["data"] == {
                 "a": [1, 2, 3, 1, 2, 3],
-                "b": ["a", "b", "c", "str1", "str2", "str3"]
+                "b": ["a", "b", "c", "str1", "str2", "str3"],
             }
 
         manager = PerspectiveManager()
@@ -79,7 +83,12 @@ class TestPerspectiveSession(object):
         for i, session in enumerate(sessions):
             # IDs have to conflict - each viewer will send the first message as
             # ID = 1, so we need to make sure we handle that.
-            msg = {"id": 1, "table_name": "table1", "view_name": "view" + str(i), "cmd": "view"}
+            msg = {
+                "id": 1,
+                "table_name": "table1",
+                "view_name": "view" + str(i),
+                "cmd": "view",
+            }
             session.process(msg, self.post)
 
         manager_views = list(manager._views.keys())
@@ -92,12 +101,23 @@ class TestPerspectiveSession(object):
 
         # arbitrarily do an update
         random_session_id = random.randint(0, 4)
-        update_message = {"id": 2, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [1, 2, 3], "b": ["str1", "str2", "str3"]}]}
+        update_message = {
+            "id": 2,
+            "name": "table1",
+            "cmd": "table_method",
+            "method": "update",
+            "args": [{"a": [1, 2, 3], "b": ["str1", "str2", "str3"]}],
+        }
         sessions[random_session_id].process(update_message, self.post)
 
         # should reflect in all sessions
         for i, session in enumerate(sessions):
-            to_dict_message = {"id": 3, "name": "view" + str(i), "cmd": "view_method", "method": "to_dict"}
+            to_dict_message = {
+                "id": 3,
+                "name": "view" + str(i),
+                "cmd": "view_method",
+                "method": "to_dict",
+            }
             session.process(to_dict_message, handle_to_dict)
 
         assert s.get() == 5
@@ -113,7 +133,12 @@ class TestPerspectiveSession(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         session.process(make_table, self.post)
 
-        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
+        make_view = {
+            "id": 2,
+            "table_name": "table1",
+            "view_name": "view1",
+            "cmd": "view",
+        }
         session.process(make_view, self.post)
 
         # make sure the client ID is attached to the new view
@@ -125,9 +150,7 @@ class TestPerspectiveSession(object):
             s.set(s.get() + 100)
 
         # simulate a client that holds callbacks by id
-        callbacks = {
-            3: callback
-        }
+        callbacks = {3: callback}
 
         def post_update(msg):
             # when `on_update` is triggered, this callback gets the message
@@ -136,18 +159,35 @@ class TestPerspectiveSession(object):
             assert message["id"] is not None
             if message["id"] == 3:
                 # trigger callback
-                assert message["data"] == {
-                    "port_id": 0
-                }
+                assert message["data"] == {"port_id": 0}
                 callbacks[message["id"]](message["data"])
 
         # hook into the created view and pass it the callback
-        make_on_update = {"id": 3, "name": "view1", "cmd": "view_method", "subscribe": True, "method": "on_update", "callback_id": "callback_1"}
+        make_on_update = {
+            "id": 3,
+            "name": "view1",
+            "cmd": "view_method",
+            "subscribe": True,
+            "method": "on_update",
+            "callback_id": "callback_1",
+        }
         session.process(make_on_update, post_update)
 
         # call updates
-        update1 = {"id": 4, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [4], "b": ["d"]}]}
-        update2 = {"id": 5, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [5], "b": ["e"]}]}
+        update1 = {
+            "id": 4,
+            "name": "table1",
+            "cmd": "table_method",
+            "method": "update",
+            "args": [{"a": [4], "b": ["d"]}],
+        }
+        update2 = {
+            "id": 5,
+            "name": "table1",
+            "cmd": "table_method",
+            "method": "update",
+            "args": [{"a": [5], "b": ["e"]}],
+        }
 
         session.process(update1, self.post)
         session.process(update2, self.post)
@@ -176,7 +216,12 @@ class TestPerspectiveSession(object):
         for i, session in enumerate(sessions):
             # IDs have to conflict - each viewer will send the first message as
             # ID = 1, so we need to make sure we handle that.
-            msg = {"id": 2, "table_name": "table1", "view_name": "view" + str(i), "cmd": "view"}
+            msg = {
+                "id": 2,
+                "table_name": "table1",
+                "view_name": "view" + str(i),
+                "cmd": "view",
+            }
             session.process(msg, self.post)
 
         manager_views = list(manager._views.keys())
@@ -192,9 +237,7 @@ class TestPerspectiveSession(object):
             s.set(s.get() + 100)
 
         # simulate a client that holds callbacks by id
-        callbacks = {
-            3: callback
-        }
+        callbacks = {3: callback}
 
         def post_update(msg):
             # when `on_update` is triggered, this callback gets the message
@@ -203,9 +246,7 @@ class TestPerspectiveSession(object):
             assert message["id"] is not None
             if message["id"] == 3:
                 # trigger callback
-                assert message["data"] == {
-                    "port_id": 0
-                }
+                assert message["data"] == {"port_id": 0}
                 callbacks[message["id"]](message["data"])
 
         # create a view and an on_update on each session
@@ -213,9 +254,21 @@ class TestPerspectiveSession(object):
             view_name = "view" + str(i)
             # IDs have to conflict - each viewer will send the first message as
             # ID = 1, so we need to make sure we handle that.
-            msg = {"id": 2, "table_name": "table1", "view_name": view_name, "cmd": "view"}
+            msg = {
+                "id": 2,
+                "table_name": "table1",
+                "view_name": view_name,
+                "cmd": "view",
+            }
             session.process(msg, self.post)
-            make_on_update = {"id": 3, "name": view_name, "cmd": "view_method", "subscribe": True, "method": "on_update", "callback_id": "callback_1"}
+            make_on_update = {
+                "id": 3,
+                "name": view_name,
+                "cmd": "view_method",
+                "subscribe": True,
+                "method": "on_update",
+                "callback_id": "callback_1",
+            }
             session.process(make_on_update, post_update)
 
         # call updates using a random session - they should propagate
@@ -223,8 +276,20 @@ class TestPerspectiveSession(object):
         random_session = sessions[random_session_id]
         random_client_id = random_session.client_id
 
-        update1 = {"id": 4, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [4], "b": ["d"]}]}
-        update2 = {"id": 5, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [5], "b": ["e"]}]}
+        update1 = {
+            "id": 4,
+            "name": "table1",
+            "cmd": "table_method",
+            "method": "update",
+            "args": [{"a": [4], "b": ["d"]}],
+        }
+        update2 = {
+            "id": 5,
+            "name": "table1",
+            "cmd": "table_method",
+            "method": "update",
+            "args": [{"a": [5], "b": ["e"]}],
+        }
 
         random_session.process(update1, self.post)
         random_session.process(update2, self.post)
@@ -241,7 +306,7 @@ class TestPerspectiveSession(object):
 
         assert "view" + str(random_session_id) not in manager._views.keys()
         assert len(manager._views.keys()) == 4
-        
+
         for callback in manager._callback_cache:
             assert callback["client_id"] != random_client_id
 

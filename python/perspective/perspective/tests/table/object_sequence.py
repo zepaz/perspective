@@ -14,7 +14,7 @@ class CustomObjectStore(object):
         return int(self._value)
 
     def __repr__(self):
-        return 'test' if self._value == 1 else "test{}".format(self._value)
+        return "test" if self._value == 1 else "test{}".format(self._value)
 
 
 def run():
@@ -99,14 +99,28 @@ def run():
     print(sys.getrefcount(t), "should be", 7)
     # assert sys.getrefcount(t) == 7
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, True, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        True,
+        False,
+        True,
+    ]
 
     print()
     # clear some, overwrite some with same
     tbl.update([{"a": 0, "b": t}])
     # 1 for `t`, 1 for `data`, 1 for argument to sys.getrefcount, and 4 for the table
     print(sys.getrefcount(t), "should be", 7)
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, True, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        True,
+        False,
+        True,
+    ]
 
     print()
     tbl.update([{"a": 1, "b": t2}])
@@ -115,7 +129,14 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 3)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, True, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        True,
+        False,
+        True,
+    ]
 
     print()
     tbl.update([{"a": 1, "b": t2}])
@@ -124,17 +145,14 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 3)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, True, False, True]
-
-
-    print()
-    tbl.update([{"a": 1, "b": t2}])
-    # 1 for `t`, 1 for `data`, 1 for argument to sys.getrefcount, and 3 for the table
-    print(sys.getrefcount(t), "should be", 6)
-    # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
-    print(sys.getrefcount(t2), "should be", 3)
-    print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, True, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        True,
+        False,
+        True,
+    ]
 
     print()
     tbl.update([{"a": 1, "b": t2}])
@@ -143,7 +161,30 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 3)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, True, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        True,
+        False,
+        True,
+    ]
+
+    print()
+    tbl.update([{"a": 1, "b": t2}])
+    # 1 for `t`, 1 for `data`, 1 for argument to sys.getrefcount, and 3 for the table
+    print(sys.getrefcount(t), "should be", 6)
+    # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
+    print(sys.getrefcount(t2), "should be", 3)
+    print(tbl.view().to_dict()["b"])
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        True,
+        False,
+        True,
+    ]
 
     print()
     tbl.update([{"a": 2, "b": t2}])
@@ -152,7 +193,14 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 4)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, True, True, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        True,
+        True,
+        False,
+        True,
+    ]
 
     print()
     tbl.update([{"a": 2, "b": None}])
@@ -161,7 +209,14 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 3)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, True, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        True,
+        False,
+        True,
+    ]
 
     print()
     tbl.update([{"a": 2, "b": t2}])
@@ -170,7 +225,14 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 4)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, True, True, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        True,
+        True,
+        False,
+        True,
+    ]
 
     print()
     tbl.update([{"a": 2, "b": None}])
@@ -179,7 +241,14 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 3)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, True, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        True,
+        False,
+        True,
+    ]
 
     print()
     tbl.update([{"a": 3, "b": None}])
@@ -188,7 +257,14 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 3)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, False, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        False,
+        False,
+        True,
+    ]
 
     print()
     tbl.update([{"a": 3, "b": None}])
@@ -197,7 +273,14 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 3)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, False, False, True]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        False,
+        False,
+        True,
+    ]
 
     print()
     tbl.update([{"a": 5, "b": None}])
@@ -206,7 +289,14 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 3)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, False, False, False]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        False,
+        False,
+        False,
+    ]
 
     print()
     tbl.update([{"a": 5, "b": None}])
@@ -215,7 +305,14 @@ def run():
     # 1 for `t2`, 1 for argument to sys.getrefcount, and 1 for the table
     print(sys.getrefcount(t2), "should be", 3)
     print(tbl.view().to_dict()["b"])
-    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [True, True, False, False, False, False]
+    assert list(_ is not None for _ in tbl.view().to_dict()["b"]) == [
+        True,
+        True,
+        False,
+        False,
+        False,
+        False,
+    ]
 
     print()
     tbl.clear()
@@ -242,9 +339,9 @@ def run2():
     assert tbl.view().to_dict() == {"a": [0], "b": [t]}
 
     # seed a few to check
-    tbl.remove([1]) 
-    tbl.remove([1]) 
-    tbl.remove([1]) 
+    tbl.remove([1])
+    tbl.remove([1])
+    tbl.remove([1])
 
     for _ in range(10):
         pick = randint(1, 2) if indexes else 1
@@ -253,7 +350,9 @@ def run2():
             while ind in indexes:
                 ind = randint(1, 100)
 
-            print('adding', ind, 'refcount', t_ref_count, 'should be', sys.getrefcount(t))
+            print(
+                "adding", ind, "refcount", t_ref_count, "should be", sys.getrefcount(t)
+            )
             tbl.update({"a": [ind], "b": [t]})
             t_ref_count += 1
             indexes.add(ind)
@@ -262,9 +361,16 @@ def run2():
         else:
             ind = choice(list(indexes))
             indexes.remove(ind)
-            tbl.remove([ind]) 
+            tbl.remove([ind])
             t_ref_count -= 1
-            print('removing', ind, 'refcount', t_ref_count, 'should be', sys.getrefcount(t))
+            print(
+                "removing",
+                ind,
+                "refcount",
+                t_ref_count,
+                "should be",
+                sys.getrefcount(t),
+            )
             assert sys.getrefcount(t) == t_ref_count
 
         print(t_ref_count)
@@ -279,5 +385,3 @@ def run2():
     # 1 for `t`, one for `data`, one for argument to sys.getrefcount
     print(sys.getrefcount(t), "should be", 2)
     assert sys.getrefcount(t) == 2
-
-

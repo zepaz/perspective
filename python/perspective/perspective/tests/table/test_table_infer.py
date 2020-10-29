@@ -12,7 +12,6 @@ from datetime import date, datetime
 
 
 class TestTableInfer(object):
-
     def test_table_infer_int(self):
         data = {"a": [None, None, None, None, 1, 0, 1, 1, 1]}
         tbl = Table(data)
@@ -27,19 +26,13 @@ class TestTableInfer(object):
         bool_data = [{"a": True, "b": False}, {"a": True, "b": True}]
         tbl = Table(bool_data)
         assert tbl.size() == 2
-        assert tbl.schema() == {
-            "a": bool,
-            "b": bool
-        }
+        assert tbl.schema() == {"a": bool, "b": bool}
 
     def test_table_infer_bool_str(self):
         bool_data = [{"a": "True", "b": "False"}, {"a": "True", "b": "True"}]
         tbl = Table(bool_data)
         assert tbl.size() == 2
-        assert tbl.schema() == {
-            "a": bool,
-            "b": bool
-        }
+        assert tbl.schema() == {"a": bool, "b": bool}
 
     def test_table_bool_infer_str_all_formats_from_schema(self):
         bool_data = [
@@ -47,17 +40,14 @@ class TestTableInfer(object):
             {"a": "t", "b": "f"},
             {"a": "true", "b": "false"},
             {"a": 1, "b": 0},
-            {"a": "on", "b": "off"}
+            {"a": "on", "b": "off"},
         ]
         tbl = Table(bool_data)
-        assert tbl.schema() == {
-            "a": bool,
-            "b": bool
-        }
+        assert tbl.schema() == {"a": bool, "b": bool}
         assert tbl.size() == 5
         assert tbl.view().to_dict() == {
             "a": [True, True, True, True, True],
-            "b": [False, False, False, False, False]
+            "b": [False, False, False, False, False],
         }
 
     def test_table_promote_float(self):
@@ -86,7 +76,17 @@ class TestTableInfer(object):
 
     def test_table_infer_time_as_string(self):
         # time objects are inferred as string
-        data = {"a": [None, None, None, None, None, None, datetime(2019, 7, 11, 12, 30, 5).time()]}
+        data = {
+            "a": [
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                datetime(2019, 7, 11, 12, 30, 5).time(),
+            ]
+        }
         tbl = Table(data)
         assert tbl.schema() == {"a": str}
 
@@ -143,7 +143,17 @@ class TestTableInfer(object):
         assert tbl.schema() == {"a": datetime}
 
     def test_table_infer_datetime_separators(self):
-        data = {"a": [None, None, None, None, None, "2019-07-25T09:00:00", "2019/07/25T09:00:00"]}
+        data = {
+            "a": [
+                None,
+                None,
+                None,
+                None,
+                None,
+                "2019-07-25T09:00:00",
+                "2019/07/25T09:00:00",
+            ]
+        }
         tbl = Table(data)
         assert tbl.schema() == {"a": datetime}
 
@@ -168,7 +178,7 @@ class TestTableInfer(object):
         assert tbl.schema() == {"a": datetime}
 
     def test_table_strict_datetime_infer(self):
-        data = {"a": ['10', '9', '8', '7', '6', '5', '4', '3', '2', '1']}
+        data = {"a": ["10", "9", "8", "7", "6", "5", "4", "3", "2", "1"]}
         tbl = Table(data)
         assert tbl.schema() == {"a": str}
 

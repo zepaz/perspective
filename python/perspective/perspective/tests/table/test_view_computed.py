@@ -436,10 +436,7 @@ class TestViewComputed(object):
         """Tests that `View`'s `__del__` method, when called by the Python
         reference counter, leaves an empty `Table` in a clean state.
         """
-        table = Table(
-            {"id": int, "msg": str, "val": float},
-            index="id",
-        )
+        table = Table({"id": int, "msg": str, "val": float}, index="id",)
         table.view(
             computed_columns=[
                 {
@@ -450,15 +447,7 @@ class TestViewComputed(object):
             ],
             columns=["inverted"],
         )
-        table.update(
-            [
-                {
-                    "id": 1,
-                    "msg": "test",
-                    "val": 1.0,
-                }
-            ]
-        )
+        table.update([{"id": 1, "msg": "test", "val": 1.0,}])
 
     def test_view_computed_with_custom_columns(self):
         table = Table({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
@@ -667,9 +656,7 @@ class TestViewComputed(object):
         }
 
     def test_view_day_of_week_datetime(self):
-        table = Table(
-            {"a": [datetime(2020, 3, i, 12, 30) for i in range(9, 14)]}
-        )
+        table = Table({"a": [datetime(2020, 3, i, 12, 30) for i in range(9, 14)]})
         view = table.view(
             computed_columns=[
                 {
@@ -722,11 +709,7 @@ class TestViewComputed(object):
         }
 
     def test_view_month_of_year_datetime(self):
-        table = Table(
-            {
-                "a": [datetime(2020, i, 15) for i in range(1, 13)],
-            }
-        )
+        table = Table({"a": [datetime(2020, i, 15) for i in range(1, 13)],})
         view = table.view(
             computed_columns=[
                 {
@@ -794,14 +777,7 @@ class TestViewComputed(object):
 
     def test_view_day_bucket_date_with_null(self):
         table = Table(
-            {
-                "a": [
-                    date(2020, 1, 1),
-                    None,
-                    date(2020, 2, 29),
-                    date(2020, 3, 15),
-                ],
-            }
+            {"a": [date(2020, 1, 1), None, date(2020, 2, 29), date(2020, 3, 15),],}
         )
         view = table.view(
             computed_columns=[
@@ -902,14 +878,7 @@ class TestViewComputed(object):
 
     def test_view_month_bucket_date_with_null(self):
         table = Table(
-            {
-                "a": [
-                    date(2020, 1, 1),
-                    None,
-                    date(2020, 2, 29),
-                    date(2020, 3, 15),
-                ],
-            }
+            {"a": [date(2020, 1, 1), None, date(2020, 2, 29), date(2020, 3, 15),],}
         )
         view = table.view(
             computed_columns=[
@@ -973,11 +942,7 @@ class TestViewComputed(object):
         }
 
     def test_view_month_bucket_datetime_with_null(self):
-        table = Table(
-            {
-                "a": [datetime(2020, 1, 1), None, None, datetime(2020, 3, 15)],
-            }
-        )
+        table = Table({"a": [datetime(2020, 1, 1), None, None, datetime(2020, 3, 15)],})
         view = table.view(
             computed_columns=[
                 {
