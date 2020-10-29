@@ -61,8 +61,7 @@ class PerspectiveTornadoClient(PerspectiveClient):
 
         # Send a `ping` message every 15 seconds.
         self._ping_callback = ioloop.PeriodicCallback(
-            self._send_ping,
-            callback_time=PerspectiveTornadoClient.PING_TIMEOUT,
+            self._send_ping, callback_time=PerspectiveTornadoClient.PING_TIMEOUT,
         )
 
         self._ping_callback.start()
