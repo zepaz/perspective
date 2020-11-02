@@ -376,10 +376,7 @@ describe("PerspectiveView", function() {
                 result.b = result.b.map(x => new Date(x));
 
                 expect(result).toEqual(data);
-
-                // TODO there is no way to verify this in perspective API
-                // currently ...
-                // expect(load_args[1]).toEqual(options);
+                expect(await load_args[0].get_index()).toEqual("a");
             });
 
             it("Should correctly update a dataset", async function() {
