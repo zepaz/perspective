@@ -19,8 +19,9 @@ data = {"a": [1, 2, 3], "b": ["a", "b", "c"]}
 
 
 class TestPerspectiveManager(object):
+
     def post(self, msg):
-        """boilerplate callback to simulate a client's `post()` method."""
+        '''boilerplate callback to simulate a client's `post()` method.'''
         msg = json.loads(msg)
         print("self.post:", msg)
         assert msg["id"] is not None
@@ -31,18 +32,15 @@ class TestPerspectiveManager(object):
             assert msg == expected
 
     def test_manager_host_table(self):
-        message = {
-            "id": 1,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "schema",
-            "args": [],
-        }
+        message = {"id": 1, "name": "table1", "cmd": "table_method", "method": "schema", "args": []}
         manager = PerspectiveManager()
         table = Table(data)
         manager.host_table("table1", table)
         manager._process(message, self.post)
-        assert manager._tables["table1"].schema() == {"a": int, "b": str}
+        assert manager._tables["table1"].schema() == {
+            "a": int,
+            "b": str
+        }
 
     def test_manager_host_view(self):
         manager = PerspectiveManager()
@@ -76,115 +74,94 @@ class TestPerspectiveManager(object):
         message = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(message, self.post)
-        assert manager._tables["table1"].schema() == {"a": int, "b": str}
+        assert manager._tables["table1"].schema() == {
+            "a": int,
+            "b": str
+        }
 
     def test_locked_manager_create_table(self):
-        post_callback = partial(
-            self.validate_post,
-            expected={"id": 1, "error": "`table` failed - access denied"},
-        )
+        post_callback = partial(self.validate_post, expected={
+            "id": 1,
+            "error": "`table` failed - access denied"
+        })
         message = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager(lock=True)
         manager._process(message, post_callback)
 
     def test_manager_create_indexed_table(self):
-        message = {
-            "id": 1,
-            "name": "table1",
-            "cmd": "table",
-            "args": [data],
-            "options": {"index": "a"},
-        }
+        message = {"id": 1, "name": "table1", "cmd": "table", "args": [data], "options": {"index": "a"}}
         manager = PerspectiveManager()
         table = Table(data)
         manager.host_table("table1", table)
         manager._process(message, self.post)
-        assert manager._tables["table1"].schema() == {"a": int, "b": str}
+        assert manager._tables["table1"].schema() == {
+            "a": int,
+            "b": str
+        }
 
         assert manager._tables["table1"].get_index() == "a"
 
     def test_manager_create_indexed_table_and_update(self):
-        message = {
-            "id": 1,
-            "name": "table1",
-            "cmd": "table",
-            "args": [data],
-            "options": {"index": "a"},
-        }
+        message = {"id": 1, "name": "table1", "cmd": "table", "args": [data], "options": {"index": "a"}}
         manager = PerspectiveManager()
         table = Table(data)
         manager.host_table("table1", table)
         manager._process(message, self.post)
-        assert manager._tables["table1"].schema() == {"a": int, "b": str}
-        assert manager._tables["table1"].get_index() == "a"
-        update_message = {
-            "id": 2,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [1, 2, 3], "b": ["str1", "str2", "str3"]}],
+        assert manager._tables["table1"].schema() == {
+            "a": int,
+            "b": str
         }
+        assert manager._tables["table1"].get_index() == "a"
+        update_message = {"id": 2, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [1, 2, 3], "b": ["str1", "str2", "str3"]}]}
         manager._process(update_message, self.post)
         assert manager._tables["table1"].view().to_dict() == {
             "a": [1, 2, 3],
-            "b": ["str1", "str2", "str3"],
+            "b": ["str1", "str2", "str3"]
         }
 
     def test_manager_create_indexed_table_and_remove(self):
-        message = {
-            "id": 1,
-            "name": "table1",
-            "cmd": "table",
-            "args": [data],
-            "options": {"index": "a"},
-        }
+        message = {"id": 1, "name": "table1", "cmd": "table", "args": [data], "options": {"index": "a"}}
         manager = PerspectiveManager()
         table = Table(data)
         manager.host_table("table1", table)
         manager._process(message, self.post)
-        assert manager._tables["table1"].schema() == {"a": int, "b": str}
-        assert manager._tables["table1"].get_index() == "a"
-        remove_message = {
-            "id": 2,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "remove",
-            "args": [[1, 2]],
+        assert manager._tables["table1"].schema() == {
+            "a": int,
+            "b": str
         }
+        assert manager._tables["table1"].get_index() == "a"
+        remove_message = {"id": 2, "name": "table1", "cmd": "table_method", "method": "remove", "args": [[1, 2]]}
         manager._process(remove_message, self.post)
-        assert manager._tables["table1"].view().to_dict() == {"a": [3], "b": ["c"]}
+        assert manager._tables["table1"].view().to_dict() == {
+            "a": [3],
+            "b": ["c"]
+        }
 
     def test_manager_create_view(self):
-        message = {
-            "id": 1,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "schema",
-            "args": [],
-        }
+        message = {"id": 1, "name": "view1", "cmd": "view_method", "method": "schema", "args": []}
         manager = PerspectiveManager()
         table = Table(data)
         view = table.view()
         manager.host_table("table1", table)
         manager.host_view("view1", view)
         manager._process(message, self.post)
-        assert manager.get_view("view1").schema() == {"a": int, "b": str}
+        assert manager.get_view("view1").schema() == {
+            "a": int,
+            "b": str
+        }
 
     def test_locked_manager_create_view(self):
-        message = {
-            "id": 1,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "schema",
-            "args": [],
-        }
+        message = {"id": 1, "name": "view1", "cmd": "view_method", "method": "schema", "args": []}
         manager = PerspectiveManager(lock=True)
         table = Table(data)
         view = table.view()
         manager.host_table("table1", table)
         manager.host_view("view1", view)
         manager._process(message, self.post)
-        assert manager.get_view("view1").schema() == {"a": int, "b": str}
+        assert manager.get_view("view1").schema() == {
+            "a": int,
+            "b": str
+        }
 
     def test_manager_create_view_zero(self):
         message = {"id": 1, "table_name": "table1", "view_name": "view1", "cmd": "view"}
@@ -195,13 +172,7 @@ class TestPerspectiveManager(object):
         assert manager._views["view1"].num_rows() == 3
 
     def test_manager_create_view_one(self):
-        message = {
-            "id": 1,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-            "config": {"row_pivots": ["a"]},
-        }
+        message = {"id": 1, "table_name": "table1", "view_name": "view1", "cmd": "view", "config": {"row_pivots": ["a"]}}
         manager = PerspectiveManager()
         table = Table(data)
         manager.host_table("table1", table)
@@ -209,17 +180,11 @@ class TestPerspectiveManager(object):
         assert manager._views["view1"].to_dict() == {
             "__ROW_PATH__": [[], [1], [2], [3]],
             "a": [6, 1, 2, 3],
-            "b": [3, 1, 1, 1],
+            "b": [3, 1, 1, 1]
         }
 
     def test_manager_create_view_two(self):
-        message = {
-            "id": 1,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-            "config": {"row_pivots": ["a"], "column_pivots": ["b"]},
-        }
+        message = {"id": 1, "table_name": "table1", "view_name": "view1", "cmd": "view", "config": {"row_pivots": ["a"], "column_pivots": ["b"]}}
         manager = PerspectiveManager()
         table = Table(data)
         manager.host_table("table1", table)
@@ -231,7 +196,7 @@ class TestPerspectiveManager(object):
             "b|a": [2, None, 2, None],
             "b|b": [1, None, 1, None],
             "c|a": [3, None, None, 3],
-            "c|b": [1, None, None, 1],
+            "c|b": [1, None, None, 1]
         }
 
     # clear views
@@ -240,7 +205,7 @@ class TestPerspectiveManager(object):
         messages = [
             {"id": 1, "table_name": "table1", "view_name": "view1", "cmd": "view"},
             {"id": 2, "table_name": "table1", "view_name": "view2", "cmd": "view"},
-            {"id": 3, "table_name": "table1", "view_name": "view3", "cmd": "view"},
+            {"id": 3, "table_name": "table1", "view_name": "view3", "cmd": "view"}
         ]
         manager = PerspectiveManager()
         table = Table(data)
@@ -254,7 +219,7 @@ class TestPerspectiveManager(object):
         messages = [
             {"id": 1, "table_name": "table1", "view_name": "view1", "cmd": "view"},
             {"id": 2, "table_name": "table1", "view_name": "view2", "cmd": "view"},
-            {"id": 3, "table_name": "table1", "view_name": "view3", "cmd": "view"},
+            {"id": 3, "table_name": "table1", "view_name": "view3", "cmd": "view"}
         ]
         manager = PerspectiveManager()
         table = Table(data)
@@ -271,7 +236,7 @@ class TestPerspectiveManager(object):
         messages = [
             {"id": 1, "table_name": "table1", "view_name": "view1", "cmd": "view"},
             {"id": 2, "table_name": "table1", "view_name": "view2", "cmd": "view"},
-            {"id": 3, "table_name": "table1", "view_name": "view3", "cmd": "view"},
+            {"id": 3, "table_name": "table1", "view_name": "view3", "cmd": "view"}
         ]
         manager = PerspectiveManager()
         table = Table(data)
@@ -283,139 +248,85 @@ class TestPerspectiveManager(object):
 
     # locked manager
     def test_locked_manager_update_table(self):
-        post_callback = partial(
-            self.validate_post,
-            expected={"id": 1, "error": "`table_method.update` failed - access denied"},
-        )
-        message = {
+        post_callback = partial(self.validate_post, expected={
             "id": 1,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [data],
-        }
+            "error": "`table_method.update` failed - access denied"
+        })
+        message = {"id": 1, "name": "table1", "cmd": "table_method", "method": "update", "args": [data]}
         manager = PerspectiveManager(lock=True)
         manager._process(message, post_callback)
 
     def test_locked_manager_clear_table(self):
-        post_callback = partial(
-            self.validate_post,
-            expected={"id": 1, "error": "`table_method.clear` failed - access denied"},
-        )
-        message = {
+        post_callback = partial(self.validate_post, expected={
             "id": 1,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "clear",
-            "args": [],
-        }
+            "error": "`table_method.clear` failed - access denied"
+        })
+        message = {"id": 1, "name": "table1", "cmd": "table_method", "method": "clear", "args": []}
         manager = PerspectiveManager(lock=True)
         manager._process(message, post_callback)
 
     def test_locked_manager_replace_table(self):
-        post_callback = partial(
-            self.validate_post,
-            expected={
-                "id": 1,
-                "error": "`table_method.replace` failed - access denied",
-            },
-        )
-        message = {
+        post_callback = partial(self.validate_post, expected={
             "id": 1,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "replace",
-            "args": [data],
-        }
+            "error": "`table_method.replace` failed - access denied"
+        })
+        message = {"id": 1, "name": "table1", "cmd": "table_method", "method": "replace", "args": [data]}
         manager = PerspectiveManager(lock=True)
         manager._process(message, post_callback)
 
     def test_locked_manager_remove_table(self):
-        post_callback = partial(
-            self.validate_post,
-            expected={"id": 1, "error": "`table_method.remove` failed - access denied"},
-        )
-        message = {
+        post_callback = partial(self.validate_post, expected={
             "id": 1,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "remove",
-            "args": [],
-        }
+            "error": "`table_method.remove` failed - access denied"
+        })
+        message = {"id": 1, "name": "table1", "cmd": "table_method", "method": "remove", "args": []}
         manager = PerspectiveManager(lock=True)
         manager._process(message, post_callback)
 
     def test_locked_manager_delete_table(self):
-        post_callback = partial(
-            self.validate_post,
-            expected={"id": 1, "error": "`table_method.delete` failed - access denied"},
-        )
-        message = {
+        post_callback = partial(self.validate_post, expected={
             "id": 1,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "delete",
-            "args": [],
-        }
+            "error": "`table_method.delete` failed - access denied"
+        })
+        message = {"id": 1, "name": "table1", "cmd": "table_method", "method": "delete", "args": []}
         manager = PerspectiveManager(lock=True)
         manager._process(message, post_callback)
 
     def test_arbitary_lock_unlock_manager(self):
         manager = PerspectiveManager(lock=True)
         make_table_message = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
-        manager._process(
-            make_table_message,
-            partial(
-                self.validate_post,
-                expected={"id": 1, "error": "`table` failed - access denied"},
-            ),
-        )
+        manager._process(make_table_message, partial(self.validate_post, expected={
+            "id": 1,
+            "error": "`table` failed - access denied"
+        }))
         manager.unlock()
         manager._process(make_table_message, self.post)
-        assert manager._tables["table1"].schema() == {"a": int, "b": str}
-        update_message = {
-            "id": 2,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [data],
+        assert manager._tables["table1"].schema() == {
+            "a": int,
+            "b": str
         }
+        update_message = {"id": 2, "name": "table1", "cmd": "table_method", "method": "update", "args": [data]}
         manager._process(update_message, self.post)
         assert manager._tables["table1"].size() == 6
         manager.lock()
-        update_message_new = {
+        update_message_new = {"id": 3, "name": "table1", "cmd": "table_method", "method": "update", "args": [data]}
+        manager._process(update_message_new, partial(self.validate_post, expected={
             "id": 3,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [data],
-        }
-        manager._process(
-            update_message_new,
-            partial(
-                self.validate_post,
-                expected={
-                    "id": 3,
-                    "error": "`table_method.update` failed - access denied",
-                },
-            ),
-        )
+            "error": "`table_method.update` failed - access denied"
+        }))
 
     # schema
 
     def test_manager_table_schema(self):
-        post_callback = partial(
-            self.validate_post,
-            expected={"id": 1, "data": {"a": "integer", "b": "string"}},
-        )
-
-        message = {
+        post_callback = partial(self.validate_post, expected={
             "id": 1,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "schema",
-            "args": [False],
-        }
+            "data": {
+                "a": "integer",
+                "b": "string"
+            }
+        })
+
+        message = {"id": 1, "name": "table1", "cmd": "table_method", "method": "schema", "args": [False]}
         manager = PerspectiveManager()
         table = Table(data)
         view = table.view()
@@ -424,18 +335,15 @@ class TestPerspectiveManager(object):
         manager._process(message, post_callback)
 
     def test_manager_view_schema(self):
-        post_callback = partial(
-            self.validate_post,
-            expected={"id": 1, "data": {"a": "integer", "b": "integer"}},
-        )
-
-        message = {
+        post_callback = partial(self.validate_post, expected={
             "id": 1,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "schema",
-            "args": [False],
-        }
+            "data": {
+                "a": "integer",
+                "b": "integer"
+            }
+        })
+
+        message = {"id": 1, "name": "view1", "cmd": "view_method", "method": "schema", "args": [False]}
         manager = PerspectiveManager()
         table = Table(data)
         view = table.view(row_pivots=["a"])
@@ -444,9 +352,12 @@ class TestPerspectiveManager(object):
         manager._process(message, post_callback)
 
     def test_manager_table_computed_schema(self):
-        post_callback = partial(
-            self.validate_post, expected={"id": 1, "data": {"abc": "float"}}
-        )
+        post_callback = partial(self.validate_post, expected={
+            "id": 1,
+            "data": {
+                "abc": "float"
+            }
+        })
 
         message = {
             "id": 1,
@@ -454,8 +365,14 @@ class TestPerspectiveManager(object):
             "cmd": "table_method",
             "method": "computed_schema",
             "args": [
-                [{"column": "abc", "computed_function_name": "+", "inputs": ["a", "a"]}]
-            ],
+                [
+                    {
+                        "column": "abc",
+                        "computed_function_name": "+",
+                        "inputs": ["a", "a"]
+                    }
+                ]
+            ]
         }
         manager = PerspectiveManager()
         table = Table(data)
@@ -465,16 +382,17 @@ class TestPerspectiveManager(object):
         manager._process(message, post_callback)
 
     def test_manager_table_get_computation_input_types(self):
-        post_callback = partial(
-            self.validate_post, expected={"id": 1, "data": ["string"]}
-        )
+        post_callback = partial(self.validate_post, expected={
+            "id": 1,
+            "data": ["string"]
+        })
 
         message = {
             "id": 1,
             "name": "table1",
             "cmd": "table_method",
             "method": "get_computation_input_types",
-            "args": ["concat_comma"],
+            "args": ["concat_comma"]
         }
         manager = PerspectiveManager()
         table = Table(data)
@@ -484,24 +402,23 @@ class TestPerspectiveManager(object):
         manager._process(message, post_callback)
 
     def test_manager_view_computed_schema(self):
-        post_callback = partial(
-            self.validate_post, expected={"id": 1, "data": {"abc": "float"}}
-        )
-
-        message = {
+        post_callback = partial(self.validate_post, expected={
             "id": 1,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "computed_schema",
-            "args": [False],
-        }
+            "data": {
+                "abc": "float"
+            }
+        })
+
+        message = {"id": 1, "name": "view1", "cmd": "view_method", "method": "computed_schema", "args": [False]}
         manager = PerspectiveManager()
         table = Table(data)
-        view = table.view(
-            computed_columns=[
-                {"column": "abc", "computed_function_name": "+", "inputs": ["a", "a"]}
-            ]
-        )
+        view = table.view(computed_columns=[
+            {
+                "column": "abc",
+                "computed_function_name": "+",
+                "inputs": ["a", "a"]
+            }
+        ])
         manager.host_table("table1", table)
         manager.host_view("view1", view)
         manager._process(message, post_callback)
@@ -515,18 +432,12 @@ class TestPerspectiveManager(object):
             s.set(True)
             message = json.loads(msg)
             assert message["data"] == data
-
         message = {"id": 1, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager = PerspectiveManager()
         table = Table(data)
         manager.host_table("table1", table)
         manager._process(message, self.post)
-        to_dict_message = {
-            "id": 2,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "to_dict",
-        }
+        to_dict_message = {"id": 2, "name": "view1", "cmd": "view_method", "method": "to_dict"}
         manager._process(to_dict_message, handle_to_dict)
         assert s.get() is True
 
@@ -537,18 +448,12 @@ class TestPerspectiveManager(object):
             s.set(True)
             message = json.loads(msg)
             assert message["data"] == data
-
         message = {"id": 1, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager = PerspectiveManager(lock=True)
         table = Table(data)
         manager.host_table("table1", table)
         manager._process(message, self.post)
-        to_dict_message = {
-            "id": 2,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "to_dict",
-        }
+        to_dict_message = {"id": 2, "name": "view1", "cmd": "view_method", "method": "to_dict"}
         manager._process(to_dict_message, handle_to_dict)
         assert s.get() is True
 
@@ -559,26 +464,17 @@ class TestPerspectiveManager(object):
             s.set(True)
             message = json.loads(msg)
             assert message["data"] == {"a": [1], "b": ["a"]}
-
         message = {"id": 1, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager = PerspectiveManager()
         table = Table(data)
         manager.host_table("table1", table)
         manager._process(message, self.post)
-        to_dict_message = {
-            "id": 2,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "to_dict",
-            "args": [{"start_row": 0, "end_row": 1}],
-        }
+        to_dict_message = {"id": 2, "name": "view1", "cmd": "view_method", "method": "to_dict", "args": [{"start_row": 0, "end_row": 1}]}
         manager._process(to_dict_message, handle_to_dict)
         assert s.get() is True
 
     def test_manager_to_dict_with_nan(self, util, sentinel):
-        data = util.make_arrow(
-            ["a"], [[1.5, np.nan, 2.5, np.nan]], types=[pa.float64()]
-        )
+        data = util.make_arrow(["a"], [[1.5, np.nan, 2.5, np.nan]], types=[pa.float64()])
         s = sentinel(False)
 
         def handle_to_dict(msg):
@@ -586,7 +482,7 @@ class TestPerspectiveManager(object):
             message = json.loads(msg)
             assert message == {
                 "id": 2,
-                "error": "JSON serialization error: Cannot serialize `NaN`, `Infinity` or `-Infinity` to JSON.",
+                "error": "JSON serialization error: Cannot serialize `NaN`, `Infinity` or `-Infinity` to JSON."
             }
 
         message = {"id": 1, "table_name": "table1", "view_name": "view1", "cmd": "view"}
@@ -594,12 +490,7 @@ class TestPerspectiveManager(object):
         table = Table(data)
         manager.host_table("table1", table)
         manager._process(message, self.post)
-        to_dict_message = {
-            "id": 2,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "to_dict",
-        }
+        to_dict_message = {"id": 2, "name": "view1", "cmd": "view_method", "method": "to_dict"}
         manager._process(to_dict_message, handle_to_dict)
         assert s.get() is True
 
@@ -608,9 +499,13 @@ class TestPerspectiveManager(object):
         alter the timestamp in any way if both are in local time."""
         s = sentinel(False)
 
-        timestamp_data = {"a": [1580515140000]}
+        timestamp_data = {
+            "a": [1580515140000]
+        }
 
-        schema = {"a": datetime}
+        schema = {
+            "a": datetime
+        }
 
         def handle_to_dict(msg):
             s.set(True)
@@ -625,12 +520,7 @@ class TestPerspectiveManager(object):
 
         manager.host_table("table1", table)
         manager._process(message, self.post)
-        to_dict_message = {
-            "id": 2,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "to_dict",
-        }
+        to_dict_message = {"id": 2, "name": "view1", "cmd": "view_method", "method": "to_dict"}
         manager._process(to_dict_message, handle_to_dict)
         assert s.get() is True
 
@@ -639,9 +529,13 @@ class TestPerspectiveManager(object):
         alter the timestamp in any way if both are in local time."""
         s = sentinel(False)
 
-        timestamp_data = {"a": [1580515140000]}
+        timestamp_data = {
+            "a": [1580515140000]
+        }
 
-        schema = {"a": datetime}
+        schema = {
+            "a": datetime
+        }
 
         def handle_to_dict(msg):
             s.set(True)
@@ -662,12 +556,7 @@ class TestPerspectiveManager(object):
 
         manager.host_table("table1", table)
         manager._process(message, self.post)
-        to_dict_message = {
-            "id": 2,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "to_dict",
-        }
+        to_dict_message = {"id": 2, "name": "view1", "cmd": "view_method", "method": "to_dict"}
         manager._process(to_dict_message, handle_to_dict)
         assert s.get() is True
 
@@ -690,12 +579,7 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
 
         # hook into the created view and pass it the callback
@@ -703,20 +587,8 @@ class TestPerspectiveManager(object):
         view.on_update(update_callback)
 
         # call updates
-        update1 = {
-            "id": 3,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [4], "b": ["d"]}],
-        }
-        update2 = {
-            "id": 4,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [5], "b": ["e"]}],
-        }
+        update1 = {"id": 3, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [4], "b": ["d"]}]}
+        update2 = {"id": 4, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [5], "b": ["e"]}]}
         manager._process(update1, self.post)
         manager._process(update2, self.post)
         assert s.get() == 2
@@ -727,7 +599,10 @@ class TestPerspectiveManager(object):
         def update_callback(port_id, delta):
             table = Table(delta)
             assert table.size() == 1
-            assert table.schema() == {"a": int, "b": str}
+            assert table.schema() == {
+                "a": int,
+                "b": str
+            }
             table.delete()
             s.set(s.get() + 1)
 
@@ -735,12 +610,7 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
 
         # hook into the created view and pass it the callback
@@ -748,20 +618,8 @@ class TestPerspectiveManager(object):
         view.on_update(update_callback, mode="row")
 
         # call updates
-        update1 = {
-            "id": 3,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [4], "b": ["d"]}],
-        }
-        update2 = {
-            "id": 4,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [5], "b": ["e"]}],
-        }
+        update1 = {"id": 3, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [4], "b": ["d"]}]}
+        update2 = {"id": 4, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [5], "b": ["e"]}]}
         manager._process(update1, self.post)
         manager._process(update2, self.post)
         assert s.get() == 2
@@ -772,7 +630,10 @@ class TestPerspectiveManager(object):
         def update_callback(port_id, delta):
             table = Table(delta)
             assert table.size() == 1
-            assert table.schema() == {"a": int, "b": str}
+            assert table.schema() == {
+                "a": int,
+                "b": str
+            }
             table.delete()
             s.set(s.get() + 1)
 
@@ -780,27 +641,12 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
 
         # Get two ports on the table
-        make_port = {
-            "id": 3,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "make_port",
-        }
-        make_port2 = {
-            "id": 4,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "make_port",
-        }
+        make_port = {"id": 3, "name": "table1", "cmd": "table_method", "method": "make_port"}
+        make_port2 = {"id": 4, "name": "table1", "cmd": "table_method", "method": "make_port"}
 
         manager._process(make_port, self.post)
         manager._process(make_port2, self.post)
@@ -810,20 +656,8 @@ class TestPerspectiveManager(object):
         view.on_update(update_callback, mode="row")
 
         # call updates
-        update1 = {
-            "id": 5,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [4], "b": ["d"]}, {"port_id": 1}],
-        }
-        update2 = {
-            "id": 6,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [5], "b": ["e"]}, {"port_id": 2}],
-        }
+        update1 = {"id": 5, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [4], "b": ["d"]}, {"port_id": 1}]}
+        update2 = {"id": 6, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [5], "b": ["e"]}, {"port_id": 2}]}
 
         manager._process(update1, self.post)
         manager._process(update2, self.post)
@@ -840,12 +674,7 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
 
         # hook into the created view and pass it the callback
@@ -854,20 +683,8 @@ class TestPerspectiveManager(object):
         view.remove_update(update_callback)
 
         # call updates
-        update1 = {
-            "id": 4,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [4], "b": ["d"]}],
-        }
-        update2 = {
-            "id": 5,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [5], "b": ["e"]}],
-        }
+        update1 = {"id": 4, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [4], "b": ["d"]}]}
+        update2 = {"id": 5, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [5], "b": ["e"]}]}
         manager._process(update1, self.post)
         manager._process(update2, self.post)
         assert s.get() == 0
@@ -879,12 +696,7 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
 
         def callback(updated):
@@ -892,7 +704,9 @@ class TestPerspectiveManager(object):
             s.set(s.get() + 100)
 
         # simulate a client that holds callbacks by id
-        callbacks = {3: callback}
+        callbacks = {
+            3: callback
+        }
 
         def post_update(msg):
             # when `on_update` is triggered, this callback gets the message
@@ -901,35 +715,18 @@ class TestPerspectiveManager(object):
             assert message["id"] is not None
             if message["id"] == 3:
                 # trigger callback
-                assert message["data"] == {"port_id": 0}
+                assert message["data"] == {
+                    "port_id": 0
+                }
                 callbacks[message["id"]](message["data"])
 
         # hook into the created view and pass it the callback
-        make_on_update = {
-            "id": 3,
-            "name": "view1",
-            "cmd": "view_method",
-            "subscribe": True,
-            "method": "on_update",
-            "callback_id": "callback_1",
-        }
+        make_on_update = {"id": 3, "name": "view1", "cmd": "view_method", "subscribe": True, "method": "on_update", "callback_id": "callback_1"}
         manager._process(make_on_update, post_update)
 
         # call updates
-        update1 = {
-            "id": 4,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [4], "b": ["d"]}],
-        }
-        update2 = {
-            "id": 5,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [5], "b": ["e"]}],
-        }
+        update1 = {"id": 4, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [4], "b": ["d"]}]}
+        update2 = {"id": 5, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [5], "b": ["e"]}]}
         manager._process(update1, self.post)
         manager._process(update2, self.post)
         assert s.get() == 200
@@ -941,23 +738,23 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
 
         def callback(delta):
             table = Table(delta)
             assert table.size() == 1
-            assert table.schema() == {"a": int, "b": str}
+            assert table.schema() == {
+                "a": int,
+                "b": str
+            }
             table.delete()
             s.set(s.get() + 100)
 
         # simulate a client that holds callbacks by id
-        callbacks = {3: callback}
+        callbacks = {
+            3: callback
+        }
 
         def post_update(msg, binary=False):
             # when `on_update` is triggered, this callback gets the message
@@ -982,25 +779,13 @@ class TestPerspectiveManager(object):
             "subscribe": True,
             "method": "on_update",
             "callback_id": "callback_1",
-            "args": [{"mode": "row"}],
+            "args": [{"mode": "row"}]
         }
         manager._process(make_on_update, post_update)
 
         # call updates
-        update1 = {
-            "id": 4,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [4], "b": ["d"]}],
-        }
-        update2 = {
-            "id": 5,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [5], "b": ["e"]}],
-        }
+        update1 = {"id": 4, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [4], "b": ["d"]}]}
+        update2 = {"id": 5, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [5], "b": ["e"]}]}
         manager._process(update1, self.post)
         manager._process(update2, self.post)
         assert s.get() == 200
@@ -1011,7 +796,10 @@ class TestPerspectiveManager(object):
         def update_callback(port_id, delta):
             table = Table(delta)
             assert table.size() == 1
-            assert table.schema() == {"a": int, "b": str}
+            assert table.schema() == {
+                "a": int,
+                "b": str
+            }
             table.delete()
             s.set(s.get() + 1)
 
@@ -1019,27 +807,12 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
 
         # Get two ports on the table
-        make_port = {
-            "id": 3,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "make_port",
-        }
-        make_port2 = {
-            "id": 4,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "make_port",
-        }
+        make_port = {"id": 3, "name": "table1", "cmd": "table_method", "method": "make_port"}
+        make_port2 = {"id": 4, "name": "table1", "cmd": "table_method", "method": "make_port"}
 
         manager._process(make_port, self.post)
         manager._process(make_port2, self.post)
@@ -1048,12 +821,17 @@ class TestPerspectiveManager(object):
         def callback(delta):
             table = Table(delta)
             assert table.size() == 1
-            assert table.schema() == {"a": int, "b": str}
+            assert table.schema() == {
+                "a": int,
+                "b": str
+            }
             table.delete()
             s.set(s.get() + 100)
 
         # simulate a client that holds callbacks by id
-        callbacks = {3: callback}
+        callbacks = {
+            3: callback
+        }
 
         def post_update(msg, binary=False):
             # when `on_update` is triggered, this callback gets the message
@@ -1080,25 +858,13 @@ class TestPerspectiveManager(object):
             "subscribe": True,
             "method": "on_update",
             "callback_id": "callback_1",
-            "args": [{"mode": "row"}],
+            "args": [{"mode": "row"}]
         }
         manager._process(make_on_update, post_update)
 
         # call updates
-        update1 = {
-            "id": 6,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [4], "b": ["d"]}, {"port_id": 1}],
-        }
-        update2 = {
-            "id": 7,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [5], "b": ["e"]}, {"port_id": 2}],
-        }
+        update1 = {"id": 6, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [4], "b": ["d"]}, {"port_id": 1}]}
+        update2 = {"id": 7, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [5], "b": ["e"]}, {"port_id": 2}]}
 
         manager._process(update1, self.post)
         manager._process(update2, self.post)
@@ -1115,12 +881,7 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
 
         def callback(updated):
@@ -1128,7 +889,9 @@ class TestPerspectiveManager(object):
             s.set(s.get() + 100)
 
         # simulate a client that holds callbacks by id
-        callbacks = {3: callback}
+        callbacks = {
+            3: callback
+        }
 
         def post_update(msg):
             # when `on_update` is triggered, this callback gets the message
@@ -1137,69 +900,36 @@ class TestPerspectiveManager(object):
             assert message["id"] is not None
             if message["id"] == 3:
                 # trigger callback
-                assert message["data"] == {"port_id": 0}
+                assert message["data"] == {
+                    "port_id": 0
+                }
                 callbacks[message["id"]](message["data"])
 
         # create an on_update callback
-        make_on_update = {
-            "id": 3,
-            "name": "view1",
-            "cmd": "view_method",
-            "subscribe": True,
-            "method": "on_update",
-            "callback_id": "callback_1",
-        }
+        make_on_update = {"id": 3, "name": "view1", "cmd": "view_method", "subscribe": True, "method": "on_update", "callback_id": "callback_1"}
         manager._process(make_on_update, post_update)
 
         # call updates
-        update1 = {
-            "id": 4,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [4], "b": ["d"]}],
-        }
+        update1 = {"id": 4, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [4], "b": ["d"]}]}
         manager._process(update1, self.post)
 
         # remove update callback
-        remove_on_update = {
-            "id": 5,
-            "name": "view1",
-            "cmd": "view_method",
-            "subscribe": True,
-            "method": "remove_update",
-            "callback_id": "callback_1",
-        }
+        remove_on_update = {"id": 5, "name": "view1", "cmd": "view_method", "subscribe": True, "method": "remove_update", "callback_id": "callback_1"}
         manager._process(remove_on_update, self.post)
 
-        update2 = {
-            "id": 6,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "update",
-            "args": [{"a": [5], "b": ["e"]}],
-        }
+        update2 = {"id": 6, "name": "table1", "cmd": "table_method", "method": "update", "args": [{"a": [5], "b": ["e"]}]}
         manager._process(update2, self.post)
         assert s.get() == 100
 
     def test_manager_delete_table_should_fail(self):
-        post_callback = partial(
-            self.validate_post,
-            expected={
-                "id": 2,
-                "error": "table.delete() cannot be called on a remote table, as the remote has full ownership.",
-            },
-        )
+        post_callback = partial(self.validate_post, expected={
+            "id": 2,
+            "error": "table.delete() cannot be called on a remote table, as the remote has full ownership."
+        })
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        delete_table = {
-            "id": 2,
-            "name": "table1",
-            "cmd": "table_method",
-            "method": "delete",
-            "args": [],
-        }
+        delete_table = {"id": 2, "name": "table1", "cmd": "table_method", "method": "delete", "args": []}
         manager._process(delete_table, post_callback)
         assert len(manager._tables) == 1
 
@@ -1207,19 +937,9 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
-        delete_view = {
-            "id": 3,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "delete",
-        }
+        delete_view = {"id": 3, "name": "view1", "cmd": "view_method", "method": "delete"}
         manager._process(delete_view, self.post)
         assert len(manager._views) == 0
 
@@ -1232,23 +952,13 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
 
         view = manager.get_view("view1")
         view.on_delete(delete_callback)
 
-        delete_view = {
-            "id": 3,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "delete",
-        }
+        delete_view = {"id": 3, "name": "view1", "cmd": "view_method", "method": "delete"}
 
         manager._process(delete_view, self.post)
 
@@ -1264,24 +974,14 @@ class TestPerspectiveManager(object):
         make_table = {"id": 1, "name": "table1", "cmd": "table", "args": [data]}
         manager = PerspectiveManager()
         manager._process(make_table, self.post)
-        make_view = {
-            "id": 2,
-            "table_name": "table1",
-            "view_name": "view1",
-            "cmd": "view",
-        }
+        make_view = {"id": 2, "table_name": "table1", "view_name": "view1", "cmd": "view"}
         manager._process(make_view, self.post)
 
         view = manager.get_view("view1")
         view.on_delete(delete_callback)
         view.remove_delete(delete_callback)
 
-        delete_view = {
-            "id": 3,
-            "name": "view1",
-            "cmd": "view_method",
-            "method": "delete",
-        }
+        delete_view = {"id": 3, "name": "view1", "cmd": "view_method", "method": "delete"}
 
         manager._process(delete_view, self.post)
 
@@ -1294,7 +994,9 @@ class TestPerspectiveManager(object):
         table = Table({"a": [1, 2, 3]})
         manager.host_table("tbl", table)
         table.update({"a": [4, 5, 6]})
-        assert table.view().to_dict() == {"a": [1, 2, 3, 4, 5, 6]}
+        assert table.view().to_dict() == {
+            "a": [1, 2, 3, 4, 5, 6]
+        }
 
         def fake_queue_process(f, *args, **kwargs):
             s.set(s.get() + 1)
@@ -1339,12 +1041,18 @@ class TestPerspectiveManager(object):
         manager2.set_loop_callback(fake_queue_process)
 
         table.update({"a": [4, 5, 6]})
-        assert table.view().to_dict() == {"a": [1, 2, 3, 4, 5, 6]}
+        assert table.view().to_dict() == {
+            "a": [1, 2, 3, 4, 5, 6]
+        }
 
         table2.update({"a": [7, 8, 9]})
         table.update({"a": [7, 8, 9]})
 
-        assert table.view().to_dict() == {"a": [1, 2, 3, 4, 5, 6, 7, 8, 9]}
-        assert table2.view().to_dict() == {"a": [1, 2, 3, 7, 8, 9]}
+        assert table.view().to_dict() == {
+            "a": [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        }
+        assert table2.view().to_dict() == {
+            "a": [1, 2, 3, 7, 8, 9]
+        }
         assert s.get() == 0
         assert s2.get() == 2

@@ -53,7 +53,9 @@ class TestPerspectiveTornadoHandler(object):
         """Connect and initialize a websocket client connection to the
         Perspective tornado server.
         """
-        client = yield websocket("ws://127.0.0.1:{0}/websocket".format(port))
+        client = yield websocket(
+            "ws://127.0.0.1:{0}/websocket".format(port)
+        )
 
         # Compatibility with Python < 3.3
         raise gen.Return(client)
@@ -230,7 +232,9 @@ class TestPerspectiveTornadoHandler(object):
         assert output == {"a": [i for i in range(5, 10)]}
 
     @pytest.mark.gen_test(run_sync=False)
-    def test_tornado_handler_create_view(self, app, http_client, http_port, sentinel):
+    def test_tornado_handler_create_view(
+        self, app, http_client, http_port, sentinel
+    ):
         table_name = str(random.random())
         _table = Table(data)
         MANAGER.host_table(table_name, _table)

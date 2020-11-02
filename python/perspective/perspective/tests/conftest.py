@@ -24,18 +24,15 @@ def _make_period_index(size, time_unit):
 
 
 def _make_dataframe(index, size=10):
-    """Create a new random dataframe of `size` and with a DateTimeIndex of
+    '''Create a new random dataframe of `size` and with a DateTimeIndex of
     frequency `time_unit`.
-    """
-    return pd.DataFrame(
-        index=index,
-        data={
-            "a": np.random.rand(size),
-            "b": np.random.rand(size),
-            "c": np.random.rand(size),
-            "d": np.random.rand(size),
-        },
-    )
+    '''
+    return pd.DataFrame(index=index, data={
+        "a": np.random.rand(size),
+        "b": np.random.rand(size),
+        "c": np.random.rand(size),
+        "d": np.random.rand(size)
+    })
 
 
 class Util:
@@ -66,8 +63,7 @@ class Util:
         batch = pa.RecordBatch.from_arrays(arrays, names)
         table = pa.Table.from_batches([batch])
         writer = pa.RecordBatchStreamWriter(
-            stream, table.schema, use_legacy_format=legacy
-        )
+            stream, table.schema, use_legacy_format=legacy)
 
         writer.write_table(table)
         writer.close()
@@ -89,8 +85,7 @@ class Util:
         table = pa.Table.from_pandas(df, schema=schema)
 
         writer = pa.RecordBatchStreamWriter(
-            stream, table.schema, use_legacy_format=legacy
-        )
+            stream, table.schema, use_legacy_format=legacy)
 
         writer.write_table(table)
         writer.close()
@@ -131,8 +126,7 @@ class Util:
         batch = pa.RecordBatch.from_arrays(arrays, names)
         table = pa.Table.from_batches([batch])
         writer = pa.RecordBatchStreamWriter(
-            stream, table.schema, use_legacy_format=legacy
-        )
+            stream, table.schema, use_legacy_format=legacy)
 
         writer.write_table(table)
         writer.close()
@@ -140,7 +134,7 @@ class Util:
 
     @staticmethod
     def to_timestamp(obj):
-        """Return an integer timestamp based on a date/datetime object."""
+        '''Return an integer timestamp based on a date/datetime object.'''
         classname = obj.__class__.__name__
         if classname == "date":
             if six.PY2:
@@ -172,9 +166,9 @@ class Util:
 
 
 class Sentinel(object):
-    """Generic sentinel class for testing side-effectful code in Python 2 and
+    '''Generic sentinel class for testing side-effectful code in Python 2 and
     3.
-    """
+    '''
 
     def __init__(self, value):
         self.value = value
@@ -188,7 +182,7 @@ class Sentinel(object):
 
 @fixture()
 def sentinel():
-    """Pass `sentinel` into a test and call it with `value` to create a new 
+    '''Pass `sentinel` into a test and call it with `value` to create a new 
     instance of the Sentinel class.
 
     Example:
@@ -196,15 +190,13 @@ def sentinel():
         >>>    s = sentinel(True)
         >>>    s.set(False)
         >>>    s.get()  # returns False
-    """
-
+    '''
     def _sentinel(value):
         return Sentinel(value)
-
     return _sentinel
 
 
 @fixture
 def util():
-    """Pass the `Util` class in to a test."""
+    '''Pass the `Util` class in to a test.'''
     return Util

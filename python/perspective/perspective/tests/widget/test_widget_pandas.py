@@ -16,86 +16,26 @@ DF = superstore(200)
 
 
 class TestWidgetPandas:
+
     def test_widget_load_table_df(self):
         table = Table(DF)
         widget = PerspectiveWidget(table)
-        assert widget.table.schema() == {
-            "index": int,
-            "Country": str,
-            "Region": str,
-            "Category": str,
-            "City": str,
-            "Customer ID": str,
-            "Discount": float,
-            "Order Date": date,
-            "Order ID": str,
-            "Postal Code": str,
-            "Product ID": str,
-            "Profit": float,
-            "Quantity": int,
-            "Row ID": int,
-            "Sales": int,
-            "Segment": str,
-            "Ship Date": date,
-            "Ship Mode": str,
-            "State": str,
-            "Sub-Category": str,
-        }
+        assert widget.table.schema() == {'index': int, 'Country': str, 'Region': str, 'Category': str, 'City': str, 'Customer ID': str, 'Discount': float,
+                                         'Order Date': date, 'Order ID': str, 'Postal Code': str, 'Product ID': str, 'Profit': float, 'Quantity': int,
+                                         'Row ID': int, 'Sales': int, 'Segment': str, 'Ship Date': date, 'Ship Mode': str, 'State': str, 'Sub-Category': str}
 
-        assert sorted(widget.columns) == sorted(
-            [
-                "index",
-                "Category",
-                "City",
-                "Country",
-                "Customer ID",
-                "Discount",
-                "Order Date",
-                "Order ID",
-                "Postal Code",
-                "Product ID",
-                "Profit",
-                "Quantity",
-                "Region",
-                "Row ID",
-                "Sales",
-                "Segment",
-                "Ship Date",
-                "Ship Mode",
-                "State",
-                "Sub-Category",
-            ]
-        )
+        assert sorted(widget.columns) == sorted(['index', 'Category', 'City', 'Country', 'Customer ID', 'Discount', 'Order Date', 'Order ID', 'Postal Code',
+                                                 'Product ID', 'Profit', 'Quantity', 'Region', 'Row ID', 'Sales', 'Segment', 'Ship Date',
+                                                 'Ship Mode', 'State', 'Sub-Category'])
         view = widget.table.view()
         assert view.num_rows() == len(DF)
         assert view.num_columns() == len(DF.columns) + 1  # index
 
     def test_widget_load_data_df(self):
         widget = PerspectiveWidget(DF)
-        assert sorted(widget.columns) == sorted(
-            [
-                "index",
-                "Category",
-                "City",
-                "Country",
-                "Customer ID",
-                "Discount",
-                "Order Date",
-                "Order ID",
-                "Postal Code",
-                "Product ID",
-                "Profit",
-                "Quantity",
-                "Region",
-                "Row ID",
-                "Sales",
-                "Segment",
-                "Ship Date",
-                "Ship Mode",
-                "State",
-                "Sub-Category",
-            ]
-        )
+        assert sorted(widget.columns) == sorted(['index', 'Category', 'City', 'Country', 'Customer ID', 'Discount', 'Order Date', 'Order ID', 'Postal Code',
+                                                 'Product ID', 'Profit', 'Quantity', 'Region', 'Row ID', 'Sales', 'Segment', 'Ship Date',
+                                                 'Ship Mode', 'State', 'Sub-Category'])
         view = widget.table.view()
         assert view.num_rows() == len(DF)
         assert view.num_columns() == 20
@@ -103,7 +43,7 @@ class TestWidgetPandas:
     def test_widget_load_series(self):
         series = pd.Series(DF["Profit"].values, name="profit")
         widget = PerspectiveWidget(series)
-        assert widget.table.schema() == {"index": int, "profit": float}
+        assert widget.table.schema() == {'index': int, 'profit': float}
 
         assert sorted(widget.columns) == sorted(["index", "profit"])
         view = widget.table.view()
@@ -111,332 +51,93 @@ class TestWidgetPandas:
         assert view.num_columns() == 2
 
     def test_widget_load_pivot_table(self):
-        pivot_table = pd.pivot_table(
-            DF,
-            values="Discount",
-            index=["Country", "Region"],
-            columns=["Category", "Segment"],
-        )
+        pivot_table = pd.pivot_table(DF, values='Discount', index=['Country', 'Region'], columns=['Category', 'Segment'])
         widget = PerspectiveWidget(pivot_table)
-        assert widget.row_pivots == ["Country", "Region"]
-        assert widget.column_pivots == ["Category", "Segment"]
-        assert widget.columns == ["value"]
+        assert widget.row_pivots == ['Country', 'Region']
+        assert widget.column_pivots == ['Category', 'Segment']
+        assert widget.columns == ['value']
         # table should host flattened data
         view = widget.table.view()
         assert view.num_rows() == 60
         assert view.num_columns() == 6
 
     def test_widget_load_pivot_table_with_user_pivots(self):
-        pivot_table = pd.pivot_table(
-            DF, values="Discount", index=["Country", "Region"], columns="Category"
-        )
+        pivot_table = pd.pivot_table(DF, values='Discount', index=['Country', 'Region'], columns='Category')
         widget = PerspectiveWidget(pivot_table, row_pivots=["Category", "Segment"])
-        assert widget.row_pivots == ["Category", "Segment"]
+        assert widget.row_pivots == ['Category', 'Segment']
         assert widget.column_pivots == []
-        assert widget.columns == [
-            "index",
-            "Country",
-            "Region",
-            "Financials",
-            "Industrials",
-            "Technology",
-        ]
+        assert widget.columns == ['index', 'Country', 'Region', 'Financials', 'Industrials', 'Technology']
         # table should host flattened data
         view = widget.table.view()
         assert view.num_rows() == 5
         assert view.num_columns() == 6
 
     def test_widget_load_row_pivots(self):
-        df_pivoted = DF.set_index(["Country", "Region"])
+        df_pivoted = DF.set_index(['Country', 'Region'])
         widget = PerspectiveWidget(df_pivoted)
-        assert widget.row_pivots == ["Country", "Region"]
+        assert widget.row_pivots == ['Country', 'Region']
         assert widget.column_pivots == []
-        assert sorted(widget.columns) == sorted(
-            [
-                "index",
-                "Category",
-                "Country",
-                "City",
-                "Customer ID",
-                "Discount",
-                "Order Date",
-                "Order ID",
-                "Postal Code",
-                "Product ID",
-                "Profit",
-                "Quantity",
-                "Region",
-                "Row ID",
-                "Sales",
-                "Segment",
-                "Ship Date",
-                "Ship Mode",
-                "State",
-                "Sub-Category",
-            ]
-        )
+        assert sorted(widget.columns) == sorted(['index', 'Category', 'Country', 'City', 'Customer ID', 'Discount', 'Order Date', 'Order ID', 'Postal Code',
+                                                'Product ID', 'Profit', 'Quantity', 'Region', 'Row ID', 'Sales', 'Segment', 'Ship Date',
+                                                'Ship Mode', 'State', 'Sub-Category'])
         assert widget.table.size() == 200
         view = widget.table.view()
         assert view.num_rows() == len(DF)
         assert view.num_columns() == len(DF.columns) + 1  # index
 
     def test_widget_load_row_pivots_with_user_pivots(self):
-        df_pivoted = DF.set_index(["Country", "Region"])
+        df_pivoted = DF.set_index(['Country', 'Region'])
         widget = PerspectiveWidget(df_pivoted, row_pivots=["Category", "Segment"])
-        assert widget.row_pivots == ["Category", "Segment"]
+        assert widget.row_pivots == ['Category', 'Segment']
         assert widget.column_pivots == []
-        assert sorted(widget.columns) == sorted(
-            [
-                "index",
-                "Category",
-                "Country",
-                "City",
-                "Customer ID",
-                "Discount",
-                "Order Date",
-                "Order ID",
-                "Postal Code",
-                "Product ID",
-                "Profit",
-                "Quantity",
-                "Region",
-                "Row ID",
-                "Sales",
-                "Segment",
-                "Ship Date",
-                "Ship Mode",
-                "State",
-                "Sub-Category",
-            ]
-        )
+        assert sorted(widget.columns) == sorted(['index', 'Category', 'Country', 'City', 'Customer ID', 'Discount', 'Order Date', 'Order ID', 'Postal Code',
+                                                'Product ID', 'Profit', 'Quantity', 'Region', 'Row ID', 'Sales', 'Segment', 'Ship Date',
+                                                'Ship Mode', 'State', 'Sub-Category'])
         assert widget.table.size() == 200
         view = widget.table.view()
         assert view.num_rows() == len(DF)
         assert view.num_columns() == len(DF.columns) + 1  # index
 
     def test_widget_load_column_pivots(self):
-        arrays = [
-            np.array(
-                [
-                    "bar",
-                    "bar",
-                    "bar",
-                    "bar",
-                    "baz",
-                    "baz",
-                    "baz",
-                    "baz",
-                    "foo",
-                    "foo",
-                    "foo",
-                    "foo",
-                    "qux",
-                    "qux",
-                    "qux",
-                    "qux",
-                ]
-            ),
-            np.array(
-                [
-                    "one",
-                    "one",
-                    "two",
-                    "two",
-                    "one",
-                    "one",
-                    "two",
-                    "two",
-                    "one",
-                    "one",
-                    "two",
-                    "two",
-                    "one",
-                    "one",
-                    "two",
-                    "two",
-                ]
-            ),
-            np.array(
-                [
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                ]
-            ),
-        ]
+        arrays = [np.array(['bar', 'bar', 'bar', 'bar', 'baz', 'baz', 'baz', 'baz', 'foo', 'foo', 'foo', 'foo', 'qux', 'qux', 'qux', 'qux']),
+                  np.array(['one', 'one', 'two', 'two', 'one', 'one', 'two', 'two', 'one', 'one', 'two', 'two', 'one', 'one', 'two', 'two']),
+                  np.array(['X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y'])]
         tuples = list(zip(*arrays))
-        index = pd.MultiIndex.from_tuples(tuples, names=["first", "second", "third"])
-        df_both = pd.DataFrame(
-            np.random.randn(3, 16), index=["A", "B", "C"], columns=index
-        )
+        index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second', 'third'])
+        df_both = pd.DataFrame(np.random.randn(3, 16), index=['A', 'B', 'C'], columns=index)
         widget = PerspectiveWidget(df_both)
-        assert widget.columns == ["value"]
-        assert widget.column_pivots == ["first", "second", "third"]
-        assert widget.row_pivots == ["index"]
+        assert widget.columns == ['value']
+        assert widget.column_pivots == ['first', 'second', 'third']
+        assert widget.row_pivots == ['index']
 
     def test_widget_load_column_pivots_preserve_user_settings(self):
-        arrays = [
-            np.array(
-                [
-                    "bar",
-                    "bar",
-                    "bar",
-                    "bar",
-                    "baz",
-                    "baz",
-                    "baz",
-                    "baz",
-                    "foo",
-                    "foo",
-                    "foo",
-                    "foo",
-                    "qux",
-                    "qux",
-                    "qux",
-                    "qux",
-                ]
-            ),
-            np.array(
-                [
-                    "one",
-                    "one",
-                    "two",
-                    "two",
-                    "one",
-                    "one",
-                    "two",
-                    "two",
-                    "one",
-                    "one",
-                    "two",
-                    "two",
-                    "one",
-                    "one",
-                    "two",
-                    "two",
-                ]
-            ),
-            np.array(
-                [
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                    "X",
-                    "Y",
-                ]
-            ),
-        ]
+        arrays = [np.array(['bar', 'bar', 'bar', 'bar', 'baz', 'baz', 'baz', 'baz', 'foo', 'foo', 'foo', 'foo', 'qux', 'qux', 'qux', 'qux']),
+                  np.array(['one', 'one', 'two', 'two', 'one', 'one', 'two', 'two', 'one', 'one', 'two', 'two', 'one', 'one', 'two', 'two']),
+                  np.array(['X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y'])]
         tuples = list(zip(*arrays))
-        index = pd.MultiIndex.from_tuples(tuples, names=["first", "second", "third"])
-        df_both = pd.DataFrame(
-            np.random.randn(3, 16), index=["A", "B", "C"], columns=index
-        )
+        index = pd.MultiIndex.from_tuples(tuples, names=['first', 'second', 'third'])
+        df_both = pd.DataFrame(np.random.randn(3, 16), index=['A', 'B', 'C'], columns=index)
         widget = PerspectiveWidget(df_both, columns=["first", "third"])
-        assert widget.columns == ["first", "third"]
-        assert widget.column_pivots == ["first", "second", "third"]
-        assert widget.row_pivots == ["index"]
+        assert widget.columns == ['first', "third"]
+        assert widget.column_pivots == ['first', 'second', 'third']
+        assert widget.row_pivots == ['index']
 
     def test_pivottable_values_index(self):
-        arrays = {
-            "A": [
-                "bar",
-                "bar",
-                "bar",
-                "bar",
-                "baz",
-                "baz",
-                "baz",
-                "baz",
-                "foo",
-                "foo",
-                "foo",
-                "foo",
-                "qux",
-                "qux",
-                "qux",
-                "qux",
-            ],
-            "B": [
-                "one",
-                "one",
-                "two",
-                "two",
-                "one",
-                "one",
-                "two",
-                "two",
-                "one",
-                "one",
-                "two",
-                "two",
-                "one",
-                "one",
-                "two",
-                "two",
-            ],
-            "C": [
-                "X",
-                "Y",
-                "X",
-                "Y",
-                "X",
-                "Y",
-                "X",
-                "Y",
-                "X",
-                "Y",
-                "X",
-                "Y",
-                "X",
-                "Y",
-                "X",
-                "Y",
-            ],
-            "D": np.arange(16),
-        }
+        arrays = {'A':['bar', 'bar', 'bar', 'bar', 'baz', 'baz', 'baz', 'baz', 'foo', 'foo', 'foo', 'foo', 'qux', 'qux', 'qux', 'qux'],
+                'B':['one', 'one', 'two', 'two', 'one', 'one', 'two', 'two', 'one', 'one', 'two', 'two', 'one', 'one', 'two', 'two'],
+                'C':['X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y', 'X', 'Y'],
+                'D':np.arange(16)}
 
         df = pd.DataFrame(arrays)
-        df_pivot = df.pivot_table(
-            values=["D"], index=["A"], columns=["B", "C"], aggfunc={"D": "count"}
-        )
+        df_pivot = df.pivot_table(values=['D'], index=['A'], columns=['B','C'], aggfunc={'D':'count'})
         widget = PerspectiveWidget(df_pivot)
-        assert widget.columns == ["value"]
-        assert widget.column_pivots == ["B", "C"]
-        assert widget.row_pivots == ["A"]
+        assert widget.columns == ['value']
+        assert widget.column_pivots == ['B', 'C']
+        assert widget.row_pivots == ['A']
 
     def test_pivottable_multi_values(self):
-        pt = pd.pivot_table(
-            DF,
-            values=["Discount", "Sales"],
-            index=["Country", "Region"],
-            aggfunc={"Discount": "count", "Sales": "sum"},
-            columns=["State", "Quantity"],
-        )
+        pt = pd.pivot_table(DF, values = ['Discount','Sales'], index=['Country','Region'],aggfunc={'Discount':'count','Sales':'sum'},columns=["State","Quantity"])
         widget = PerspectiveWidget(pt)
-        assert widget.columns == ["Discount", "Sales"]
-        assert widget.column_pivots == ["State", "Quantity"]
-        assert widget.row_pivots == ["Country", "Region"]
+        assert widget.columns == ['Discount', 'Sales']
+        assert widget.column_pivots == ['State', 'Quantity']
+        assert widget.row_pivots == ['Country', 'Region']

@@ -15,11 +15,12 @@ from perspective import PerspectiveError, PerspectiveWidget, Table
 
 
 def mock_post(self, msg, msg_id=None, assert_msg=None):
-    """Mock the widget's `post()` method so we can introspect the contents."""
+    '''Mock the widget's `post()` method so we can introspect the contents.'''
     assert msg == assert_msg
 
 
 class TestWidget:
+
     def test_widget(self):
         data = {"a": np.arange(0, 50)}
         widget = PerspectiveWidget(data, plugin="x_bar")
@@ -31,8 +32,8 @@ class TestWidget:
             "data": {
                 "table_name": widget.table_name,
                 "view_name": widget._perspective_view_name,
-                "options": {},
-            },
+                "options": {}
+            }
         }
 
     def test_widget_indexed(self):
@@ -46,8 +47,10 @@ class TestWidget:
             "data": {
                 "table_name": widget.table_name,
                 "view_name": widget._perspective_view_name,
-                "options": {"index": "a"},
-            },
+                "options": {
+                    "index": "a"
+                }
+            }
         }
 
     def test_widget_no_data(self):
@@ -56,7 +59,14 @@ class TestWidget:
         assert widget.row_pivots == ["a"]
 
     def test_widget_schema(self):
-        schema = {"a": int, "b": float, "c": bool, "d": date, "e": datetime, "f": str}
+        schema = {
+            "a": int,
+            "b": float,
+            "c": bool,
+            "d": date,
+            "e": datetime,
+            "f": str
+        }
         widget = PerspectiveWidget(schema)
         assert widget.table.schema() == schema
 
@@ -95,8 +105,8 @@ class TestWidget:
             "data": {
                 "table_name": widget.table_name,
                 "view_name": widget._perspective_view_name,
-                "options": {},
-            },
+                "options": {}
+            }
         }
 
     def test_widget_eventual_data_server(self):
@@ -107,7 +117,9 @@ class TestWidget:
         assert load_msg.to_dict() == {
             "id": -2,
             "type": "table",
-            "data": {"table_name": widget.table_name,},
+            "data": {
+                "table_name": widget.table_name,
+            }
         }
 
     def test_widget_eventual_data_indexed(self):
@@ -121,8 +133,10 @@ class TestWidget:
             "data": {
                 "table_name": widget.table_name,
                 "view_name": widget._perspective_view_name,
-                "options": {"index": "a"},
-            },
+                "options": {
+                    "index": "a"
+                }
+            }
         }
 
     def test_widget_eventual_table_indexed(self):
@@ -137,8 +151,10 @@ class TestWidget:
             "data": {
                 "table_name": widget.table_name,
                 "view_name": widget._perspective_view_name,
-                "options": {"index": "a"},
-            },
+                "options": {
+                    "index": "a"
+                }
+            }
         }
 
     def test_widget_load_table(self):
@@ -152,8 +168,8 @@ class TestWidget:
             "data": {
                 "table_name": widget.table_name,
                 "view_name": widget._perspective_view_name,
-                "options": {},
-            },
+                "options": {}
+            }
         }
 
     def test_widget_load_table_indexed(self):
@@ -167,8 +183,10 @@ class TestWidget:
             "data": {
                 "table_name": widget.table_name,
                 "view_name": widget._perspective_view_name,
-                "options": {"index": "a"},
-            },
+                "options": {
+                    "index": "a"
+                }
+            }
         }
 
     def test_widget_load_view(self):
@@ -183,8 +201,8 @@ class TestWidget:
             "data": {
                 "table_name": widget.table_name,
                 "view_name": widget._perspective_view_name,
-                "options": {},
-            },
+                "options": {}
+            }
         }
 
     def test_widget_load_table_ignore_limit(self):
@@ -221,7 +239,9 @@ class TestWidget:
         assert load_msg.to_dict() == {
             "id": -2,
             "type": "table",
-            "data": {"table_name": widget.table_name},
+            "data": {
+                "table_name": widget.table_name
+            }
         }
 
     def test_widget_load_view_server(self):
@@ -232,7 +252,9 @@ class TestWidget:
         assert load_msg.to_dict() == {
             "id": -2,
             "type": "table",
-            "data": {"table_name": widget.table_name},
+            "data": {
+                "table_name": widget.table_name
+            }
         }
 
     def test_widget_no_data_with_server(self):
@@ -254,7 +276,9 @@ class TestWidget:
         assert load_msg.to_dict() == {
             "id": -2,
             "type": "table",
-            "data": {"table_name": widget.table_name},
+            "data": {
+                "table_name": widget.table_name
+            }
         }
 
     # clear
@@ -290,7 +314,9 @@ class TestWidget:
     def test_widget_delete(self):
         data = {"a": np.arange(0, 50)}
         widget = PerspectiveWidget(data)
-        mocked_post = partial(mock_post, assert_msg={"cmd": "delete"})
+        mocked_post = partial(mock_post, assert_msg={
+            "cmd": "delete"
+        })
         widget.post = MethodType(mocked_post, widget)
         widget.delete()
         assert widget._view is None
@@ -301,7 +327,9 @@ class TestWidget:
         table = Table(data)
         view = table.view()
         widget = PerspectiveWidget(view)
-        mocked_post = partial(mock_post, assert_msg={"cmd": "delete"})
+        mocked_post = partial(mock_post, assert_msg={
+            "cmd": "delete"
+        })
         widget.post = MethodType(mocked_post, widget)
         widget.delete()
         assert widget._view is None

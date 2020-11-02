@@ -26,7 +26,10 @@ class TestView(object):
         view = tbl.view()
         assert view.num_rows() == 2
         assert view.num_columns() == 2
-        assert view.schema() == {"a": int, "b": int}
+        assert view.schema() == {
+            "a": int,
+            "b": int
+        }
         assert view.to_records() == data
 
     def test_view_one(self):
@@ -35,11 +38,14 @@ class TestView(object):
         view = tbl.view(row_pivots=["a"])
         assert view.num_rows() == 3
         assert view.num_columns() == 2
-        assert view.schema() == {"a": int, "b": int}
+        assert view.schema() == {
+            "a": int,
+            "b": int
+        }
         assert view.to_records() == [
             {"__ROW_PATH__": [], "a": 4, "b": 6},
             {"__ROW_PATH__": [1], "a": 1, "b": 2},
-            {"__ROW_PATH__": [3], "a": 3, "b": 4},
+            {"__ROW_PATH__": [3], "a": 3, "b": 4}
         ]
 
     def test_view_two(self):
@@ -48,11 +54,14 @@ class TestView(object):
         view = tbl.view(row_pivots=["a"], column_pivots=["b"])
         assert view.num_rows() == 3
         assert view.num_columns() == 4
-        assert view.schema() == {"a": int, "b": int}
+        assert view.schema() == {
+            "a": int,
+            "b": int
+        }
         assert view.to_records() == [
             {"2|a": 1, "2|b": 2, "4|a": 3, "4|b": 4, "__ROW_PATH__": []},
             {"2|a": 1, "2|b": 2, "4|a": None, "4|b": None, "__ROW_PATH__": [1]},
-            {"2|a": None, "2|b": None, "4|a": 3, "4|b": 4, "__ROW_PATH__": [3]},
+            {"2|a": None, "2|b": None, "4|a": 3, "4|b": 4, "__ROW_PATH__": [3]}
         ]
 
     def test_view_two_column_only(self):
@@ -61,89 +70,115 @@ class TestView(object):
         view = tbl.view(column_pivots=["b"])
         assert view.num_rows() == 2
         assert view.num_columns() == 4
-        assert view.schema() == {"a": int, "b": int}
+        assert view.schema() == {
+            "a": int,
+            "b": int
+        }
         assert view.to_records() == [
             {"2|a": 1, "2|b": 2, "4|a": None, "4|b": None},
-            {"2|a": None, "2|b": None, "4|a": 3, "4|b": 4},
+            {"2|a": None, "2|b": None, "4|a": 3, "4|b": 4}
         ]
 
     # column path
 
     def test_view_column_path_zero(self):
-        data = {"a": [1, 2, 3], "b": [1.5, 2.5, 3.5]}
+        data = {
+            "a": [1, 2, 3],
+            "b": [1.5, 2.5, 3.5]
+        }
         tbl = Table(data)
         view = tbl.view()
         paths = view.column_paths()
         assert paths == ["a", "b"]
 
     def test_view_column_path_zero_schema(self):
-        data = {"a": int, "b": float}
+        data = {
+            "a": int,
+            "b": float
+        }
         tbl = Table(data)
         view = tbl.view()
         paths = view.column_paths()
         assert paths == ["a", "b"]
 
     def test_view_column_path_zero_hidden(self):
-        data = {"a": [1, 2, 3], "b": [1.5, 2.5, 3.5]}
+        data = {
+            "a": [1, 2, 3],
+            "b": [1.5, 2.5, 3.5]
+        }
         tbl = Table(data)
         view = tbl.view(columns=["b"])
         paths = view.column_paths()
         assert paths == ["b"]
 
     def test_view_column_path_zero_respects_order(self):
-        data = {"a": [1, 2, 3], "b": [1.5, 2.5, 3.5]}
+        data = {
+            "a": [1, 2, 3],
+            "b": [1.5, 2.5, 3.5]
+        }
         tbl = Table(data)
         view = tbl.view(columns=["b", "a"])
         paths = view.column_paths()
         assert paths == ["b", "a"]
 
     def test_view_column_path_one(self):
-        data = {"a": [1, 2, 3], "b": [1.5, 2.5, 3.5]}
+        data = {
+            "a": [1, 2, 3],
+            "b": [1.5, 2.5, 3.5]
+        }
         tbl = Table(data)
         view = tbl.view(row_pivots=["a"])
         paths = view.column_paths()
         assert paths == ["__ROW_PATH__", "a", "b"]
 
     def test_view_column_path_two(self):
-        data = {"a": [1, 2, 3], "b": [1.5, 2.5, 3.5]}
+        data = {
+            "a": [1, 2, 3],
+            "b": [1.5, 2.5, 3.5]
+        }
         tbl = Table(data)
         view = tbl.view(row_pivots=["a"], column_pivots=["b"])
         paths = view.column_paths()
-        assert paths == [
-            "__ROW_PATH__",
-            "1.5|a",
-            "1.5|b",
-            "2.5|a",
-            "2.5|b",
-            "3.5|a",
-            "3.5|b",
-        ]
+        assert paths == ["__ROW_PATH__", "1.5|a", "1.5|b", "2.5|a", "2.5|b", "3.5|a", "3.5|b"]
 
     def test_view_column_path_two_column_only(self):
-        data = {"a": [1, 2, 3], "b": [1.5, 2.5, 3.5]}
+        data = {
+            "a": [1, 2, 3],
+            "b": [1.5, 2.5, 3.5]
+        }
         tbl = Table(data)
         view = tbl.view(column_pivots=["b"])
         paths = view.column_paths()
         assert paths == ["1.5|a", "1.5|b", "2.5|a", "2.5|b", "3.5|a", "3.5|b"]
 
     def test_view_column_path_hidden_sort(self):
-        data = {"a": [1, 2, 3], "b": [1.5, 2.5, 3.5], "c": [3, 2, 1]}
+        data = {
+            "a": [1, 2, 3],
+            "b": [1.5, 2.5, 3.5],
+            "c": [3, 2, 1]
+        }
         tbl = Table(data)
         view = tbl.view(columns=["a", "b"], sort=[["c", "desc"]])
         paths = view.column_paths()
         assert paths == ["a", "b"]
 
     def test_view_column_path_hidden_col_sort(self):
-        data = {"a": [1, 2, 3], "b": [1.5, 2.5, 3.5], "c": [3, 2, 1]}
+        data = {
+            "a": [1, 2, 3],
+            "b": [1.5, 2.5, 3.5],
+            "c": [3, 2, 1]
+        }
         tbl = Table(data)
-        view = tbl.view(
-            column_pivots=["a"], columns=["a", "b"], sort=[["c", "col desc"]]
-        )
+        view = tbl.view(column_pivots=["a"], columns=["a", "b"], sort=[["c", "col desc"]])
         paths = view.column_paths()
         assert paths == ["1|a", "1|b", "2|a", "2|b", "3|a", "3|b"]
 
     def test_view_column_path_pivot_by_bool(self):
-        data = {"a": [1, 2, 3], "b": [True, False, True], "c": [3, 2, 1]}
+        data = {
+            "a": [1, 2, 3],
+            "b": [True, False, True],
+            "c": [3, 2, 1]
+        }
         tbl = Table(data)
         view = tbl.view(column_pivots=["b"], columns=["a", "b", "c"])
         paths = view.column_paths()
@@ -155,19 +190,28 @@ class TestView(object):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
         tbl = Table(data)
         view = tbl.view()
-        assert view.schema(as_string=True) == {"a": "integer", "b": "integer"}
+        assert view.schema(as_string=True) == {
+            "a": "integer",
+            "b": "integer"
+        }
 
     def test_zero_view_schema(self):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
         tbl = Table(data)
         view = tbl.view()
-        assert view.schema() == {"a": int, "b": int}
+        assert view.schema() == {
+            "a": int,
+            "b": int
+        }
 
     def test_one_view_schema(self):
         data = [{"a": "abc", "b": 2}, {"a": "abc", "b": 4}]
         tbl = Table(data)
         view = tbl.view(row_pivots=["a"], aggregates={"a": "distinct count"})
-        assert view.schema() == {"a": int, "b": int}
+        assert view.schema() == {
+            "a": int,
+            "b": int
+        }
 
     def test_two_view_schema(self):
         data = [{"a": "abc", "b": "def"}, {"a": "abc", "b": "def"}]
@@ -175,9 +219,14 @@ class TestView(object):
         view = tbl.view(
             row_pivots=["a"],
             column_pivots=["b"],
-            aggregates={"a": "count", "b": "count"},
-        )
-        assert view.schema() == {"a": int, "b": int}
+            aggregates={
+                "a": "count",
+                "b": "count"
+            })
+        assert view.schema() == {
+            "a": int,
+            "b": int
+        }
 
     # aggregates and column specification
 
@@ -194,10 +243,13 @@ class TestView(object):
         view = tbl.view(row_pivots=["a"], columns=[])
         assert view.num_columns() == 0
         assert view.to_records() == [
-            {"__ROW_PATH__": []},
-            {"__ROW_PATH__": [1]},
-            {"__ROW_PATH__": [3]},
-        ]
+            {
+                "__ROW_PATH__": []
+            }, {
+                "__ROW_PATH__": [1]
+            }, {
+                "__ROW_PATH__": [3]
+            }]
 
     def test_view_specific_column(self):
         data = [{"a": 1, "b": 2, "c": 3, "d": 4}, {"a": 3, "b": 4, "c": 5, "d": 6}]
@@ -213,43 +265,43 @@ class TestView(object):
         assert view.to_records() == [{"b": 2, "a": 1}, {"b": 4, "a": 3}]
 
     def test_view_dataframe_column_order(self):
-        table = Table(
-            pd.DataFrame(
-                {
-                    "0.1": [5, 6, 7, 8],
-                    "-0.05": [5, 6, 7, 8],
-                    "0.0": [1, 2, 3, 4],
-                    "-0.1": [1, 2, 3, 4],
-                    "str": ["a", "b", "c", "d"],
-                }
-            )
-        )
-        view = table.view(columns=["-0.1", "-0.05", "0.0", "0.1"], row_pivots=["str"])
-        assert view.column_paths() == ["__ROW_PATH__", "-0.1", "-0.05", "0.0", "0.1"]
+        table = Table(pd.DataFrame({
+            "0.1": [5, 6, 7, 8],
+            "-0.05": [5, 6, 7, 8],
+            "0.0": [1, 2, 3, 4],
+            "-0.1": [1, 2, 3, 4],
+            "str": ["a", "b", "c", "d"]
+        }))
+        view = table.view(
+            columns=["-0.1", "-0.05", "0.0", "0.1"], row_pivots=["str"])
+        assert view.column_paths() == [
+            "__ROW_PATH__", "-0.1", "-0.05", "0.0", "0.1"]
 
     def test_view_aggregate_order_with_columns(self):
-        """If `columns` is provided, order is always guaranteed."""
+        '''If `columns` is provided, order is always guaranteed.'''
         data = [{"a": 1, "b": 2, "c": 3, "d": 4}, {"a": 3, "b": 4, "c": 5, "d": 6}]
         tbl = Table(data)
         view = tbl.view(
             row_pivots=["a"],
             columns=["a", "b", "c", "d"],
-            aggregates={"d": "avg", "c": "avg", "b": "last", "a": "last"},
+            aggregates={"d": "avg", "c": "avg", "b": "last", "a": "last"}
         )
 
         order = ["__ROW_PATH__", "a", "b", "c", "d"]
         assert view.column_paths() == order
 
     def test_view_df_aggregate_order_with_columns(self):
-        """If `columns` is provided, order is always guaranteed."""
-        data = pd.DataFrame(
-            {"a": [1, 2, 3], "b": [2, 3, 4], "c": [3, 4, 5], "d": [4, 5, 6]},
-            columns=["d", "a", "c", "b"],
-        )
+        '''If `columns` is provided, order is always guaranteed.'''
+        data = pd.DataFrame({
+            "a": [1, 2, 3],
+            "b": [2, 3, 4],
+            "c": [3, 4, 5],
+            "d": [4, 5, 6]
+        }, columns=["d", "a", "c", "b"])
         tbl = Table(data)
         view = tbl.view(
             row_pivots=["a"],
-            aggregates={"d": "avg", "c": "avg", "b": "last", "a": "last"},
+            aggregates={"d": "avg", "c": "avg", "b": "last", "a": "last"}
         )
 
         order = ["__ROW_PATH__", "index", "d", "a", "c", "b"]
@@ -259,21 +311,25 @@ class TestView(object):
         data = [{"a": 1, "b": 2, "c": 3, "d": 4}, {"a": 3, "b": 4, "c": 5, "d": 6}]
         tbl = Table(data)
         view = tbl.view(
-            row_pivots=["a"], aggregates={"c": "avg", "a": "last"}, columns=[]
+            row_pivots=["a"],
+            aggregates={"c": "avg", "a": "last"},
+            columns=[]
         )
         assert view.to_records() == [
             {"__ROW_PATH__": []},
             {"__ROW_PATH__": [1]},
-            {"__ROW_PATH__": [3]},
+            {"__ROW_PATH__": [3]}
         ]
 
     def test_view_aggregates_column_order(self):
-        """Order of columns are entirely determined by the `columns` kwarg. If
-        it is not provided, order of columns is undefined behavior."""
+        '''Order of columns are entirely determined by the `columns` kwarg. If
+        it is not provided, order of columns is undefined behavior.'''
         data = [{"a": 1, "b": 2, "c": 3, "d": 4}, {"a": 3, "b": 4, "c": 5, "d": 6}]
         tbl = Table(data)
         view = tbl.view(
-            row_pivots=["a"], aggregates={"c": "avg", "a": "last"}, columns=["a", "c"]
+            row_pivots=["a"],
+            aggregates={"c": "avg", "a": "last"},
+            columns=["a", "c"]
         )
 
         order = ["__ROW_PATH__", "a", "c"]
@@ -292,7 +348,9 @@ class TestView(object):
             if len(rp) > 0:
                 assert rp[0] == datetime(2019, 7, 11, 12, 30)
 
-        assert tbl.view().to_dict() == {"a": [datetime(2019, 7, 11, 12, 30)], "b": [1]}
+        assert tbl.view().to_dict() == {
+            "a": [datetime(2019, 7, 11, 12, 30)], "b": [1]
+        }
 
     def test_view_column_pivot_datetime_names_utc(self):
         """Tests column paths for datetimes in UTC. Timezone-related tests are
@@ -327,102 +385,124 @@ class TestView(object):
     def test_view_aggregate_int(self):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
         tbl = Table(data)
-        view = tbl.view(aggregates={"a": "avg"}, row_pivots=["a"])
+        view = tbl.view(
+            aggregates={"a": "avg"},
+            row_pivots=["a"]
+        )
         assert view.to_records() == [
             {"__ROW_PATH__": [], "a": 2.0, "b": 6},
             {"__ROW_PATH__": [1], "a": 1.0, "b": 2},
-            {"__ROW_PATH__": [3], "a": 3.0, "b": 4},
+            {"__ROW_PATH__": [3], "a": 3.0, "b": 4}
         ]
 
     def test_view_aggregate_str(self):
         data = [{"a": "abc", "b": 2}, {"a": "def", "b": 4}]
         tbl = Table(data)
-        view = tbl.view(aggregates={"a": "count"}, row_pivots=["a"])
+        view = tbl.view(
+            aggregates={"a": "count"},
+            row_pivots=["a"]
+        )
         assert view.to_records() == [
             {"__ROW_PATH__": [], "a": 2, "b": 6},
             {"__ROW_PATH__": ["abc"], "a": 1, "b": 2},
-            {"__ROW_PATH__": ["def"], "a": 1, "b": 4},
+            {"__ROW_PATH__": ["def"], "a": 1, "b": 4}
         ]
 
     def test_view_aggregate_datetime(self):
-        data = [
-            {"a": datetime(2019, 10, 1, 11, 30)},
-            {"a": datetime(2019, 10, 1, 11, 30)},
-        ]
+        data = [{"a": datetime(2019, 10, 1, 11, 30)}, {"a": datetime(2019, 10, 1, 11, 30)}]
         tbl = Table(data)
-        view = tbl.view(aggregates={"a": "distinct count"}, row_pivots=["a"])
+        view = tbl.view(
+            aggregates={"a": "distinct count"},
+            row_pivots=["a"]
+        )
         assert view.to_records() == [
             {"__ROW_PATH__": [], "a": 1},
-            {"__ROW_PATH__": [datetime(2019, 10, 1, 11, 30)], "a": 1},
+            {"__ROW_PATH__": [datetime(2019, 10, 1, 11, 30)], "a": 1}
         ]
 
     def test_view_aggregate_datetime_leading_zeroes(self):
-        data = [
-            {"a": datetime(2019, 1, 1, 5, 5, 5)},
-            {"a": datetime(2019, 1, 1, 5, 5, 5)},
-        ]
+        data = [{"a": datetime(2019, 1, 1, 5, 5, 5)}, {"a": datetime(2019, 1, 1, 5, 5, 5)}]
         tbl = Table(data)
-        view = tbl.view(aggregates={"a": "distinct count"}, row_pivots=["a"])
+        view = tbl.view(
+            aggregates={"a": "distinct count"},
+            row_pivots=["a"]
+        )
         assert view.to_records() == [
             {"__ROW_PATH__": [], "a": 1},
-            {"__ROW_PATH__": [datetime(2019, 1, 1, 5, 5, 5)], "a": 1},
+            {"__ROW_PATH__": [datetime(2019, 1, 1, 5, 5, 5)], "a": 1}
         ]
 
     def test_view_aggregate_mean(self):
         data = [
             {"a": "a", "x": 1, "y": 200},
             {"a": "a", "x": 2, "y": 100},
-            {"a": "a", "x": 3, "y": None},
+            {"a": "a", "x": 3, "y": None}
         ]
         tbl = Table(data)
-        view = tbl.view(aggregates={"y": "mean"}, row_pivots=["a"], columns=["y"])
+        view = tbl.view(
+            aggregates={"y": "mean"},
+            row_pivots=["a"],
+            columns=['y']
+        )
         assert view.to_records() == [
             {"__ROW_PATH__": [], "y": 300 / 2},
-            {"__ROW_PATH__": ["a"], "y": 300 / 2},
+            {"__ROW_PATH__": ["a"], "y": 300 / 2}
         ]
 
     def test_view_aggregate_mean_from_schema(self):
         data = [
             {"a": "a", "x": 1, "y": 200},
             {"a": "a", "x": 2, "y": 100},
-            {"a": "a", "x": 3, "y": None},
+            {"a": "a", "x": 3, "y": None}
         ]
-        tbl = Table({"a": str, "x": int, "y": float})
-        view = tbl.view(aggregates={"y": "mean"}, row_pivots=["a"], columns=["y"])
+        tbl = Table({
+            "a": str,
+            "x": int,
+            "y": float
+        })
+        view = tbl.view(
+            aggregates={"y": "mean"},
+            row_pivots=["a"],
+            columns=['y']
+        )
         tbl.update(data)
         assert view.to_records() == [
             {"__ROW_PATH__": [], "y": 300 / 2},
-            {"__ROW_PATH__": ["a"], "y": 300 / 2},
+            {"__ROW_PATH__": ["a"], "y": 300 / 2}
         ]
 
     def test_view_aggregate_weighted_mean(self):
         data = [
             {"a": "a", "x": 1, "y": 200},
             {"a": "a", "x": 2, "y": 100},
-            {"a": "a", "x": 3, "y": None},
+            {"a": "a", "x": 3, "y": None}
         ]
         tbl = Table(data)
         view = tbl.view(
-            aggregates={"y": ["weighted mean", "x"]}, row_pivots=["a"], columns=["y"]
+            aggregates={"y": ["weighted mean", "x"]},
+            row_pivots=["a"],
+            columns=['y']
         )
         assert view.to_records() == [
             {"__ROW_PATH__": [], "y": (1.0 * 200 + 2 * 100) / (1.0 + 2)},
-            {"__ROW_PATH__": ["a"], "y": (1.0 * 200 + 2 * 100) / (1.0 + 2)},
+            {"__ROW_PATH__": ["a"], "y": (1.0 * 200 + 2 * 100) / (1.0 + 2)}
         ]
 
     def test_view_aggregate_weighted_mean_with_negative_weights(self):
         data = [
             {"a": "a", "x": 1, "y": 200},
             {"a": "a", "x": -2, "y": 100},
-            {"a": "a", "x": 3, "y": None},
+            {"a": "a", "x": 3, "y": None}
         ]
         tbl = Table(data)
         view = tbl.view(
-            aggregates={"y": ["weighted mean", "x"]}, row_pivots=["a"], columns=["y"]
+            aggregates={"y": ["weighted mean", "x"]},
+            row_pivots=["a"],
+            columns=['y']
         )
         assert view.to_records() == [
             {"__ROW_PATH__": [], "y": (1 * 200 + (-2) * 100) / (1 - 2)},
-            {"__ROW_PATH__": ["a"], "y": (1 * 200 + (-2) * 100) / (1 - 2)},
+            {"__ROW_PATH__": ["a"], "y": (1 * 200 + (-2) * 100) / (1 - 2)}
         ]
 
     # sort
@@ -449,22 +529,13 @@ class TestView(object):
         data = [{"a": date(2019, 7, 11), "b": 2}, {"a": date(2019, 7, 12), "b": 4}]
         tbl = Table(data)
         view = tbl.view(sort=[["a", "desc"]])
-        assert view.to_records() == [
-            {"a": datetime(2019, 7, 12), "b": 4},
-            {"a": datetime(2019, 7, 11), "b": 2},
-        ]
+        assert view.to_records() == [{"a": datetime(2019, 7, 12), "b": 4}, {"a": datetime(2019, 7, 11), "b": 2}]
 
     def test_view_sort_datetime(self):
-        data = [
-            {"a": datetime(2019, 7, 11, 8, 15), "b": 2},
-            {"a": datetime(2019, 7, 11, 8, 16), "b": 4},
-        ]
+        data = [{"a": datetime(2019, 7, 11, 8, 15), "b": 2}, {"a": datetime(2019, 7, 11, 8, 16), "b": 4}]
         tbl = Table(data)
         view = tbl.view(sort=[["a", "desc"]])
-        assert view.to_records() == [
-            {"a": datetime(2019, 7, 11, 8, 16), "b": 4},
-            {"a": datetime(2019, 7, 11, 8, 15), "b": 2},
-        ]
+        assert view.to_records() == [{"a": datetime(2019, 7, 11, 8, 16), "b": 4}, {"a": datetime(2019, 7, 11, 8, 15), "b": 2}]
 
     def test_view_sort_hidden(self):
         data = [{"a": 1.1, "b": 2}, {"a": 1.2, "b": 4}]
@@ -571,59 +642,37 @@ class TestView(object):
         assert view.to_records() == [{"a": datetime(2019, 7, 11), "b": 2}]
 
     def test_view_filter_datetime_eq(self):
-        data = [
-            {"a": datetime(2019, 7, 11, 8, 15), "b": 2},
-            {"a": datetime(2019, 7, 11, 8, 16), "b": 4},
-        ]
+        data = [{"a": datetime(2019, 7, 11, 8, 15), "b": 2}, {"a": datetime(2019, 7, 11, 8, 16), "b": 4}]
         tbl = Table(data)
         view = tbl.view(filter=[["a", "==", datetime(2019, 7, 11, 8, 15)]])
         assert view.to_records() == [{"a": datetime(2019, 7, 11, 8, 15), "b": 2}]
 
     def test_view_filter_datetime_neq(self):
-        data = [
-            {"a": datetime(2019, 7, 11, 8, 15), "b": 2},
-            {"a": datetime(2019, 7, 11, 8, 16), "b": 4},
-        ]
+        data = [{"a": datetime(2019, 7, 11, 8, 15), "b": 2}, {"a": datetime(2019, 7, 11, 8, 16), "b": 4}]
         tbl = Table(data)
         view = tbl.view(filter=[["a", "!=", datetime(2019, 7, 11, 8, 15)]])
         assert view.to_records() == [{"a": datetime(2019, 7, 11, 8, 16), "b": 4}]
 
     def test_view_filter_datetime_np_eq(self):
-        data = [
-            {"a": datetime(2019, 7, 11, 8, 15), "b": 2},
-            {"a": datetime(2019, 7, 11, 8, 16), "b": 4},
-        ]
+        data = [{"a": datetime(2019, 7, 11, 8, 15), "b": 2}, {"a": datetime(2019, 7, 11, 8, 16), "b": 4}]
         tbl = Table(data)
-        view = tbl.view(
-            filter=[["a", "==", np.datetime64(datetime(2019, 7, 11, 8, 15))]]
-        )
+        view = tbl.view(filter=[["a", "==", np.datetime64(datetime(2019, 7, 11, 8, 15))]])
         assert view.to_records() == [{"a": datetime(2019, 7, 11, 8, 15), "b": 2}]
 
     def test_view_filter_datetime_np_neq(self):
-        data = [
-            {"a": datetime(2019, 7, 11, 8, 15), "b": 2},
-            {"a": datetime(2019, 7, 11, 8, 16), "b": 4},
-        ]
+        data = [{"a": datetime(2019, 7, 11, 8, 15), "b": 2}, {"a": datetime(2019, 7, 11, 8, 16), "b": 4}]
         tbl = Table(data)
-        view = tbl.view(
-            filter=[["a", "!=", np.datetime64(datetime(2019, 7, 11, 8, 15))]]
-        )
+        view = tbl.view(filter=[["a", "!=", np.datetime64(datetime(2019, 7, 11, 8, 15))]])
         assert view.to_records() == [{"a": datetime(2019, 7, 11, 8, 16), "b": 4}]
 
     def test_view_filter_datetime_str_eq(self):
-        data = [
-            {"a": datetime(2019, 7, 11, 8, 15), "b": 2},
-            {"a": datetime(2019, 7, 11, 8, 16), "b": 4},
-        ]
+        data = [{"a": datetime(2019, 7, 11, 8, 15), "b": 2}, {"a": datetime(2019, 7, 11, 8, 16), "b": 4}]
         tbl = Table(data)
         view = tbl.view(filter=[["a", "==", "2019/7/11 8:15"]])
         assert view.to_records() == [{"a": datetime(2019, 7, 11, 8, 15), "b": 2}]
 
     def test_view_filter_datetime_str_neq(self):
-        data = [
-            {"a": datetime(2019, 7, 11, 8, 15), "b": 2},
-            {"a": datetime(2019, 7, 11, 8, 16), "b": 4},
-        ]
+        data = [{"a": datetime(2019, 7, 11, 8, 15), "b": 2}, {"a": datetime(2019, 7, 11, 8, 16), "b": 4}]
         tbl = Table(data)
         view = tbl.view(filter=[["a", "!=", "2019/7/11 8:15"]])
         assert view.to_records() == [{"a": datetime(2019, 7, 11, 8, 16), "b": 4}]
@@ -780,7 +829,10 @@ class TestView(object):
 
     def test_view_row_delta_zero(self, util):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
-        update_data = {"a": [5], "b": [6]}
+        update_data = {
+            "a": [5],
+            "b": [6]
+        }
 
         def cb1(port_id, delta):
             compare_delta(delta, update_data)
@@ -792,10 +844,15 @@ class TestView(object):
 
     def test_view_row_delta_zero_column_subset(self, util):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
-        update_data = {"a": [5], "b": [6]}
+        update_data = {
+            "a": [5],
+            "b": [6]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"b": [6]})
+            compare_delta(delta, {
+                "b": [6]
+            })
 
         tbl = Table(data)
         view = tbl.view(columns=["b"])
@@ -803,46 +860,78 @@ class TestView(object):
         tbl.update(update_data)
 
     def test_view_row_delta_zero_from_schema(self, util):
-        update_data = {"a": [5], "b": [6]}
+        update_data = {
+            "a": [5],
+            "b": [6]
+        }
 
         def cb1(port_id, delta):
             compare_delta(delta, update_data)
 
-        tbl = Table({"a": int, "b": int})
+        tbl = Table({
+            "a": int,
+            "b": int
+        })
         view = tbl.view()
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
     def test_view_row_delta_zero_from_schema_column_subset(self, util):
-        update_data = {"a": [5], "b": [6]}
+        update_data = {
+            "a": [5],
+            "b": [6]
+        }
 
-        def cb1(port_id, delta):
-            compare_delta(delta, {"b": [6]})
+        def cb1(port_id, delta):            
+            compare_delta(delta, {
+                "b": [6]
+            })
 
-        tbl = Table({"a": int, "b": int})
+        tbl = Table({
+            "a": int,
+            "b": int
+        })
 
         view = tbl.view(columns=["b"])
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
     def test_view_row_delta_zero_from_schema_filtered(self, util):
-        update_data = {"a": [8, 9, 10, 11], "b": [1, 2, 3, 4]}
+        update_data = {
+            "a": [8, 9, 10, 11],
+            "b": [1, 2, 3, 4]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": [11], "b": [4]})
+            compare_delta(delta, {
+                "a": [11],
+                "b": [4]
+            })
 
-        tbl = Table({"a": int, "b": int})
+        tbl = Table({
+            "a": int,
+            "b": int
+        })
         view = tbl.view(filter=[["a", ">", 10]])
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
     def test_view_row_delta_zero_from_schema_indexed(self, util):
-        update_data = {"a": ["a", "b", "a"], "b": [1, 2, 3]}
+        update_data = {
+            "a": ["a", "b", "a"],
+            "b": [1, 2, 3]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": ["a", "b"], "b": [3, 2]})
+            compare_delta(delta, {
+                "a": ["a", "b"],
+                "b": [3, 2]
+            })
 
-        tbl = Table({"a": str, "b": int}, index="a")
+        tbl = Table({
+            "a": str,
+            "b": int
+        }, index="a")
 
         view = tbl.view()
         view.on_update(cb1, mode="row")
@@ -850,84 +939,147 @@ class TestView(object):
         tbl.update(update_data)
 
     def test_view_row_delta_zero_from_schema_indexed_filtered(self, util):
-        update_data = {"a": [8, 9, 10, 11, 11], "b": [1, 2, 3, 4, 5]}
+        update_data = {
+            "a": [8, 9, 10, 11, 11],
+            "b": [1, 2, 3, 4, 5]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": [11], "b": [5]})
+            compare_delta(delta, {
+                "a": [11],
+                "b": [5]
+            })
 
-        tbl = Table({"a": int, "b": int}, index="a")
+        tbl = Table({
+            "a": int,
+            "b": int
+        }, index="a")
         view = tbl.view(filter=[["a", ">", 10]])
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
     def test_view_row_delta_one(self, util):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
-        update_data = {"a": [5], "b": [6]}
+        update_data = {
+            "a": [5],
+            "b": [6]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": [9, 5], "b": [12, 6]})
+            compare_delta(delta, {
+                "a": [9, 5],
+                "b": [12, 6]
+            })
 
         tbl = Table(data)
         view = tbl.view(row_pivots=["a"])
         assert view.to_dict() == {
             "__ROW_PATH__": [[], [1], [3]],
             "a": [4, 1, 3],
-            "b": [6, 2, 4],
+            "b": [6, 2, 4]
         }
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
     def test_view_row_delta_one_from_schema(self, util):
-        update_data = {"a": [1, 2, 3, 4, 5], "b": [6, 7, 8, 9, 10]}
+        update_data = {
+            "a": [1, 2, 3, 4, 5],
+            "b": [6, 7, 8, 9, 10]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": [15, 1, 2, 3, 4, 5], "b": [40, 6, 7, 8, 9, 10]})
+            compare_delta(delta, {
+                "a": [15, 1, 2, 3, 4, 5],
+                "b": [40, 6, 7, 8, 9, 10]
+            })
 
-        tbl = Table({"a": int, "b": int})
+        tbl = Table({
+            "a": int,
+            "b": int
+        })
         view = tbl.view(row_pivots=["a"])
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
     def test_view_row_delta_one_from_schema_sorted(self, util):
-        update_data = {"a": [1, 2, 3, 4, 5], "b": [6, 7, 8, 9, 10]}
+        update_data = {
+            "a": [1, 2, 3, 4, 5],
+            "b": [6, 7, 8, 9, 10]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": [15, 5, 4, 3, 2, 1], "b": [40, 10, 9, 8, 7, 6]})
+            compare_delta(delta, {
+                "a": [15, 5, 4, 3, 2, 1],
+                "b": [40, 10, 9, 8, 7, 6]
+            })
 
-        tbl = Table({"a": int, "b": int})
+        tbl = Table({
+            "a": int,
+            "b": int
+        })
         view = tbl.view(row_pivots=["a"], sort=[["a", "desc"]])
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
     def test_view_row_delta_one_from_schema_filtered(self, util):
-        update_data = {"a": [1, 2, 3, 4, 5], "b": [6, 7, 8, 9, 10]}
+        update_data = {
+            "a": [1, 2, 3, 4, 5],
+            "b": [6, 7, 8, 9, 10]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": [9, 4, 5], "b": [19, 9, 10]})
+            compare_delta(delta, {
+                "a": [9, 4, 5],
+                "b": [19, 9, 10]
+            })
 
-        tbl = Table({"a": int, "b": int})
+        tbl = Table({
+            "a": int,
+            "b": int
+        })
         view = tbl.view(row_pivots=["a"], filter=[["a", ">", 3]])
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
     def test_view_row_delta_one_from_schema_sorted_filtered(self, util):
-        update_data = {"a": [1, 2, 3, 4, 5], "b": [6, 7, 8, 9, 10]}
+        update_data = {
+            "a": [1, 2, 3, 4, 5],
+            "b": [6, 7, 8, 9, 10]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": [9, 5, 4], "b": [19, 10, 9]})
+            compare_delta(delta, {
+                "a": [9, 5, 4],
+                "b": [19, 10, 9]
+            })
 
-        tbl = Table({"a": int, "b": int})
-        view = tbl.view(row_pivots=["a"], sort=[["a", "desc"]], filter=[["a", ">", 3]])
+        tbl = Table({
+            "a": int,
+            "b": int
+        })
+        view = tbl.view(
+            row_pivots=["a"],
+            sort=[["a", "desc"]],
+            filter=[["a", ">", 3]])
         view.on_update(cb1, mode="row")
         tbl.update(update_data)
 
     def test_view_row_delta_one_from_schema_indexed(self, util):
-        update_data = {"a": [1, 2, 3, 4, 5, 5, 4], "b": [6, 7, 8, 9, 10, 11, 12]}
+        update_data = {
+            "a": [1, 2, 3, 4, 5, 5, 4],
+            "b": [6, 7, 8, 9, 10, 11, 12]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": [15, 1, 2, 3, 4, 5], "b": [44, 6, 7, 8, 12, 11]})
+            compare_delta(delta, {
+                "a": [15, 1, 2, 3, 4, 5],
+                "b": [44, 6, 7, 8, 12, 11]
+            })
 
-        tbl = Table({"a": int, "b": int}, index="a")
+        tbl = Table({
+            "a": int,
+            "b": int
+        }, index="a")
 
         view = tbl.view(row_pivots=["a"])
         view.on_update(cb1, mode="row")
@@ -935,12 +1087,21 @@ class TestView(object):
         tbl.update(update_data)
 
     def test_view_row_delta_one_from_schema_sorted_indexed(self, util):
-        update_data = {"a": [1, 2, 3, 4, 5, 5, 4], "b": [6, 7, 8, 9, 10, 11, 12]}
+        update_data = {
+            "a": [1, 2, 3, 4, 5, 5, 4],
+            "b": [6, 7, 8, 9, 10, 11, 12]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": [15, 4, 5, 3, 2, 1], "b": [44, 12, 11, 8, 7, 6]})
+            compare_delta(delta, {
+                "a": [15, 4, 5, 3, 2, 1],
+                "b": [44, 12, 11, 8, 7, 6]
+            })
 
-        tbl = Table({"a": int, "b": int}, index="a")
+        tbl = Table({
+            "a": int,
+            "b": int
+        }, index="a")
 
         view = tbl.view(row_pivots=["a"], sort=[["b", "desc"]])
         view.on_update(cb1, mode="row")
@@ -948,12 +1109,21 @@ class TestView(object):
         tbl.update(update_data)
 
     def test_view_row_delta_one_from_schema_filtered_indexed(self, util):
-        update_data = {"a": [1, 2, 3, 4, 5, 5, 4], "b": [6, 7, 8, 9, 10, 11, 12]}
+        update_data = {
+            "a": [1, 2, 3, 4, 5, 5, 4],
+            "b": [6, 7, 8, 9, 10, 11, 12]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(delta, {"a": [9, 4, 5], "b": [23, 12, 11]})
+            compare_delta(delta, {
+                "a": [9, 4, 5],
+                "b": [23, 12, 11]
+            })
 
-        tbl = Table({"a": int, "b": int}, index="a")
+        tbl = Table({
+            "a": int,
+            "b": int
+        }, index="a")
 
         view = tbl.view(row_pivots=["a"], filter=[["a", ">", 3]])
         view.on_update(cb1, mode="row")
@@ -962,20 +1132,20 @@ class TestView(object):
 
     def test_view_row_delta_two(self, util):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
-        update_data = {"a": [5], "b": [6]}
+        update_data = {
+            "a": [5],
+            "b": [6]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(
-                delta,
-                {
-                    "2|a": [1, None],
-                    "2|b": [2, None],
-                    "4|a": [3, None],
-                    "4|b": [4, None],
-                    "6|a": [5, 5],
-                    "6|b": [6, 6],
-                },
-            )
+            compare_delta(delta, {
+                "2|a": [1, None],
+                "2|b": [2, None],
+                "4|a": [3, None],
+                "4|b": [4, None],
+                "6|a": [5, 5],
+                "6|b": [6, 6]
+            })
 
         tbl = Table(data)
         view = tbl.view(row_pivots=["a"], column_pivots=["b"])
@@ -993,17 +1163,17 @@ class TestView(object):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
 
         def cb1(port_id, delta):
-            compare_delta(
-                delta,
-                {
-                    "2|a": [1, 1, None],
-                    "2|b": [2, 2, None],
-                    "4|a": [3, None, 3],
-                    "4|b": [4, None, 4],
-                },
-            )
+            compare_delta(delta, {
+                "2|a": [1, 1, None],
+                "2|b": [2, 2, None],
+                "4|a": [3, None, 3],
+                "4|b": [4, None, 4]
+            })
 
-        tbl = Table({"a": int, "b": int})
+        tbl = Table({
+            "a": int,
+            "b": int
+        })
         view = tbl.view(row_pivots=["a"], column_pivots=["b"])
         view.on_update(cb1, mode="row")
         tbl.update(data)
@@ -1012,37 +1182,37 @@ class TestView(object):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}, {"a": 3, "b": 5}]
 
         def cb1(port_id, delta):
-            compare_delta(
-                delta,
-                {
-                    "2|a": [1, 1, None],
-                    "2|b": [2, 2, None],
-                    "5|a": [3, None, 3],
-                    "5|b": [5, None, 5],
-                },
-            )
+            compare_delta(delta, {
+                "2|a": [1, 1, None],
+                "2|b": [2, 2, None],
+                "5|a": [3, None, 3],
+                "5|b": [5, None, 5]
+            })
 
-        tbl = Table({"a": int, "b": int}, index="a")
+        tbl = Table({
+            "a": int,
+            "b": int
+        }, index="a")
         view = tbl.view(row_pivots=["a"], column_pivots=["b"])
         view.on_update(cb1, mode="row")
         tbl.update(data)
 
     def test_view_row_delta_two_column_only(self, util):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
-        update_data = {"a": [5], "b": [6]}
+        update_data = {
+            "a": [5],
+            "b": [6]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(
-                delta,
-                {
-                    "2|a": [1, None],
-                    "2|b": [2, None],
-                    "4|a": [3, None],
-                    "4|b": [4, None],
-                    "6|a": [5, 5],
-                    "6|b": [6, 6],
-                },
-            )
+            compare_delta(delta, {
+                "2|a": [1, None],
+                "2|b": [2, None],
+                "4|a": [3, None],
+                "4|b": [4, None],
+                "6|a": [5, 5],
+                "6|b": [6, 6]
+            })
 
         tbl = Table(data)
         view = tbl.view(column_pivots=["b"])
@@ -1057,20 +1227,20 @@ class TestView(object):
 
     def test_view_row_delta_two_column_only_indexed(self, util):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}, {"a": 3, "b": 5}]
-        update_data = {"a": [5], "b": [6]}
+        update_data = {
+            "a": [5],
+            "b": [6]
+        }
 
         def cb1(port_id, delta):
-            compare_delta(
-                delta,
-                {
-                    "2|a": [1, None],
-                    "2|b": [2, None],
-                    "5|a": [3, None],
-                    "5|b": [5, None],
-                    "6|a": [5, 5],
-                    "6|b": [6, 6],
-                },
-            )
+            compare_delta(delta, {
+                "2|a": [1, None],
+                "2|b": [2, None],
+                "5|a": [3, None],
+                "5|b": [5, None],
+                "6|a": [5, 5],
+                "6|b": [6, 6]
+            })
 
         tbl = Table(data, index="a")
         view = tbl.view(column_pivots=["b"])
@@ -1087,17 +1257,17 @@ class TestView(object):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
 
         def cb1(port_id, delta):
-            compare_delta(
-                delta,
-                {
-                    "2|a": [1, 1, None],
-                    "2|b": [2, 2, None],
-                    "4|a": [3, None, 3],
-                    "4|b": [4, None, 4],
-                },
-            )
+            compare_delta(delta, {
+                "2|a": [1, 1, None],
+                "2|b": [2, 2, None],
+                "4|a": [3, None, 3],
+                "4|b": [4, None, 4]
+            })
 
-        tbl = Table({"a": int, "b": int})
+        tbl = Table({
+            "a": int,
+            "b": int
+        })
         view = tbl.view(column_pivots=["b"])
         view.on_update(cb1, mode="row")
         tbl.update(data)
@@ -1106,17 +1276,17 @@ class TestView(object):
         data = [{"a": 1, "b": 2}, {"a": 3, "b": 4}, {"a": 3, "b": 5}]
 
         def cb1(port_id, delta):
-            compare_delta(
-                delta,
-                {
-                    "2|a": [1, 1, None],
-                    "2|b": [2, 2, None],
-                    "5|a": [3, None, 3],
-                    "5|b": [5, None, 5],
-                },
-            )
+            compare_delta(delta, {
+                "2|a": [1, 1, None],
+                "2|b": [2, 2, None],
+                "5|a": [3, None, 3],
+                "5|b": [5, None, 5]
+            })
 
-        tbl = Table({"a": int, "b": int}, index="a")
+        tbl = Table({
+            "a": int,
+            "b": int
+        }, index="a")
         view = tbl.view(column_pivots=["b"])
         view.on_update(cb1, mode="row")
         tbl.update(data)
@@ -1152,14 +1322,18 @@ class TestView(object):
         )
 
         assert view.to_records() == [
-            {"__ROW_PATH__": [], "a|c": 7.5, "b|c": 16.5},
-            {"__ROW_PATH__": [1], "a|c": 1.5, "b|c": 4.5},
-            {"__ROW_PATH__": [2], "a|c": 2.5, "b|c": 5.5},
-            {"__ROW_PATH__": [3], "a|c": 3.5, "b|c": 6.5},
+             {'__ROW_PATH__': [], 'a|c': 7.5, 'b|c': 16.5},
+             {'__ROW_PATH__': [1], 'a|c': 1.5, 'b|c': 4.5},
+             {'__ROW_PATH__': [2], 'a|c': 2.5, 'b|c': 5.5},
+             {'__ROW_PATH__': [3], 'a|c': 3.5, 'b|c': 6.5}
         ]
 
         tbl.update(
-            [{"c": -1, "i": 0}, {"c": -1, "i": 1}, {"c": -1, "i": 2},]
+            [
+                {"c": -1, "i": 0},
+                {"c": -1, "i": 1},
+                {"c": -1, "i": 2},
+            ]
         )
 
         assert view.to_records() == [
@@ -1178,10 +1352,10 @@ class TestView(object):
         )
 
         assert view.to_records() == [
-            {"__ROW_PATH__": [], "a|c": 7.5, "b|c": 16.5},
-            {"__ROW_PATH__": [1], "a|c": 1.5, "b|c": 4.5},
-            {"__ROW_PATH__": [2], "a|c": 2.5, "b|c": 5.5},
-            {"__ROW_PATH__": [3], "a|c": 3.5, "b|c": 6.5},
+             {'__ROW_PATH__': [], 'a|c': 7.5, 'b|c': 16.5},
+             {'__ROW_PATH__': [1], 'a|c': 1.5, 'b|c': 4.5},
+             {'__ROW_PATH__': [2], 'a|c': 2.5, 'b|c': 5.5},
+             {'__ROW_PATH__': [3], 'a|c': 3.5, 'b|c': 6.5}
         ]
 
         assert tbl.size() == 9
